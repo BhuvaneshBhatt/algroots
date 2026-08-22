@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use algroots in research, please cite the software."
+title: "algroots"
+type: software
+authors:
+  - family-names: "Bhatt"
+    given-names: "Bhuvanesh"
+version: "0.1.0"
+license: "GPL-3.0-only"
+url: "https://pypi.org/project/algroots/"

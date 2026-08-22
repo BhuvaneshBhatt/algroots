@@ -1,0 +1,939 @@
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass, field
+
+import sympy as sp
+
+from .rational_univariate.quotient import (
+    _as_rational_polynomial,
+    _coefficient_vector,
+    _leading_exponent_grevlex,
+    _monomial_from_exponent,
+    _normal_form,
+    _standard_exponents,
+)
+from .rational_univariate.representation import RationalUnivariateError
+
+
+class BorderBasisError(RationalUnivariateError):
+    """Raised when an exact border basis cannot be constructed."""
+
+
+@dataclass(frozen=True)
+class BorderBasisDiagnostics:
+    """Diagnostics for exact border-basis construction.
+
+    The diagnostics are intentionally exact/symbolic. Numerical border-basis
+    algorithms should report residual norms separately; this class records the
+    structural checks used by the current exact implementation.
+    """
+
+    success: bool = True
+    messages: tuple[str, ...] = tuple()
+    quotient_basis_rank: int | None = None
+    border_rank: int | None = None
+    commutators_zero: bool | None = None
+    failed_border_monomial: sp.Expr | None = None
+    failed_expression: sp.Expr | None = None
+
+    def add_message(self, message: str) -> BorderBasisDiagnostics:
+        return BorderBasisDiagnostics(
+            success=self.success,
+            messages=self.messages + (message,),
+            quotient_basis_rank=self.quotient_basis_rank,
+            border_rank=self.border_rank,
+            commutators_zero=self.commutators_zero,
+            failed_border_monomial=self.failed_border_monomial,
+            failed_expression=self.failed_expression,
+        )
+
+
+@dataclass(frozen=True)
+class BorderBasisResult:
+    """Exact border basis data for a zero-dimensional quotient algebra.
+
+    The implementation constructs an order ideal from standard monomials of a
+    zero-dimensional Groebner basis, then rewrites each border monomial in that
+    quotient basis. This is an exact, symbolic border-basis representation; it
+    is not the numerical AVI/SVD algorithm.
+    """
+
+    variables: tuple[sp.Symbol, ...]
+    order_ideal: tuple[tuple[int, ...], ...]
+    border: tuple[tuple[int, ...], ...]
+    border_polynomials: tuple[sp.Poly, ...]
+    multiplication_matrices: Mapping[sp.Symbol, sp.Matrix]
+    groebner_basis: sp.polys.polytools.GroebnerBasis
+    source: str = "groebner-standard-monomials"
+    diagnostics: BorderBasisDiagnostics = field(default_factory=BorderBasisDiagnostics)
+
+    @property
+    def dimension(self) -> int:
+        """Dimension of the quotient vector space, counted with multiplicity."""
+
+        return len(self.order_ideal)
+
+    @property
+    def quotient_basis_rank(self) -> int:
+        """Rank of the chosen quotient-basis coordinate matrix.
+
+        For a successful exact border basis this equals ``dimension``. The
+        matrix is expressed in the chosen order-ideal coordinates, so it also
+        works when the supporting Groebner basis was computed in a permuted
+        variable order.
+        """
+
+        return int(self.normal_form_matrix.rank())
+
+    @property
+    def border_rank(self) -> int:
+        """Rank of the border-polynomial coefficient matrix."""
+
+        if not self.border_polynomials:
+            return 0
+        monomials = _sort_exponents(
+            exp for poly in self.border_polynomials for exp, coeff in poly.terms() if coeff != 0
+        )
+        rows = []
+        for poly in self.border_polynomials:
+            rows.append(
+                [
+                    poly.coeff_monomial(_monomial_from_exponent(self.variables, exp))
+                    for exp in monomials
+                ]
+            )
+        return int(sp.Matrix(rows).rank()) if rows else 0
+
+    @property
+    def order_monomials(self) -> tuple[sp.Expr, ...]:
+        """Return the order ideal as monomial expressions."""
+
+        return tuple(
+            _monomial_from_exponent(self.variables, exponent) for exponent in self.order_ideal
+        )
+
+    @property
+    def border_monomials(self) -> tuple[sp.Expr, ...]:
+        """Return the border as monomial expressions."""
+
+        return tuple(_monomial_from_exponent(self.variables, exponent) for exponent in self.border)
+
+    def as_exprs(self) -> tuple[sp.Expr, ...]:
+        """Return border-basis polynomials as expressions."""
+
+        return tuple(poly.as_expr() for poly in self.border_polynomials)
+
+    def normal_form(self, expression: sp.Expr) -> sp.Expr:
+        """Return the quotient normal form of ``expression``.
+
+        The normal form is reconstructed in the chosen order ideal. When
+        multiplication matrices are available, coordinate extraction uses the
+        quotient action directly; this supports non-standard but valid border
+        bases such as the Macaulay-derived basis ``(1, x)`` even when the
+        supporting Groebner normal form is expressed in a different standard
+        basis.
+        """
+
+        vector = self.coordinates(expression)
+        reconstructed = sum(
+            vector[index] * _monomial_from_exponent(self.variables, self.order_ideal[index])
+            for index in range(len(self.order_ideal))
+        )
+        return sp.expand(reconstructed)
+
+    def _coordinates_from_multiplication_matrices(self, expression: sp.Expr) -> sp.Matrix | None:
+        if not self.order_ideal:
+            return sp.zeros(0, 1)
+        if not all(variable in self.multiplication_matrices for variable in self.variables):
+            return None
+        try:
+            poly = sp.Poly(sp.expand(expression), *self.variables, domain=sp.QQ)
+        except (
+            sp.PolynomialError,
+            sp.polys.polyerrors.CoercionFailed,
+            ValueError,
+            TypeError,
+        ):
+            return None
+        order_index = {tuple(exp): index for index, exp in enumerate(self.order_ideal)}
+        zero = tuple(0 for _ in self.variables)
+        if zero not in order_index:
+            return None
+        basis_one = sp.zeros(len(self.order_ideal), 1)
+        basis_one[order_index[zero], 0] = 1
+        total = sp.zeros(len(self.order_ideal), 1)
+        for exponent, coeff in poly.terms():
+            column = basis_one
+            for variable, power in zip(self.variables, exponent, strict=True):
+                if power:
+                    column = (self.multiplication_matrices[variable] ** int(power)) * column
+            total += coeff * column
+        return total
+
+    def coordinates(self, expression: sp.Expr) -> sp.Matrix:
+        """Return the coordinate column of ``expression`` in the order ideal."""
+
+        matrix_coords = self._coordinates_from_multiplication_matrices(sp.sympify(expression))
+        if matrix_coords is not None:
+            return matrix_coords
+
+        remainder = _normal_form(self.groebner_basis, sp.sympify(expression))
+        vector = _coefficient_vector(remainder, self.variables, self.order_ideal)
+        reconstructed = sum(
+            vector[index] * _monomial_from_exponent(self.variables, self.order_ideal[index])
+            for index in range(len(self.order_ideal))
+        )
+        if sp.expand(remainder - reconstructed) != 0:
+            raise BorderBasisError(
+                "chosen order ideal does not span quotient normal forms; "
+                f"{expression!s} reduced to {remainder!s}"
+            )
+        return vector
+
+    def multiplication_matrix(self, element: sp.Expr) -> sp.Matrix:
+        """Return the multiplication matrix for a quotient element.
+
+        Passing one of the quotient variables returns the cached variable
+        multiplication matrix. Passing any polynomial expression constructs the
+        matrix whose columns are the coordinates of ``element * m`` for each
+        order-ideal monomial ``m``.
+        """
+
+        key = sp.sympify(element)
+        if key in self.multiplication_matrices:
+            return self.multiplication_matrices[key]
+        columns: list[sp.Matrix] = []
+        for exponent in self.order_ideal:
+            basis_monomial = _monomial_from_exponent(self.variables, exponent)
+            columns.append(self.coordinates(sp.expand(key * basis_monomial)))
+        return sp.Matrix.hstack(*columns) if columns else sp.zeros(0, 0)
+
+    @property
+    def normal_form_matrix(self) -> sp.Matrix:
+        """Matrix of order-ideal monomial normal forms in order coordinates."""
+
+        columns = [
+            self.coordinates(_monomial_from_exponent(self.variables, exponent))
+            for exponent in self.order_ideal
+        ]
+        return sp.Matrix.hstack(*columns) if columns else sp.zeros(0, 0)
+
+    @property
+    def border_reduction_matrix(self) -> sp.Matrix:
+        """Matrix whose columns are border monomials reduced in the order basis."""
+
+        columns = [
+            self.coordinates(_monomial_from_exponent(self.variables, exponent))
+            for exponent in self.border
+        ]
+        return sp.Matrix.hstack(*columns) if columns else sp.zeros(self.dimension, 0)
+
+    def commutation_residuals(self) -> tuple[tuple[sp.Symbol, sp.Symbol, sp.Matrix], ...]:
+        """Return all pairwise multiplication-matrix commutators."""
+
+        residuals: list[tuple[sp.Symbol, sp.Symbol, sp.Matrix]] = []
+        for left_index, left in enumerate(self.variables):
+            for right in self.variables[left_index + 1 :]:
+                residuals.append(
+                    (
+                        left,
+                        right,
+                        sp.simplify(
+                            self.multiplication_matrices[left] * self.multiplication_matrices[right]
+                            - self.multiplication_matrices[right]
+                            * self.multiplication_matrices[left]
+                        ),
+                    )
+                )
+        return tuple(residuals)
+
+    @property
+    def commutation_certificate(self) -> tuple[tuple[sp.Symbol, sp.Symbol, sp.Matrix], ...]:
+        """Exact pairwise commutator matrices for the multiplication operators."""
+
+        return self.commutation_residuals()
+
+    def has_commuting_multiplication_matrices(self) -> bool:
+        """Return whether the border-basis commuting-matrix criterion holds."""
+
+        return all(
+            residual == sp.zeros(*residual.shape) for _, _, residual in self.commutation_residuals()
+        )
+
+
+def _supporting_standard_order(
+    groebner_basis: sp.polys.polytools.GroebnerBasis,
+    variables: Sequence[sp.Symbol],
+) -> tuple[tuple[int, ...], ...]:
+    leading_exponents = [_leading_exponent_grevlex(poly) for poly in groebner_basis.polys]
+    return _standard_exponents(leading_exponents, len(tuple(variables)))
+
+
+def _sort_exponents(exponents: Iterable[Sequence[int]]) -> tuple[tuple[int, ...], ...]:
+    """Sort monomial exponents by degree, preferring earlier variables.
+
+    SymPy's grevlex standard-monomial enumeration can leave symmetric quotient
+    bases in either ``x`` or ``y``. For a public border-basis object it is more
+    predictable to prefer monomials involving earlier user-supplied variables,
+    so ``x`` precedes ``y`` for variables ``[x, y]`` at the same total degree.
+    """
+
+    normalized = {tuple(int(value) for value in exp) for exp in exponents}
+    return tuple(sorted(normalized, key=lambda exp: (sum(exp), tuple(-value for value in exp))))
+
+
+def _degree_exponents(variable_count: int, degree: int) -> tuple[tuple[int, ...], ...]:
+    if variable_count == 1:
+        return ((degree,),)
+    out: list[tuple[int, ...]] = []
+    for head in range(degree, -1, -1):
+        for tail in _degree_exponents(variable_count - 1, degree - head):
+            out.append((head,) + tail)
+    return tuple(out)
+
+
+def _is_divisor_closed_after_add(order: set[tuple[int, ...]], exponent: tuple[int, ...]) -> bool:
+    for index, power in enumerate(exponent):
+        if power <= 0:
+            continue
+        divisor = list(exponent)
+        divisor[index] -= 1
+        if tuple(divisor) not in order:
+            return False
+    return True
+
+
+def _preferred_order_ideal_from_quotient(
+    groebner_basis: sp.polys.polytools.GroebnerBasis,
+    variables: Sequence[sp.Symbol],
+    standard_order: Sequence[Sequence[int]],
+) -> tuple[tuple[int, ...], ...]:
+    """Choose a user-variable-friendly order ideal for the quotient basis.
+
+    Standard monomials of a Groebner basis are a valid order ideal but are tied
+    to the supporting monomial order. For public border-basis output we prefer
+    an equivalent order ideal whose normal forms are linearly independent and
+    whose monomials use earlier variables when possible. This keeps examples
+    such as ``[x**2 - 1, y - x]`` in the intuitive basis ``(1, x)``.
+    """
+
+    dimension = len(tuple(standard_order))
+    if dimension <= 1:
+        return tuple(tuple(exp) for exp in standard_order)
+    selected: list[tuple[int, ...]] = []
+    selected_set: set[tuple[int, ...]] = set()
+    columns: list[sp.Matrix] = []
+    degree = 0
+    max_degree = max(sum(exp) for exp in standard_order) + dimension + 1
+    while len(selected) < dimension and degree <= max_degree:
+        for exponent in _degree_exponents(len(variables), degree):
+            if exponent in selected_set or not _is_divisor_closed_after_add(selected_set, exponent):
+                continue
+            monomial = _monomial_from_exponent(variables, exponent)
+            remainder = _normal_form(groebner_basis, monomial)
+            vector = _coefficient_vector(remainder, variables, standard_order)
+            trial = columns + [vector]
+            if sp.Matrix.hstack(*trial).rank() == len(trial):
+                selected.append(exponent)
+                selected_set.add(exponent)
+                columns.append(vector)
+                if len(selected) == dimension:
+                    return tuple(selected)
+        degree += 1
+    return tuple(tuple(exp) for exp in standard_order)
+
+
+def _border_exponents(
+    order_ideal: Sequence[Sequence[int]],
+    variable_count: int,
+) -> tuple[tuple[int, ...], ...]:
+    order_set = {tuple(exp) for exp in order_ideal}
+    border: set[tuple[int, ...]] = set()
+    for exponent in order_set:
+        for index in range(variable_count):
+            candidate = list(exponent)
+            candidate[index] += 1
+            candidate_tuple = tuple(candidate)
+            if candidate_tuple not in order_set:
+                border.add(candidate_tuple)
+    return _sort_exponents(border)
+
+
+def _exponent_from_monomial(monomial: sp.Expr, variables: Sequence[sp.Symbol]) -> tuple[int, ...]:
+    poly = sp.Poly(monomial, *variables, domain=sp.QQ)
+    terms = poly.terms()
+    if len(terms) != 1 or terms[0][1] != 1:
+        raise BorderBasisError(f"order ideal entry is not a monomial: {monomial!s}")
+    return tuple(int(value) for value in terms[0][0])
+
+
+def _normalize_order_ideal(
+    order_ideal: Iterable[Sequence[int] | sp.Expr] | None,
+    variables: Sequence[sp.Symbol],
+    default: Sequence[Sequence[int]],
+) -> tuple[tuple[int, ...], ...]:
+    if order_ideal is None:
+        normalized = _sort_exponents(default)
+    else:
+        exponents: list[tuple[int, ...]] = []
+        for item in order_ideal:
+            if isinstance(item, (tuple, list)) and all(isinstance(value, int) for value in item):
+                exponent = tuple(int(value) for value in item)
+            else:
+                exponent = _exponent_from_monomial(sp.sympify(item), variables)
+            if len(exponent) != len(variables):
+                raise BorderBasisError("order ideal exponent has the wrong dimension")
+            exponents.append(exponent)
+        normalized = _sort_exponents(exponents)
+    normalized_set = set(normalized)
+    zero = tuple(0 for _ in variables)
+    if zero not in normalized_set:
+        raise BorderBasisError("order ideal must contain 1")
+    for exponent in normalized:
+        for index, power in enumerate(exponent):
+            for lower_power in range(power):
+                divisor = list(exponent)
+                divisor[index] = lower_power
+                if tuple(divisor) not in normalized_set:
+                    raise BorderBasisError("order ideal is not closed under divisibility")
+    return normalized
+
+
+def _map_permuted_exponents_to_original(
+    exponents: Sequence[Sequence[int]],
+    permuted_variables: Sequence[sp.Symbol],
+    original_variables: Sequence[sp.Symbol],
+) -> tuple[tuple[int, ...], ...]:
+    positions = {var: idx for idx, var in enumerate(original_variables)}
+    mapped: list[tuple[int, ...]] = []
+    for exponent in exponents:
+        out = [0] * len(original_variables)
+        for idx, power in enumerate(exponent):
+            out[positions[permuted_variables[idx]]] = int(power)
+        mapped.append(tuple(out))
+    return tuple(mapped)
+
+
+def _total_degree(poly: sp.Expr, variables: Sequence[sp.Symbol]) -> int:
+    return int(sp.Poly(poly, *variables, domain=sp.QQ).total_degree())
+
+
+def _monomial_exponents_upto(variable_count: int, max_degree: int) -> tuple[tuple[int, ...], ...]:
+    exponents: list[tuple[int, ...]] = []
+    for degree in range(max_degree + 1):
+        exponents.extend(_degree_exponents(variable_count, degree))
+    return tuple(exponents)
+
+
+def _macaulay_column_order(variable_count: int, max_degree: int) -> tuple[tuple[int, ...], ...]:
+    """Return monomials ordered so row reduction pivots prefer large terms."""
+
+    exponents = _monomial_exponents_upto(variable_count, max_degree)
+    # Row reduction treats earlier columns as pivot candidates. Put higher
+    # degree monomials first, and among equal degrees pivot monomials involving
+    # later user variables before earlier ones. This leaves quotient bases in
+    # earlier variables when possible, matching the public Groebner-derived
+    # border-basis preference, e.g. ``(1, x)`` rather than ``(1, y)`` for
+    # ``[x**2 - 1, y - x]`` with variables ``[x, y]``.
+    return tuple(sorted(exponents, key=lambda exp: (sum(exp), tuple(reversed(exp))), reverse=True))
+
+
+def _poly_row(
+    poly: sp.Expr, variables: Sequence[sp.Symbol], columns: Sequence[Sequence[int]]
+) -> list[sp.Expr]:
+    p = sp.Poly(sp.expand(poly), *variables, domain=sp.QQ)
+    return [p.coeff_monomial(_monomial_from_exponent(variables, exp)) for exp in columns]
+
+
+def _macaulay_rows(
+    polynomials: Sequence[sp.Expr],
+    variables: Sequence[sp.Symbol],
+    max_degree: int,
+    columns: Sequence[Sequence[int]],
+) -> list[list[sp.Expr]]:
+    """Build exact Macaulay rows from multiples whose total degree is bounded."""
+
+    rows: list[list[sp.Expr]] = []
+    variable_count = len(variables)
+    for poly in polynomials:
+        poly_degree = _total_degree(poly, variables)
+        if poly_degree < 0 or poly_degree > max_degree:
+            continue
+        for multiplier_exp in _monomial_exponents_upto(variable_count, max_degree - poly_degree):
+            multiplier = _monomial_from_exponent(variables, multiplier_exp)
+            row = _poly_row(sp.expand(multiplier * poly), variables, columns)
+            if any(value != 0 for value in row):
+                rows.append(row)
+    return rows
+
+
+def _is_order_ideal(exponents: Sequence[Sequence[int]]) -> bool:
+    order_set = {tuple(exp) for exp in exponents}
+    if not order_set:
+        return False
+    zero = tuple(0 for _ in next(iter(order_set)))
+    if zero not in order_set:
+        return False
+    for exponent in order_set:
+        for index, power in enumerate(exponent):
+            if power <= 0:
+                continue
+            divisor = list(exponent)
+            divisor[index] -= 1
+            if tuple(divisor) not in order_set:
+                return False
+    return True
+
+
+def _try_linear_border_basis_at_degree(
+    polynomials: Sequence[sp.Expr],
+    variables: Sequence[sp.Symbol],
+    dimension: int,
+    degree: int,
+    groebner_basis: sp.polys.polytools.GroebnerBasis,
+    domain: sp.polys.domains.Domain,
+) -> BorderBasisResult | None:
+    """Try to construct a border basis from a bounded Macaulay row space.
+
+    This is an exact, native linear-algebra construction: border relations are
+    read from dependencies among polynomial multiples rather than from Groebner
+    normal forms. A supporting Groebner basis is retained only for the generic
+    ``normal_form``/``coordinates`` convenience methods and for zero-dimensional
+    dimension detection in the public wrapper.
+    """
+
+    columns = _macaulay_column_order(len(variables), degree)
+    rows = _macaulay_rows(polynomials, variables, degree, columns)
+    if not rows:
+        return None
+    matrix = sp.Matrix(rows)
+    rref_matrix, pivots = matrix.rref()
+    pivot_set = set(int(pivot) for pivot in pivots)
+    nonpivot_exponents = [columns[index] for index in range(len(columns)) if index not in pivot_set]
+    if len(nonpivot_exponents) != dimension:
+        return None
+    order_tuple = _sort_exponents(nonpivot_exponents)
+    if not _is_order_ideal(order_tuple):
+        return None
+    border_tuple = _border_exponents(order_tuple, len(variables))
+    column_index = {exp: index for index, exp in enumerate(columns)}
+    pivot_row_for_column = {int(pivot): row_index for row_index, pivot in enumerate(pivots)}
+    order_set = set(order_tuple)
+
+    border_polys: list[sp.Poly] = []
+    border_reductions: dict[tuple[int, ...], sp.Matrix] = {}
+    for border_exp in border_tuple:
+        if border_exp not in column_index:
+            return None
+        border_col = column_index[border_exp]
+        if border_col not in pivot_row_for_column:
+            return None
+        row = rref_matrix.row(pivot_row_for_column[border_col])
+        coeffs: list[sp.Expr] = []
+        relation_expr = _monomial_from_exponent(variables, border_exp)
+        for basis_exp in order_tuple:
+            basis_col = column_index[basis_exp]
+            coeff = sp.simplify(row[basis_col])
+            coeffs.append(-coeff)
+            relation_expr += coeff * _monomial_from_exponent(variables, basis_exp)
+        for exp in nonpivot_exponents:
+            if exp in order_set:
+                continue
+            if row[column_index[exp]] != 0:
+                return None
+        border_polys.append(sp.Poly(sp.expand(relation_expr), *variables, domain=domain))
+        border_reductions[border_exp] = sp.Matrix(coeffs)
+
+    multiplication_matrices: dict[sp.Symbol, sp.Matrix] = {}
+    order_index = {exp: index for index, exp in enumerate(order_tuple)}
+    for var_index, variable in enumerate(variables):
+        cols: list[sp.Matrix] = []
+        for exponent in order_tuple:
+            product = list(exponent)
+            product[var_index] += 1
+            product_exp = tuple(product)
+            if product_exp in order_index:
+                col = sp.zeros(dimension, 1)
+                col[order_index[product_exp], 0] = 1
+            elif product_exp in border_reductions:
+                col = border_reductions[product_exp]
+            else:
+                return None
+            cols.append(col)
+        multiplication_matrices[variable] = sp.Matrix.hstack(*cols) if cols else sp.zeros(0, 0)
+
+    provisional = BorderBasisResult(
+        variables=tuple(variables),
+        order_ideal=order_tuple,
+        border=border_tuple,
+        border_polynomials=tuple(border_polys),
+        multiplication_matrices=multiplication_matrices,
+        groebner_basis=groebner_basis,
+        source="macaulay-linear-algebra",
+    )
+    commutes = provisional.has_commuting_multiplication_matrices()
+    diagnostics = BorderBasisDiagnostics(
+        success=commutes,
+        messages=tuple()
+        if commutes
+        else ("linear-algebra multiplication matrices do not commute",),
+        quotient_basis_rank=provisional.quotient_basis_rank,
+        border_rank=provisional.border_rank,
+        commutators_zero=commutes,
+    )
+    return BorderBasisResult(
+        variables=tuple(variables),
+        order_ideal=order_tuple,
+        border=border_tuple,
+        border_polynomials=tuple(border_polys),
+        multiplication_matrices=multiplication_matrices,
+        groebner_basis=groebner_basis,
+        source="macaulay-linear-algebra",
+        diagnostics=diagnostics,
+    )
+
+
+def compute_border_basis_linear(
+    polynomials: Iterable[sp.Expr],
+    variables: Sequence[sp.Symbol],
+    *,
+    domain: sp.polys.domains.Domain = sp.QQ,
+    groebner_order: str = "grevlex",
+    max_degree: int | None = None,
+    strict: bool = True,
+) -> BorderBasisResult:
+    """Compute an exact border basis from Macaulay linear algebra.
+
+    The constructor forms exact Macaulay matrices of polynomial multiples,
+    row-reduces them over ``domain``, extracts a divisor-closed quotient order
+    ideal from nonpivot monomials, and reads border relations directly from the
+    row space. A supporting Groebner basis is used to certify the ideal is
+    zero-dimensional and to provide the quotient dimension; border relations and
+    multiplication matrices are not obtained by reducing border monomials with
+    that Groebner basis.
+    """
+
+    variable_tuple = tuple(variables)
+    if not variable_tuple:
+        raise BorderBasisError("at least one variable is required")
+    polys = [
+        _as_rational_polynomial(sp.sympify(poly), variable_tuple).as_expr() for poly in polynomials
+    ]
+    if not polys:
+        raise BorderBasisError("at least one polynomial generator is required")
+    groebner_basis = sp.groebner(polys, *variable_tuple, order=groebner_order, domain=domain)
+    if groebner_basis.polys == [sp.Poly(1, *variable_tuple, domain=domain)]:
+        empty = sp.zeros(0, 0)
+        return BorderBasisResult(
+            variables=variable_tuple,
+            order_ideal=tuple(),
+            border=tuple(),
+            border_polynomials=tuple(),
+            multiplication_matrices={variable: empty for variable in variable_tuple},
+            groebner_basis=groebner_basis,
+            source="macaulay-linear-algebra",
+        )
+    if not groebner_basis.is_zero_dimensional:
+        message = "linear border basis construction requires a zero-dimensional ideal"
+        if strict:
+            raise BorderBasisError(message)
+        return BorderBasisResult(
+            variables=variable_tuple,
+            order_ideal=tuple(),
+            border=tuple(),
+            border_polynomials=tuple(),
+            multiplication_matrices={variable: sp.zeros(0, 0) for variable in variable_tuple},
+            groebner_basis=groebner_basis,
+            source="macaulay-linear-algebra",
+            diagnostics=BorderBasisDiagnostics(success=False, messages=(message,)),
+        )
+    leading_exponents = [_leading_exponent_grevlex(poly) for poly in groebner_basis.polys]
+    dimension = len(_standard_exponents(leading_exponents, len(variable_tuple)))
+    start_degree = max(_total_degree(poly, variable_tuple) for poly in polys)
+    if max_degree is None:
+        max_degree = start_degree + dimension + max(2, len(variable_tuple))
+    for degree in range(start_degree, max_degree + 1):
+        result = _try_linear_border_basis_at_degree(
+            polys, variable_tuple, dimension, degree, groebner_basis, domain
+        )
+        if result is not None:
+            if result.diagnostics.success or not strict:
+                return result
+            break
+    message = f"Macaulay linear-algebra border-basis construction did not stabilize up to degree {max_degree}"
+    if strict:
+        raise BorderBasisError(message)
+    return BorderBasisResult(
+        variables=variable_tuple,
+        order_ideal=tuple(),
+        border=tuple(),
+        border_polynomials=tuple(),
+        multiplication_matrices={variable: sp.zeros(0, 0) for variable in variable_tuple},
+        groebner_basis=groebner_basis,
+        source="macaulay-linear-algebra",
+        diagnostics=BorderBasisDiagnostics(success=False, messages=(message,)),
+    )
+
+
+def _prepare_border_basis_input(
+    polynomials: Iterable[sp.Expr],
+    variables: Sequence[sp.Symbol],
+    *,
+    domain: sp.polys.domains.Domain,
+    groebner_order: str,
+) -> tuple[
+    tuple[sp.Symbol, ...],
+    list[sp.Expr],
+    sp.polys.polytools.GroebnerBasis,
+]:
+    variable_tuple = tuple(variables)
+    if not variable_tuple:
+        raise BorderBasisError("at least one variable is required")
+    polys = [
+        _as_rational_polynomial(sp.sympify(poly), variable_tuple).as_expr() for poly in polynomials
+    ]
+    if not polys:
+        raise BorderBasisError("at least one polynomial generator is required")
+    groebner_basis = sp.groebner(polys, *variable_tuple, order=groebner_order, domain=domain)
+    return variable_tuple, polys, groebner_basis
+
+
+def _empty_border_result(
+    variables: tuple[sp.Symbol, ...],
+    groebner_basis: sp.polys.polytools.GroebnerBasis,
+    *,
+    message: str | None = None,
+) -> BorderBasisResult:
+    return BorderBasisResult(
+        variables=variables,
+        order_ideal=tuple(),
+        border=tuple(),
+        border_polynomials=tuple(),
+        multiplication_matrices={variable: sp.zeros(0, 0) for variable in variables},
+        groebner_basis=groebner_basis,
+        diagnostics=(
+            BorderBasisDiagnostics(success=False, messages=(message,))
+            if message is not None
+            else BorderBasisDiagnostics()
+        ),
+    )
+
+
+def _choose_order_ideal(
+    polys: Sequence[sp.Expr],
+    variables: tuple[sp.Symbol, ...],
+    groebner_basis: sp.polys.polytools.GroebnerBasis,
+    *,
+    order_ideal: Iterable[Sequence[int] | sp.Expr] | None,
+    domain: sp.polys.domains.Domain,
+    groebner_order: str,
+) -> tuple[sp.polys.polytools.GroebnerBasis, tuple[tuple[int, ...], ...]]:
+    reduction_basis = groebner_basis
+    leading_exponents = [_leading_exponent_grevlex(poly) for poly in groebner_basis.polys]
+    default_order = _standard_exponents(leading_exponents, len(variables))
+    if order_ideal is None and len(variables) == 2:
+        reversed_variables = tuple(reversed(variables))
+        try:
+            reversed_basis = sp.groebner(
+                polys, *reversed_variables, order=groebner_order, domain=domain
+            )
+            reversed_leads = [_leading_exponent_grevlex(poly) for poly in reversed_basis.polys]
+            reversed_standard = _standard_exponents(reversed_leads, len(variables))
+            default_order = _map_permuted_exponents_to_original(
+                reversed_standard, reversed_variables, variables
+            )
+            reduction_basis = reversed_basis
+        except (
+            RationalUnivariateError,
+            sp.PolynomialError,
+            sp.polys.polyerrors.CoercionFailed,
+            ValueError,
+            TypeError,
+        ):
+            pass
+    if order_ideal is None:
+        default_order = _preferred_order_ideal_from_quotient(
+            reduction_basis, variables, default_order
+        )
+    return reduction_basis, _normalize_order_ideal(order_ideal, variables, default_order)
+
+
+def _construct_border_relations(
+    reduction_basis: sp.polys.polytools.GroebnerBasis,
+    variables: tuple[sp.Symbol, ...],
+    order_tuple: tuple[tuple[int, ...], ...],
+    *,
+    domain: sp.polys.domains.Domain,
+) -> tuple[tuple[tuple[int, ...], ...], tuple[sp.Poly, ...]]:
+    border_tuple = _border_exponents(order_tuple, len(variables))
+    border_polys: list[sp.Poly] = []
+    for exponent in border_tuple:
+        monomial = _monomial_from_exponent(variables, exponent)
+        remainder = _normal_form(reduction_basis, monomial)
+        vector = _coefficient_vector(remainder, variables, order_tuple)
+        reconstructed = sum(
+            vector[index] * _monomial_from_exponent(variables, order_tuple[index])
+            for index in range(len(order_tuple))
+        )
+        if sp.expand(remainder - reconstructed) != 0:
+            raise BorderBasisError(
+                "chosen order ideal does not span the quotient normal forms; "
+                f"border monomial {monomial!s} reduced to {remainder!s}"
+            )
+        border_polys.append(sp.Poly(sp.expand(monomial - reconstructed), *variables, domain=domain))
+    return border_tuple, tuple(border_polys)
+
+
+def _build_border_multiplication_matrices(
+    reduction_basis: sp.polys.polytools.GroebnerBasis,
+    variables: tuple[sp.Symbol, ...],
+    order_tuple: tuple[tuple[int, ...], ...],
+) -> dict[sp.Symbol, sp.Matrix]:
+    matrices: dict[sp.Symbol, sp.Matrix] = {}
+    for variable in variables:
+        columns: list[sp.Matrix] = []
+        for exponent in order_tuple:
+            product_expr = variable * _monomial_from_exponent(variables, exponent)
+            remainder = _normal_form(reduction_basis, product_expr)
+            vector = _coefficient_vector(remainder, variables, order_tuple)
+            reconstructed = sum(
+                vector[index] * _monomial_from_exponent(variables, order_tuple[index])
+                for index in range(len(order_tuple))
+            )
+            if sp.expand(remainder - reconstructed) != 0:
+                raise BorderBasisError(
+                    "chosen order ideal does not span multiplication normal forms; "
+                    f"{product_expr!s} reduced to {remainder!s}"
+                )
+            columns.append(vector)
+        matrices[variable] = sp.Matrix.hstack(*columns) if columns else sp.zeros(0, 0)
+    return matrices
+
+
+def _build_border_result(
+    variables: tuple[sp.Symbol, ...],
+    order_tuple: tuple[tuple[int, ...], ...],
+    border_tuple: tuple[tuple[int, ...], ...],
+    border_polys: tuple[sp.Poly, ...],
+    multiplication_matrices: Mapping[sp.Symbol, sp.Matrix],
+    reduction_basis: sp.polys.polytools.GroebnerBasis,
+    *,
+    strict: bool,
+) -> BorderBasisResult:
+    initial = BorderBasisResult(
+        variables=variables,
+        order_ideal=order_tuple,
+        border=border_tuple,
+        border_polynomials=border_polys,
+        multiplication_matrices=multiplication_matrices,
+        groebner_basis=reduction_basis,
+    )
+    commutes = initial.has_commuting_multiplication_matrices()
+    diagnostics = BorderBasisDiagnostics(
+        success=commutes,
+        messages=tuple() if commutes else ("computed multiplication matrices do not commute",),
+        quotient_basis_rank=initial.quotient_basis_rank,
+        border_rank=initial.border_rank,
+        commutators_zero=commutes,
+    )
+    result = BorderBasisResult(
+        variables=variables,
+        order_ideal=order_tuple,
+        border=border_tuple,
+        border_polynomials=border_polys,
+        multiplication_matrices=multiplication_matrices,
+        groebner_basis=reduction_basis,
+        diagnostics=diagnostics,
+    )
+    if not commutes and strict:
+        raise BorderBasisError("computed multiplication matrices do not commute")
+    return result
+
+
+def compute_border_basis(
+    polynomials: Iterable[sp.Expr],
+    variables: Sequence[sp.Symbol],
+    *,
+    order_ideal: Iterable[Sequence[int] | sp.Expr] | None = None,
+    domain: sp.polys.domains.Domain = sp.QQ,
+    groebner_order: str = "grevlex",
+    strict: bool = True,
+    algorithm: str = "groebner",
+    max_degree: int | None = None,
+) -> BorderBasisResult:
+    """Compute an exact border basis for a rational zero-dimensional ideal.
+
+    This is an exact symbolic implementation. ``algorithm="groebner"`` derives
+    the quotient representation from a supporting Groebner basis, while the
+    linear/Macaulay route uses exact coefficient linear algebra. It is not a
+    numerical AVI/SVD approximate-border algorithm.
+    """
+    algorithm_key = algorithm.lower().replace("_", "-")
+    if algorithm_key in {"linear", "macaulay", "macaulay-linear", "native"}:
+        if order_ideal is not None:
+            message = "custom order_ideal is only supported by algorithm='groebner' in this release"
+            if strict:
+                raise BorderBasisError(message)
+            variable_tuple = tuple(variables)
+            groebner_basis = sp.groebner(
+                [sp.sympify(poly) for poly in polynomials],
+                *variable_tuple,
+                order=groebner_order,
+                domain=domain,
+            )
+            return _empty_border_result(variable_tuple, groebner_basis, message=message)
+        return compute_border_basis_linear(
+            polynomials,
+            variables,
+            domain=domain,
+            groebner_order=groebner_order,
+            max_degree=max_degree,
+            strict=strict,
+        )
+    if algorithm_key not in {"groebner", "groebner-derived", "standard"}:
+        raise BorderBasisError(f"unknown border-basis algorithm: {algorithm!r}")
+
+    variable_tuple, polys, groebner_basis = _prepare_border_basis_input(
+        polynomials,
+        variables,
+        domain=domain,
+        groebner_order=groebner_order,
+    )
+    if groebner_basis.polys == [sp.Poly(1, *variable_tuple, domain=domain)]:
+        return _empty_border_result(variable_tuple, groebner_basis)
+    if not groebner_basis.is_zero_dimensional:
+        message = "border basis construction requires a zero-dimensional ideal"
+        if strict:
+            raise BorderBasisError(message)
+        return _empty_border_result(variable_tuple, groebner_basis, message=message)
+
+    try:
+        reduction_basis, order_tuple = _choose_order_ideal(
+            polys,
+            variable_tuple,
+            groebner_basis,
+            order_ideal=order_ideal,
+            domain=domain,
+            groebner_order=groebner_order,
+        )
+        border_tuple, border_polys = _construct_border_relations(
+            reduction_basis, variable_tuple, order_tuple, domain=domain
+        )
+        multiplication_matrices = _build_border_multiplication_matrices(
+            reduction_basis, variable_tuple, order_tuple
+        )
+        return _build_border_result(
+            variable_tuple,
+            order_tuple,
+            border_tuple,
+            border_polys,
+            multiplication_matrices,
+            reduction_basis,
+            strict=strict,
+        )
+    except BorderBasisError as exc:
+        if strict:
+            raise
+        reduction_basis = locals().get("reduction_basis", groebner_basis)
+        return _empty_border_result(variable_tuple, reduction_basis, message=str(exc))

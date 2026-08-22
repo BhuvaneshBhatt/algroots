@@ -1,0 +1,527 @@
+"""Reusable mixed-precision predictor-corrector path tracking."""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from typing import Any, Protocol
+
+import mpmath as mp
+import sympy as sp
+
+from .numerical import number_to_mpc
+
+
+class PathTrackingError(RuntimeError):
+    """Base error for numerical homotopy path tracking."""
+
+
+class PathStepError(PathTrackingError):
+    """Raised when a continuation step cannot be completed reliably."""
+
+
+class HomotopySystem(Protocol):
+    """Minimal numerical interface consumed by :func:`track_path`."""
+
+    variables: tuple[Any, ...]
+
+    def evaluate(self, values: Sequence[Any], t: Any) -> mp.matrix: ...
+
+    def jacobian(self, values: Sequence[Any], t: Any) -> mp.matrix: ...
+
+    def parameter_derivative(self, values: Sequence[Any], t: Any) -> mp.matrix: ...
+
+
+@dataclass(frozen=True)
+class PathTrackerOptions:
+    """Controls for adaptive mixed-precision path tracking."""
+
+    initial_step: float = 0.05
+    min_step: float = 1e-8
+    max_step: float = 0.2
+    max_steps: int = 4000
+    max_newton_steps: int = 8
+    initial_digits: int = 35
+    max_digits: int = 240
+    residual_digits: int = 24
+    step_growth: float = 1.5
+    step_shrink: float = 0.5
+    precision_growth: float = 2.0
+    max_step_rejections: int = 20
+    condition_guard_digits: int = 8
+
+    def __post_init__(self) -> None:
+        finite_fields = {
+            "initial_step": self.initial_step,
+            "min_step": self.min_step,
+            "max_step": self.max_step,
+            "step_growth": self.step_growth,
+            "step_shrink": self.step_shrink,
+            "precision_growth": self.precision_growth,
+        }
+        for name, value in finite_fields.items():
+            if not math.isfinite(float(value)):
+                raise ValueError(f"{name} must be finite")
+        if not 0 < self.initial_step <= self.max_step:
+            raise ValueError("initial_step must lie in (0, max_step]")
+        if not 0 < self.min_step < self.max_step:
+            raise ValueError("min_step must lie in (0, max_step)")
+        if self.max_steps <= 0 or self.max_newton_steps <= 0:
+            raise ValueError("step limits must be positive")
+        if self.initial_digits < 15 or self.max_digits < self.initial_digits:
+            raise ValueError("invalid precision bounds")
+        if not 1 <= self.residual_digits < self.max_digits:
+            raise ValueError("residual_digits must lie in [1, max_digits)")
+        if self.step_growth <= 1:
+            raise ValueError("step_growth must be > 1")
+        if not 0 < self.step_shrink < 1:
+            raise ValueError("step_shrink must lie in (0, 1)")
+        if self.precision_growth <= 1:
+            raise ValueError("precision_growth must be > 1")
+        if self.max_step_rejections <= 0:
+            raise ValueError("max_step_rejections must be positive")
+        if self.condition_guard_digits < 0:
+            raise ValueError("condition_guard_digits must be nonnegative")
+
+
+@dataclass(frozen=True)
+class PathStep:
+    """Accepted continuation-step diagnostics."""
+
+    t: float
+    step_size: float
+    digits: int
+    newton_iterations: int
+    relative_residual: mp.mpf
+
+
+@dataclass(frozen=True)
+class PathResult:
+    """Result and diagnostics for one tracked continuation path."""
+
+    start: tuple[Any, ...]
+    endpoint: tuple[Any, ...]
+    success: bool
+    final_t: float
+    final_digits: int
+    accepted_steps: int
+    rejected_steps: int
+    precision_increases: int
+    max_relative_residual: mp.mpf
+    steps: tuple[PathStep, ...] = field(default_factory=tuple)
+    message: str = ""
+    classification: str = "success"
+
+
+class SympyHomotopy:
+    """Analytic homotopy compiled from SymPy expressions."""
+
+    def __init__(
+        self,
+        expressions: Sequence[Any],
+        variables: Sequence[sp.Symbol],
+        parameter: sp.Symbol,
+    ) -> None:
+        self.expressions = tuple(sp.sympify(expr) for expr in expressions)
+        self.variables = tuple(variables)
+        self.parameter = parameter
+        if not self.variables:
+            raise ValueError("at least one solution variable is required")
+        if len(self.expressions) != len(self.variables):
+            raise ValueError("path tracking currently requires a square system")
+        if len(set(self.variables)) != len(self.variables):
+            raise ValueError("variables must be distinct")
+        args = (*self.variables, self.parameter)
+        jacobian = sp.Matrix(self.expressions).jacobian(self.variables)
+        derivative = [sp.diff(expr, self.parameter) for expr in self.expressions]
+        expanded_terms = [sp.Add.make_args(sp.expand(expr)) for expr in self.expressions]
+        self._function = sp.lambdify(args, self.expressions, modules="mpmath")
+        self._jacobian = sp.lambdify(args, jacobian.tolist(), modules="mpmath")
+        self._derivative = sp.lambdify(args, derivative, modules="mpmath")
+        self._term_functions = tuple(
+            sp.lambdify(args, terms, modules="mpmath") for terms in expanded_terms
+        )
+
+    def evaluate(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        raw = self._function(*values, t)
+        return mp.matrix([mp.mpc(value) for value in raw])
+
+    def jacobian(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        raw = self._jacobian(*values, t)
+        return mp.matrix([[mp.mpc(value) for value in row] for row in raw])
+
+    def parameter_derivative(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        raw = self._derivative(*values, t)
+        return mp.matrix([mp.mpc(value) for value in raw])
+
+    def residual_scales(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        """Return per-equation term scales for scale-invariant residuals."""
+        scales: list[mp.mpf] = []
+        for function in self._term_functions:
+            raw = function(*values, t)
+            terms = raw if isinstance(raw, (list, tuple)) else (raw,)
+            scales.append(sum((abs(mp.mpc(value)) for value in terms), mp.mpf(0)))
+        return mp.matrix(scales)
+
+
+def _vector_tuple(vector: mp.matrix) -> tuple[mp.mpc, ...]:
+    return tuple(mp.mpc(vector[index]) for index in range(vector.rows))
+
+
+def _norm_inf(vector: mp.matrix) -> mp.mpf:
+    return max(
+        (abs(vector[index]) for index in range(vector.rows)),
+        default=mp.mpf(0),
+    )
+
+
+def _matrix_is_finite(matrix: mp.matrix) -> bool:
+    return all(
+        mp.isfinite(matrix[row, col]) for row in range(matrix.rows) for col in range(matrix.cols)
+    )
+
+
+def _validated_outputs(
+    homotopy: HomotopySystem, x: mp.matrix, t: mp.mpf
+) -> tuple[mp.matrix, mp.matrix, mp.matrix]:
+    """Validate the numerical contract of a custom homotopy implementation."""
+    n = len(homotopy.variables)
+    values = _vector_tuple(x)
+    try:
+        residual = homotopy.evaluate(values, t)
+        jacobian = homotopy.jacobian(values, t)
+        derivative = homotopy.parameter_derivative(values, t)
+    except Exception as exc:  # custom implementations can fail arbitrarily
+        raise PathStepError("homotopy evaluation failed") from exc
+    if not isinstance(residual, mp.matrix) or residual.rows != n or residual.cols != 1:
+        raise PathStepError(f"homotopy evaluate() must return a {n}-vector")
+    if not isinstance(jacobian, mp.matrix) or jacobian.rows != n or jacobian.cols != n:
+        raise PathStepError(f"homotopy jacobian() must return a {n}x{n} matrix")
+    if not isinstance(derivative, mp.matrix) or derivative.rows != n or derivative.cols != 1:
+        raise PathStepError(f"homotopy parameter_derivative() must return a {n}-vector")
+    if not (
+        _matrix_is_finite(residual)
+        and _matrix_is_finite(jacobian)
+        and _matrix_is_finite(derivative)
+    ):
+        raise PathStepError("homotopy returned NaN or infinite numerical values")
+    return residual, jacobian, derivative
+
+
+def _residual_scales(
+    homotopy: HomotopySystem,
+    x: mp.matrix,
+    t: mp.mpf,
+    residual: mp.matrix,
+    jacobian: mp.matrix,
+    derivative: mp.matrix,
+) -> mp.matrix:
+    values = _vector_tuple(x)
+    scale_method = getattr(homotopy, "residual_scales", None)
+    if callable(scale_method):
+        try:
+            scales = scale_method(values, t)
+        except Exception as exc:
+            raise PathStepError("homotopy residual_scales() failed") from exc
+        if not isinstance(scales, mp.matrix) or scales.rows != residual.rows or scales.cols != 1:
+            raise PathStepError("homotopy residual_scales() must return one scale per equation")
+        if not _matrix_is_finite(scales) or any(scales[i] < 0 for i in range(scales.rows)):
+            raise PathStepError("homotopy residual scales must be finite and nonnegative")
+        return scales
+
+    # Generic fallback: a first-order local magnitude estimate.  Every row
+    # scales with the corresponding equation, so unlike an absolute residual
+    # it is invariant under nonzero constant rescaling of individual equations.
+    scales = []
+    for row in range(residual.rows):
+        scale = sum(
+            abs(jacobian[row, col]) * max(mp.mpf(1), abs(x[col])) for col in range(jacobian.cols)
+        )
+        scale += abs(derivative[row]) * max(mp.mpf(1), abs(t))
+        if scale == 0:
+            scale = abs(residual[row])
+        scales.append(scale)
+    return mp.matrix(scales)
+
+
+def _scaled_residual(
+    homotopy: HomotopySystem,
+    x: mp.matrix,
+    t: mp.mpf,
+    residual: mp.matrix,
+    jacobian: mp.matrix,
+    derivative: mp.matrix,
+) -> mp.mpf:
+    scales = _residual_scales(homotopy, x, t, residual, jacobian, derivative)
+    ratios = []
+    for index in range(residual.rows):
+        scale = scales[index]
+        if scale == 0:
+            ratios.append(mp.mpf(0) if residual[index] == 0 else mp.inf)
+        else:
+            ratios.append(abs(residual[index]) / scale)
+    return max(ratios, default=mp.mpf(0))
+
+
+def _relative_residual(homotopy: HomotopySystem, x: mp.matrix, t: mp.mpf) -> mp.mpf:
+    residual, jacobian, derivative = _validated_outputs(homotopy, x, t)
+    return _scaled_residual(homotopy, x, t, residual, jacobian, derivative)
+
+
+def _linear_solve(matrix: mp.matrix, rhs: mp.matrix) -> mp.matrix:
+    try:
+        return mp.lu_solve(matrix, rhs)
+    except (ZeroDivisionError, ValueError) as exc:
+        raise PathStepError("singular or numerically unusable path Jacobian") from exc
+
+
+def _predict_tangent(homotopy: HomotopySystem, x: mp.matrix, t: mp.mpf) -> tuple[mp.matrix, mp.mpf]:
+    _, jacobian, derivative = _validated_outputs(homotopy, x, t)
+    try:
+        condition = mp.cond(jacobian)
+    except (ZeroDivisionError, ValueError):
+        condition = mp.inf
+    return _linear_solve(jacobian, -derivative), condition
+
+
+def _newton_correct(
+    homotopy: HomotopySystem,
+    predicted: mp.matrix,
+    t: mp.mpf,
+    *,
+    target: mp.mpf,
+    maxsteps: int,
+) -> tuple[mp.matrix, int, mp.mpf]:
+    x = predicted.copy()
+    previous = mp.inf
+    for iteration in range(1, maxsteps + 1):
+        residual, jacobian, derivative = _validated_outputs(homotopy, x, t)
+        scaled = _scaled_residual(homotopy, x, t, residual, jacobian, derivative)
+        if scaled <= target:
+            return x, iteration - 1, scaled
+        correction = _linear_solve(jacobian, -residual)
+        trial = x + correction
+        trial_value, trial_jac, trial_dt = _validated_outputs(homotopy, trial, t)
+        trial_scaled = _scaled_residual(homotopy, trial, t, trial_value, trial_jac, trial_dt)
+        if trial_scaled > scaled:
+            accepted = False
+            factor = mp.mpf("0.5")
+            for _ in range(8):
+                trial = x + factor * correction
+                trial_value, trial_jac, trial_dt = _validated_outputs(homotopy, trial, t)
+                trial_scaled = _scaled_residual(
+                    homotopy, trial, t, trial_value, trial_jac, trial_dt
+                )
+                if trial_scaled <= scaled:
+                    accepted = True
+                    break
+                factor /= 2
+            if not accepted:
+                raise PathStepError("Newton correction failed to decrease scaled residual")
+        x = trial
+        if trial_scaled <= target:
+            return x, iteration, trial_scaled
+        if trial_scaled >= previous * mp.mpf("0.999"):
+            raise PathStepError("Newton correction stagnated")
+        previous = trial_scaled
+    raise PathStepError("Newton correction exceeded iteration budget")
+
+
+def track_path(
+    homotopy: HomotopySystem,
+    start: Sequence[Any],
+    *,
+    t_start: float = 0.0,
+    t_end: float = 1.0,
+    options: PathTrackerOptions | None = None,
+) -> PathResult:
+    """Track one nonsingular homotopy path with adaptive precision and steps."""
+    opts = options or PathTrackerOptions()
+    if not math.isfinite(float(t_start)) or not math.isfinite(float(t_end)):
+        raise ValueError("t_start and t_end must be finite")
+    if not getattr(homotopy, "variables", None):
+        raise ValueError("homotopy must define at least one variable")
+    if len(start) != len(homotopy.variables):
+        raise ValueError("start point dimension does not match homotopy")
+
+    direction = 1 if t_end >= t_start else -1
+    t = mp.mpf(str(t_start))
+    target_t = mp.mpf(str(t_end))
+    step = mp.mpf(str(opts.initial_step))
+    digits = opts.initial_digits
+    x_values = tuple(number_to_mpc(value, digits + 8) for value in start)
+    accepted = rejected = precision_increases = 0
+    consecutive_rejections = 0
+    history: list[PathStep] = []
+    max_residual = mp.mpf(0)
+
+    def residual_target() -> mp.mpf:
+        return mp.power(10, -min(opts.residual_digits, digits - 8))
+
+    def result(success: bool, message: str = "", *, residual: mp.mpf | None = None) -> PathResult:
+        endpoint_norm = max((abs(value) for value in x_values), default=mp.mpf(0))
+        near_target = abs(target_t - t) <= mp.mpf("0.2") * max(
+            mp.mpf(1), abs(target_t - mp.mpf(str(t_start)))
+        )
+        likely_divergent = (
+            not success
+            and near_target
+            and endpoint_norm > mp.power(10, min(10, max(6, digits // 8)))
+        )
+        classification = (
+            "success" if success else ("likely_divergent" if likely_divergent else "failed")
+        )
+        return PathResult(
+            start=tuple(start),
+            endpoint=tuple(x_values),
+            success=success,
+            final_t=float(t),
+            final_digits=digits,
+            accepted_steps=accepted,
+            rejected_steps=rejected,
+            precision_increases=precision_increases,
+            max_relative_residual=(mp.mpf(max_residual) if residual is None else mp.mpf(residual)),
+            steps=tuple(history),
+            message=message,
+            classification=classification,
+        )
+
+    def fail(message: str, *, residual: mp.mpf | None = None) -> PathResult:
+        return result(False, message, residual=residual)
+
+    def recorrect_current_point() -> None:
+        nonlocal x_values, max_residual
+        with mp.workdps(digits + 10):
+            current = mp.matrix([mp.mpc(value) for value in x_values])
+            target = residual_target()
+            corrected, _, residual = _newton_correct(
+                homotopy,
+                current,
+                t,
+                target=target,
+                maxsteps=opts.max_newton_steps,
+            )
+            x_values = _vector_tuple(corrected)
+            max_residual = max(max_residual, residual)
+
+    def increase_precision(required: int = 0) -> bool:
+        nonlocal digits, precision_increases
+        if digits >= opts.max_digits:
+            return False
+        new_digits = min(
+            opts.max_digits,
+            max(required, digits + 10, int(digits * opts.precision_growth)),
+        )
+        if new_digits <= digits:
+            return False
+        digits = new_digits
+        precision_increases += 1
+        recorrect_current_point()
+        return True
+
+    # Correct the supplied seed at the initial parameter before continuation.
+    with mp.workdps(digits + 10):
+        seed = mp.matrix(list(x_values))
+        seed_target = residual_target()
+        try:
+            seed, _, seed_residual = _newton_correct(
+                homotopy,
+                seed,
+                t,
+                target=seed_target,
+                maxsteps=opts.max_newton_steps,
+            )
+        except PathStepError:
+            return fail(
+                "starting seed could not be corrected onto the homotopy",
+                residual=mp.inf,
+            )
+        x_values = _vector_tuple(seed)
+        max_residual = seed_residual
+
+    while direction * (target_t - t) > 0:
+        if accepted >= opts.max_steps:
+            return fail("maximum path steps exceeded")
+
+        step = min(step, abs(target_t - t))
+        signed_step = direction * step
+        with mp.workdps(digits + 10):
+            x = mp.matrix([mp.mpc(value) for value in x_values])
+            current_t = mp.mpf(t)
+            next_t = current_t + signed_step
+            target_residual = residual_target()
+            try:
+                tangent, condition = _predict_tangent(homotopy, x, current_t)
+                if mp.isfinite(condition) and condition > 1:
+                    needed = (
+                        opts.residual_digits
+                        + opts.condition_guard_digits
+                        + max(0, int(mp.ceil(mp.log10(condition))))
+                    )
+                    if needed > digits:
+                        try:
+                            if increase_precision(needed):
+                                continue
+                        except PathStepError:
+                            return fail(
+                                "current point could not be re-corrected after precision increase"
+                            )
+
+                predictor = x + signed_step * tangent
+                corrected, iterations, _ = _newton_correct(
+                    homotopy,
+                    predictor,
+                    next_t,
+                    target=target_residual,
+                    maxsteps=opts.max_newton_steps,
+                )
+            except PathStepError:
+                rejected += 1
+                consecutive_rejections += 1
+
+                if consecutive_rejections >= opts.max_step_rejections:
+                    try:
+                        if increase_precision():
+                            consecutive_rejections = 0
+                            continue
+                    except PathStepError:
+                        return fail(
+                            "current point could not be re-corrected after precision increase"
+                        )
+                    return fail("consecutive step-rejection budget exhausted")
+
+                min_step = mp.mpf(str(opts.min_step))
+                if step > min_step * mp.mpf("1.01"):
+                    step = max(min_step, step * opts.step_shrink)
+                    continue
+
+                try:
+                    if increase_precision():
+                        step = max(min_step, step * opts.step_growth)
+                        continue
+                except PathStepError:
+                    return fail("current point could not be re-corrected after precision increase")
+                return fail("minimum step/maximum precision reached")
+
+            x_values = _vector_tuple(corrected)
+            t = next_t
+            accepted += 1
+            consecutive_rejections = 0
+            rel = _relative_residual(homotopy, corrected, next_t)
+            max_residual = max(max_residual, rel)
+            history.append(
+                PathStep(
+                    t=float(t),
+                    step_size=float(abs(signed_step)),
+                    digits=digits,
+                    newton_iterations=iterations,
+                    relative_residual=mp.mpf(rel),
+                )
+            )
+            if iterations <= 2:
+                step = min(mp.mpf(str(opts.max_step)), step * opts.step_growth)
+            elif iterations >= max(4, opts.max_newton_steps - 2):
+                step = max(mp.mpf(str(opts.min_step)), step * mp.mpf("0.8"))
+
+    return result(True)

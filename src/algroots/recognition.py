@@ -1,0 +1,407 @@
+"""Algebraic recognition and exact certification of numerical system roots."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, replace
+from math import ceil, log2
+from typing import Any
+
+import sympy as sp
+
+from .monodromy import MonodromyOrbitResult
+from .solver import PolynomialSystemRoots
+
+
+class ExactCertificationError(ValueError):
+    """A recognized scalar root could not be converted to an exact candidate."""
+
+
+@dataclass(frozen=True)
+class RecognizedSystemRoot:
+    """Recognized algebraic coordinates for one numerical solution tuple.
+
+    ``coordinates`` contains the scalar :mod:`algrecognize` result objects.
+    ``exact_coordinates`` contains the corresponding exact SymPy algebraic
+    numbers. ``equation_values`` is the exact value of every original equation
+    after substitution of the exact tuple.
+    """
+
+    numerical_root: tuple[Any, ...]
+    coordinates: tuple[Any, ...]
+    exact_coordinates: tuple[Any, ...]
+    equation_values: tuple[Any, ...]
+    jointly_certified: bool
+
+    @property
+    def scalar_certified(self) -> bool:
+        """Whether every scalar recognizer selected a certified isolated root."""
+        return all(bool(result.certified) for result in self.coordinates)
+
+    @property
+    def certified(self) -> bool:
+        """Whether scalar recognition and exact joint substitution both certify."""
+        return self.scalar_certified and self.jointly_certified
+
+
+def _to_flint_number(value: Any, digits: int):
+    """Enclose a validated numerical coordinate in a trustworthy FLINT ball.
+
+    ``algrecognize`` certifies compatibility by intersecting its input ball
+    with isolated exact roots.  Passing a rounded decimal as a radius-zero
+    Arb/Acb point therefore prevents certification in the generic case.  The
+    solver's verification precision supplies a conservative decimal enclosure
+    for the coordinate instead.
+    """
+    try:
+        from flint import acb, arb
+    except ImportError as exc:  # pragma: no cover - dependency error
+        raise ImportError("root recognition requires python-flint through algrecognize") from exc
+
+    guard_digits = max(8, int(digits))
+    eval_digits = guard_digits + 8
+    numeric = sp.N(value, eval_digits)
+    real = sp.N(sp.re(numeric), eval_digits)
+    imag = sp.N(sp.im(numeric), eval_digits)
+    scale = max(sp.Integer(1), abs(real), abs(imag))
+    radius = sp.N(sp.Integer(10) ** (-guard_digits) * scale, eval_digits)
+    real_ball = arb(f"{real} +/- {radius}")
+    if imag == 0:
+        return real_ball
+    imag_ball = arb(f"{imag} +/- {radius}")
+    return acb(real_ball, imag_ball)
+
+
+def _sympy_poly(fl_int_poly: Any, symbol: Any) -> sp.Poly:
+    """Convert an algrecognize ``fmpz_poly`` to an exact SymPy polynomial."""
+    try:
+        coefficients = tuple(sp.Integer(int(c)) for c in fl_int_poly.coeffs())
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise ExactCertificationError(
+            "recognized polynomial could not be converted from python-flint"
+        ) from exc
+    if not coefficients:
+        raise ExactCertificationError("recognized polynomial has no coefficients")
+    expression = sum(
+        coefficient * symbol**degree for degree, coefficient in enumerate(coefficients)
+    )
+    polynomial = sp.Poly(expression, symbol, domain=sp.ZZ)
+    if polynomial.degree() < 1:
+        raise ExactCertificationError("recognized polynomial must have positive degree")
+    return polynomial
+
+
+def _exact_root_from_result(
+    recognition: Any,
+    numerical_value: Any,
+    *,
+    digits: int,
+    verification_digits: int,
+) -> Any:
+    """Select the exact polynomial root corresponding to a numerical coordinate."""
+    variable = sp.Dummy("z")
+    polynomial = _sympy_poly(recognition.polynomial, variable)
+    try:
+        roots = tuple(polynomial.all_roots(radicals=False))
+    except (NotImplementedError, sp.PolynomialError, ValueError) as exc:
+        raise ExactCertificationError(
+            "could not construct exact roots of the recognized polynomial"
+        ) from exc
+    if not roots:
+        raise ExactCertificationError("recognized polynomial has no exact roots")
+
+    compare_digits = max(30, digits + 10)
+    target = sp.N(numerical_value, compare_digits)
+    distances = [abs(sp.N(root, compare_digits) - target) for root in roots]
+    index = min(range(len(roots)), key=lambda i: distances[i])
+    exact_root = roots[index]
+    distance = sp.N(distances[index], compare_digits)
+
+    scale = max(sp.Integer(1), abs(target))
+    match_digits = max(6, verification_digits // 2)
+    tolerance = sp.N(sp.Integer(10) ** (-match_digits) * scale, compare_digits)
+    if distance > tolerance:
+        raise ExactCertificationError(
+            "recognized exact root is not sufficiently close to the validated "
+            f"numerical coordinate (distance={distance})"
+        )
+
+    if len(roots) > 1:
+        ordered = sorted((sp.N(value, compare_digits), i) for i, value in enumerate(distances))
+        if ordered[1][0] <= tolerance:
+            raise ExactCertificationError(
+                "the numerical coordinate does not uniquely identify an exact root"
+            )
+    return exact_root
+
+
+def _rootof_remainder_zero(value: Any) -> bool | None:
+    """Decide expressions involving one CRootOf by exact polynomial reduction."""
+    rootofs = tuple(value.atoms(sp.polys.rootoftools.ComplexRootOf))
+    if len(rootofs) != 1:
+        return None
+    root = rootofs[0]
+    variable = sp.Dummy("a")
+    try:
+        expression_poly = sp.Poly(
+            value.xreplace({root: variable}),
+            variable,
+            extension=True,
+        )
+        minimal_poly = sp.Poly(
+            root.poly.as_expr().subs(root.poly.gen, variable),
+            variable,
+            extension=True,
+        )
+    except (sp.PolynomialError, TypeError, ValueError):
+        return None
+    return bool(expression_poly.rem(minimal_poly).is_zero)
+
+
+def _exact_zero_value(value: Any) -> tuple[Any, bool]:
+    """Reduce an algebraic expression exactly and report whether it is zero."""
+    simplified = sp.simplify(value)
+    if simplified == 0 or simplified.is_zero is True:
+        return sp.Integer(0), True
+    if simplified.is_zero is False:
+        return simplified, False
+
+    rootof_zero = _rootof_remainder_zero(simplified)
+    if rootof_zero is True:
+        return sp.Integer(0), True
+    if rootof_zero is False:
+        return simplified, False
+
+    try:
+        algebraic = sp.to_number_field(simplified)
+    except (sp.PolynomialError, NotImplementedError, TypeError, ValueError):
+        return simplified, False
+    exact = sp.simplify(algebraic.as_expr())
+    if exact == 0:
+        return sp.Integer(0), True
+    return exact, False
+
+
+def _certify_exact_tuple(
+    equations: tuple[Any, ...],
+    variables: tuple[Any, ...],
+    exact_coordinates: tuple[Any, ...],
+) -> tuple[tuple[Any, ...], bool]:
+    """Certify one exact tuple directly against the supplied system."""
+    assignment = dict(zip(variables, exact_coordinates, strict=True))
+    values: list[Any] = []
+    all_zero = True
+    for equation in equations:
+        value, is_zero = _exact_zero_value(sp.sympify(equation).subs(assignment))
+        values.append(value)
+        all_zero = all_zero and is_zero
+    return tuple(values), all_zero
+
+
+def _recognize_exact_roots(
+    roots: tuple[tuple[Any, ...], ...],
+    equations: tuple[Any, ...],
+    variables: tuple[Any, ...],
+    precision_digits: tuple[int, ...],
+    verification_digits: tuple[int, ...],
+    recognize_coordinate: Any,
+    *,
+    require_certified: bool,
+) -> tuple[RecognizedSystemRoot, ...]:
+    """Recognize numerical roots using aligned per-root precision metadata."""
+    count = len(roots)
+    if len(precision_digits) != count or len(verification_digits) != count:
+        raise ValueError("per-root precision metadata must align with roots")
+
+    recognized: list[RecognizedSystemRoot] = []
+    for root, digits, verify_digits in zip(
+        roots, precision_digits, verification_digits, strict=True
+    ):
+        scalar_results: list[Any] = []
+        exact_coordinates: list[Any] = []
+        for value in root:
+            scalar = recognize_coordinate(value, verify_digits)
+            scalar_results.append(scalar)
+            exact_coordinates.append(
+                _exact_root_from_result(
+                    scalar,
+                    value,
+                    digits=digits,
+                    verification_digits=verify_digits,
+                )
+            )
+
+        exact_tuple = tuple(exact_coordinates)
+        equation_values, jointly_certified = _certify_exact_tuple(
+            equations,
+            variables,
+            exact_tuple,
+        )
+        item = RecognizedSystemRoot(
+            numerical_root=root,
+            coordinates=tuple(scalar_results),
+            exact_coordinates=exact_tuple,
+            equation_values=equation_values,
+            jointly_certified=jointly_certified,
+        )
+        if require_certified and not item.certified:
+            raise ExactCertificationError(
+                "recognized tuple did not receive complete scalar and joint exact certification"
+            )
+        recognized.append(item)
+    return tuple(recognized)
+
+
+def _recognition_inputs(
+    result: PolynomialSystemRoots | MonodromyOrbitResult,
+) -> tuple[
+    tuple[tuple[Any, ...], ...],
+    tuple[Any, ...],
+    tuple[Any, ...],
+    tuple[int, ...],
+    tuple[int, ...],
+]:
+    """Return roots, system, and aligned trusted precision metadata."""
+    if isinstance(result, MonodromyOrbitResult):
+        if len(result.root_info) != len(result.roots):
+            raise ValueError("monodromy recognition requires verification metadata for every root")
+        return (
+            result.roots,
+            result.equations,
+            result.variables,
+            tuple(info.digits for info in result.root_info),
+            tuple(info.verification_digits for info in result.root_info),
+        )
+
+    count = len(result.roots)
+    return (
+        result.roots,
+        result.equations,
+        result.variables,
+        (result.precision_digits,) * count,
+        (result.verification_digits,) * count,
+    )
+
+
+def recognize_system_roots(
+    result: PolynomialSystemRoots | MonodromyOrbitResult,
+    *,
+    max_degree: int,
+    max_height: int | None = None,
+    min_relation_bits: int | None = None,
+    degree_cost: int = 0,
+    require_certified: bool = False,
+) -> tuple[RecognizedSystemRoot, ...]:
+    """Recognize and exactly certify numerical system roots.
+
+    ``result`` may come from the core polynomial/algebraic solver or from
+    :func:`discover_monodromy_orbit`. Each coordinate is first processed by
+    :func:`algrecognize.algrecognize`; the recognized integer polynomial is
+    converted to the exact SymPy root compatible with the validated numerical
+    coordinate. The complete tuple is then substituted exactly into every
+    original equation.
+
+    Monodromy recognition uses each root's own working and verification
+    precision. Exact recognition certifies the returned root tuple only; it does
+    not change or strengthen the monodromy orbit's completeness evidence.
+
+    When ``require_certified`` is true, every scalar recognition must be
+    certified and exact joint substitution must reduce every equation to zero.
+    Otherwise :class:`ExactCertificationError` is raised.
+    """
+    try:
+        import algrecognize as algrecognize_module
+        from flint import ctx
+    except ImportError as exc:  # pragma: no cover - dependency error
+        raise ImportError("recognize_system_roots requires algrecognize and python-flint") from exc
+
+    algrecognize = algrecognize_module.algrecognize
+    algrecognize_error = getattr(algrecognize_module, "AlgRecognizeError", ())
+
+    if not isinstance(max_degree, int) or max_degree <= 0:
+        raise ValueError("max_degree must be a positive integer")
+    if not isinstance(require_certified, bool):
+        raise TypeError("require_certified must be bool")
+
+    roots, equations, variables, digits_by_root, verify_by_root = _recognition_inputs(result)
+    if any(digits <= 0 for digits in digits_by_root):
+        raise ValueError("root precision must be positive")
+    if any(digits <= 0 for digits in verify_by_root):
+        raise ValueError("root verification precision must be positive")
+
+    options: dict[str, Any] = {
+        "max_degree": max_degree,
+        "degree_cost": degree_cost,
+    }
+    if max_height is not None:
+        options["max_height"] = max_height
+    if min_relation_bits is not None:
+        options["min_relation_bits"] = min_relation_bits
+
+    trusted_digits = max(verify_by_root, default=15)
+    old_precision = int(ctx.prec)
+    working_bits = max(old_precision, ceil(trusted_digits * log2(10)) + 8)
+    ctx.prec = working_bits
+    try:
+
+        def recognize_coordinate(value: Any, digits: int):
+            try:
+                return algrecognize(
+                    _to_flint_number(value, digits),
+                    **options,
+                )
+            except algrecognize_error as exc:
+                raise ExactCertificationError(
+                    f"algrecognize could not identify a relation: {exc}"
+                ) from exc
+
+        return _recognize_exact_roots(
+            roots,
+            equations,
+            variables,
+            digits_by_root,
+            verify_by_root,
+            recognize_coordinate,
+            require_certified=require_certified,
+        )
+    finally:
+        ctx.prec = old_precision
+
+
+def _with_auto_recognition(result: Any, *, max_degree: int):
+    """Return ``result`` with best-effort certified recognition metadata attached."""
+    if not result.roots:
+        return replace(
+            result,
+            recognized_roots=(),
+            recognition_attempted=True,
+            recognition_error=None,
+        )
+    try:
+        recognized = recognize_system_roots(
+            result,
+            max_degree=max_degree,
+            require_certified=True,
+        )
+    except (ExactCertificationError, ImportError) as exc:
+        # Automatic recognition is deliberately best-effort: failure to find a
+        # low-complexity exact relation must not invalidate an already verified
+        # numerical solve. Preserve the failure for inspection instead.
+        return replace(
+            result,
+            recognized_roots=None,
+            recognition_attempted=True,
+            recognition_error=f"{type(exc).__name__}: {exc}",
+        )
+    return replace(
+        result,
+        recognized_roots=recognized,
+        recognition_attempted=True,
+        recognition_error=None,
+    )
+
+
+def _auto_recognize(result: Any, *, recognize: bool, max_degree: int):
+    """Apply best-effort exact recognition when enabled."""
+    if not recognize:
+        return result
+    return _with_auto_recognition(result, max_degree=max_degree)

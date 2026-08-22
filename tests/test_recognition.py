@@ -175,10 +175,7 @@ def test_real_recognition_handles_rational_and_complex_algebraic_roots() -> None
 
     exact_values = [item.exact_coordinates[0] for item in complex_recognized]
 
-    numerical_values = {
-        complex(sp.N(value, 40))
-        for value in exact_values
-    }
+    numerical_values = {complex(sp.N(value, 40)) for value in exact_values}
 
     assert any(abs(value - 1j) < 1e-30 for value in numerical_values)
     assert any(abs(value + 1j) < 1e-30 for value in numerical_values)

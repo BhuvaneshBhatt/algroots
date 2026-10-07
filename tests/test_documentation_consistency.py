@@ -134,7 +134,7 @@ def test_local_markdown_anchors_resolve():
     paths = [ROOT / "README.md", *DOCS.glob("*.md"), *(ROOT / "examples").glob("*.md")]
     missing = []
     for path in paths:
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         for target in re.findall(r"(?<!!)\[[^\]]+\]\(([^)]+)\)", text):
             if "://" in target or "#" not in target:
                 continue

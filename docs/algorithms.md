@@ -4,29 +4,29 @@
 
 ```text
 original algebraic equations
-        ↓
+        ⇩
 exact algebraization and domain constraints
-        ↓
+        ⇩
 exact polynomial system
-        ↓
-guarded constant-unit polynomial presolve + deterministic variable ordering + grevlex Gröbner basis
-        ↓
+        ⇩
+guarded constant-unit polynomial presolve + deterministic variable ordering + grevlex (graded reverse lexicographic) Gröbner basis
+        ⇩
 zero-dimensionality + quotient structure (`QuotientAlgebra`)
-        ↓
+        ⇩
 auto: cheap exposed shape → bounded action → shared-quotient RUR
-        ↓ if exact RUR declines
+        ⇩ if exact RUR declines
 FGLM to lexicographic → triangular fallback
 
 explicit shape/triangular: FGLM to lex on demand
 
 explicit numerical route: total-degree homotopy
-        ↓
+        ⇩
 Arb arbitrary-precision numerical roots
-        ↓
+        ⇩
 compiled residual verification + Newton refinement
-        ↓
+        ⇩
 original algebraic branch/domain filtering
-        ↓
+        ⇩
 default best-effort algrecognize exact reconstruction
 ```
 
@@ -36,7 +36,7 @@ When the lexicographic basis has the form
 
 $$p(t)=0,\qquad x_i=q_i(t),$$
 
-only the eliminant `p` needs a numerical all-roots solve. `algroots` uses FLINT/Arb `acb_poly.roots()` when available and evaluates each exact coordinate polynomial at the corresponding parameter root.
+only the eliminant `p` needs a numerical all-roots solve. `algroots` uses FLINT/Arb `acb_poly.roots()` when availble and evaluates each exact coordinate polynomial at the corresponding parameter root.
 
 ## Action-matrix backend
 

@@ -1,0 +1,98 @@
+[
+  {
+    "file": "01_polynomial_system.py",
+    "title": "Solve a coupled polynomial system",
+    "category": "core",
+    "guarantee": "Conditional finite-root extraction"
+  },
+  {
+    "file": "02_branches_and_poles.py",
+    "title": "Retain principal branches and exclude poles",
+    "category": "core",
+    "guarantee": "Original expression and domain checks"
+  },
+  {
+    "file": "03_exact_recognition.py",
+    "title": "Recognize and jointly certify numerical coordinates",
+    "category": "core",
+    "guarantee": "Coordinate and joint equation certification"
+  },
+  {
+    "file": "04_quotient_and_cache.py",
+    "title": "Inspect exact quotient structure and bounded caches",
+    "category": "exact",
+    "guarantee": "Exact finite algebra"
+  },
+  {
+    "file": "05_exact_rur.py",
+    "title": "Construct an RUR and extract exact points",
+    "category": "exact",
+    "guarantee": "Exact algebraic coordinates"
+  },
+  {
+    "file": "06_algebraic_coefficients.py",
+    "title": "Solve and certify an algebraic-field system",
+    "category": "exact",
+    "guarantee": "Exact point certificate; automatic boxes remain rational-only"
+  },
+  {
+    "file": "07_multiplicity_and_boxes.py",
+    "title": "Certify individual multiplicities with automatic boxes",
+    "category": "certification",
+    "guarantee": "Exact isolated endpoint proofs"
+  },
+  {
+    "file": "08_clustered_roots.py",
+    "title": "Resolve closely spaced exact roots",
+    "category": "certification",
+    "guarantee": "Distinct exact endpoint proofs"
+  },
+  {
+    "file": "09_presolve_and_costs.py",
+    "title": "Inspect cancellation-aware presolve and observed costs",
+    "category": "diagnostics",
+    "guarantee": "Exact substitution; timings are observations"
+  },
+  {
+    "file": "10_border_bases.py",
+    "title": "Compare exact border-basis constructions",
+    "category": "exact",
+    "guarantee": "Exact quotient relations and commutation"
+  },
+  {
+    "file": "11_singular_deflation.py",
+    "title": "Deflate and replay an exact singular-root proof",
+    "category": "certification",
+    "guarantee": "Local exact deflation; finite ideal required"
+  },
+  {
+    "file": "12_bounded_homotopy_recovery.py",
+    "title": "Recover and certify a singular finite endpoint",
+    "category": "continuation",
+    "guarantee": "Exact finite-root accounting; no path proof"
+  },
+  {
+    "file": "13_projective_chart_switching.py",
+    "title": "Track a point through an automatic chart change",
+    "category": "continuation",
+    "guarantee": "Numerical projective tracking only"
+  },
+  {
+    "file": "14_seeded_monodromy.py",
+    "title": "Discover a quadratic orbit from one supplied seed",
+    "category": "experimental",
+    "guarantee": "Numerical orbit discovery; no automatic exact count"
+  },
+  {
+    "file": "15_limits_and_failures.py",
+    "title": "Handle unsupported problems and proof budgets",
+    "category": "diagnostics",
+    "guarantee": "Explicit refusal; no weakened proof"
+  },
+  {
+    "file": "16_multiplicity_views_and_order.py",
+    "title": "Select repeated-root views and certified canonical order",
+    "category": "certification",
+    "guarantee": "Exact local multiplicities and ordering; distinct metadata storage"
+  }
+]

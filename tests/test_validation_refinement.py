@@ -1,7 +1,7 @@
 import sympy as sp
 
-from algroots import RootDiagnostics, polysolve
-from algroots.solver import _validate_roots
+from algroots import polysolve
+from algroots.solver import RootDiagnostics, _validate_roots
 
 
 def test_validator_refines_inexact_candidate() -> None:

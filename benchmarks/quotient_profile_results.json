@@ -1,0 +1,121 @@
+{
+  "scope": "four cases, three counterbalanced fresh-process repetitions; cProfile enabled; exact ranks and pairings checked",
+  "cases": [
+    {
+      "name": "univariate-24",
+      "dimension": 24,
+      "pairing_digest": "d8962741a6092166bd507c16dbb355b6de51c5c58af6f7c1e7800731e59e1e95",
+      "versions": {
+        "0.6.0": {
+          "median_seconds": {
+            "groebner": 0.0025261249975301325,
+            "actions": 0.04416104199481197,
+            "trace": 0.027789833999122493,
+            "pairing": 0.05732975000864826,
+            "selected_rank": 0.015345791995059699
+          },
+          "median_selected_total": 0.1471389180078404,
+          "normal_form_misses": 24
+        },
+        "0.7.0": {
+          "median_seconds": {
+            "groebner": 0.0025707080058055,
+            "actions": 0.018576959002530202,
+            "trace": 0.02913779200753197,
+            "pairing": 0.0578596249979455,
+            "selected_rank": 0.0002937499957624823
+          },
+          "median_selected_total": 0.109155959013151,
+          "normal_form_misses": 1
+        }
+      }
+    },
+    {
+      "name": "separable-25",
+      "dimension": 25,
+      "pairing_digest": "870fb2d2d29720cea69ea0914996ad97aa95eb74884aeaa93870fb34ffd37a14",
+      "versions": {
+        "0.6.0": {
+          "median_seconds": {
+            "groebner": 0.002970750007079914,
+            "actions": 0.08178191700426396,
+            "trace": 0.2699453329987591,
+            "pairing": 0.29691291600465775,
+            "selected_rank": 0.013200290995882824
+          },
+          "median_selected_total": 0.664759708015481,
+          "normal_form_misses": 34
+        },
+        "0.7.0": {
+          "median_seconds": {
+            "groebner": 0.00277799999457784,
+            "actions": 0.03820758400252089,
+            "trace": 0.03329374999157153,
+            "pairing": 0.06777479199809022,
+            "selected_rank": 0.00018429200281389058
+          },
+          "median_selected_total": 0.14222433298709802,
+          "normal_form_misses": 10
+        }
+      }
+    },
+    {
+      "name": "nonreduced-24",
+      "dimension": 24,
+      "pairing_digest": "a5f4d7e59f301e369a3a2413f03fc0c6a19906a1598e0f4e5225f7f27d13b3d5",
+      "versions": {
+        "0.6.0": {
+          "median_seconds": {
+            "groebner": 0.002333625001483597,
+            "actions": 0.06972016699728556,
+            "trace": 0.24295441700087395,
+            "pairing": 0.2752145420090528,
+            "selected_rank": 0.012194500013720244
+          },
+          "median_selected_total": 0.599732627015328,
+          "normal_form_misses": 33
+        },
+        "0.7.0": {
+          "median_seconds": {
+            "groebner": 0.002997042000060901,
+            "actions": 0.03744591699796729,
+            "trace": 0.031281540999771096,
+            "pairing": 0.05958600000303704,
+            "selected_rank": 4.73749969387427e-05
+          },
+          "median_selected_total": 0.13612662501691375,
+          "normal_form_misses": 10
+        }
+      }
+    },
+    {
+      "name": "algebraic-12",
+      "dimension": 12,
+      "pairing_digest": "97327e64914d3ef1451d65eb8b4dd22751f250ea03ba175d0af5f5c4201fd520",
+      "versions": {
+        "0.6.0": {
+          "median_seconds": {
+            "groebner": 0.018953792008687742,
+            "actions": 0.04721941699972376,
+            "trace": 0.02414837499964051,
+            "pairing": 0.0330679170001531,
+            "selected_rank": 0.0032475000043632463
+          },
+          "median_selected_total": 0.12760958400031086,
+          "normal_form_misses": 18
+        },
+        "0.7.0": {
+          "median_seconds": {
+            "groebner": 0.01941399999486748,
+            "actions": 0.03453854100371245,
+            "trace": 0.0061255839973455295,
+            "pairing": 0.013933708003605716,
+            "selected_rank": 0.003064834003453143
+          },
+          "median_selected_total": 0.07933150099415798,
+          "normal_form_misses": 7
+        }
+      }
+    }
+  ]
+}

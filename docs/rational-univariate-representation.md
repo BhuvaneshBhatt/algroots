@@ -15,7 +15,7 @@ together with rational coordinate maps. After normalizing the common denominator
 <!-- algroots: execute -->
 ```python
 import sympy as sp
-from algroots import compute_rational_univariate_representation
+from algroots.rational_univariate import compute_rational_univariate_representation
 
 x, y = sp.symbols("x y")
 representation = compute_rational_univariate_representation(
@@ -74,6 +74,6 @@ The numerical backend retains the exact representation in `result.rational_univa
 
 ## Multiplicity and geometric roots
 
-The quotient-algebra dimension counts multiplicity, while the squarefree RUR defining polynomial represents distinct geometric parameter roots. `algroots` keeps these notions separate. First-class multiplicity reporting is still outside the current numerical result API.
+The quotient-algebra dimension counts multiplicity, while the squarefree RUR defining polynomial represents distinct geometric parameter roots. `algroots` keeps these notions separate. `total_multiplicity` and `geometric_solution_count` report global counts. Individual multiplicities are available through exact isolated-root certificates; the numerical root list contains distinct points.
 
 For the quotient-algebra relationship to action matrices and border bases, see [Algorithms](algorithms.md) and [Exact Border Bases](exact-border-bases.md).

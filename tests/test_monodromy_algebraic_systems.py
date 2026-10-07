@@ -3,12 +3,9 @@
 import pytest
 import sympy as sp
 
-from algroots import (
-    PathTrackerOptions,
-    PolynomialSystemInputError,
-    discover_monodromy_orbit,
-)
-from algroots.monodromy import normalized_root_distance
+from algroots import PolynomialSystemInputError
+from algroots.continuation import PathTrackerOptions
+from algroots.monodromy import discover_monodromy_orbit, normalized_root_distance
 
 x, y = sp.symbols("x y")
 OPTIONS = PathTrackerOptions(

@@ -3,12 +3,12 @@
 Both `polysolve` and `algsolve` accept:
 
 ```python
-method="auto"
-method="shape"
-method="action"
-method="triangular"
-method="rur"
-method="homotopy"
+method = "auto"
+method = "shape"
+method = "action"
+method = "triangular"
+method = "rur"
+method = "homotopy"
 ```
 
 For most applications, use `"auto"`.
@@ -30,7 +30,7 @@ For most applications, use `"auto"`.
 result = polysolve(system, variables, method="auto")
 ```
 
-This is the recommended default. It allows `algroots` to exploit a favorable representation and fall back when a specialized strategy is unsuitable.
+This is the recommended default. Affine presolve and automatic variable ordering precede one grevlex basis. A cheap exposed shape is preferred. Action is attempted when quotient dimension is at most `min(64, max_action_dimension, max_solutions)`; unless bounded repeated-factor hints favor RUR; larger quotients favor RUR. RUR reuses the same quotient and is also the action fallback. Only shape/triangular requests and the final triangular fallback convert to lex with FGLM. These conservative cost thresholds are deterministic heuristics, not universal performance optima. Use `variable_order="input"` and/or `presolve=False` for controlled comparisons.
 
 Use an explicit backend primarily for:
 
@@ -133,7 +133,7 @@ The backend therefore does **not** decide whether a radical branch is valid. Aft
 Use:
 
 ```python
-method="auto"
+method = "auto"
 ```
 
 unless you have a specific reason not to.
@@ -168,3 +168,13 @@ Independent paths can be tracked in separate processes with `homotopy_parallel=T
 
 
 For the explicit total-degree backend, see [Total-Degree Homotopy Continuation](homotopy-continuation.md).
+
+
+## Bounded homotopy recovery
+
+For rational finite square systems, `polysolve(..., method="homotopy",
+homotopy_recovery=True)` adds bounded endgame, chart, proof and deflation
+orchestration. It computes a quotient for proof accounting, so it does not have
+the ordinary route's no-Gröbner property. Recovery certifies finite endpoints/counts,
+not numerical paths or infinity. It is sequential and remains outside auto.
+See [Recovery Workflow](recovery-workflow.md).

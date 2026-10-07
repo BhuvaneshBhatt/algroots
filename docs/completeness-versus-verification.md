@@ -118,9 +118,16 @@ Exact recognition strengthens root identity and equation satisfaction; it is not
 Use:
 
 - `max_relative_residual` and `diagnostics` to assess numerical verification;
-- `quotient_dimension` and backend structural behavior to understand completeness reasoning;
+- `completeness` and its basis/notes to inspect global evidence, together with `quotient_dimension` and `geometric_solution_count`;
 - `RecognizedSystemRoot.certified` for optional exact certification of a returned tuple.
 
 Do not treat any one of those as a synonym for all the others.
 
 See [Guarantees and Result Semantics](guarantees-and-result-semantics.md).
+
+
+Requested `root_certifications` prove individual endpoints and multiplicities;
+they do not automatically promote global evidence. Bounded homotopy recovery
+certifies finite-root accounting when distinct exact endpoint proofs equal the
+exact geometric count. Numerical paths and infinity remain outside that proof.
+See [Reading Results](reading-results.md).

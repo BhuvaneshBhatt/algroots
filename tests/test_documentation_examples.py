@@ -39,9 +39,6 @@ def test_marked_documented_python_examples_execute(relative_path):
     assert blocks, f"{relative_path} contains an execution marker but no marked block"
     namespace = {"__name__": "__algroots_documentation_example__"}
     for index, code in enumerate(blocks, start=1):
-        if "recognize_system_roots(" in code:
-            pytest.importorskip("flint")
-            pytest.importorskip("algrecognize")
         exec(compile(code, f"{relative_path}:marked-block-{index}", "exec"), namespace)
 
 
@@ -66,3 +63,21 @@ def test_all_python_fences_are_syntactically_valid_or_explicit_signatures():
             if path.name == "api.md":
                 continue
             compile(code, f"{path.name}:block-{index + 1}", "exec")
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    [
+        "README.md",
+        "docs/reading-results.md",
+        "docs/certification-workflow.md",
+        "docs/recovery-workflow.md",
+        "docs/quotient-tools.md",
+    ],
+)
+def test_new_workflow_snippets_are_independently_copyable(relative_path):
+    for index, code in enumerate(_executable_blocks(relative_path)):
+        exec(
+            compile(code, f"{relative_path}:standalone-{index}", "exec"),
+            {"__name__": "__algroots_standalone_example__"},
+        )

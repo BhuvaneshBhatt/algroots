@@ -17,11 +17,9 @@ $$
 <!-- algroots: execute -->
 ```python
 import sympy as sp
-from algroots import (
-    algsolve,
-    algebraize_system,
-    recognize_system_roots,
-)
+from algroots import algsolve
+from algroots.algebraization import algebraize_system
+from algroots.recognition import recognize_system_roots
 
 x, y = sp.symbols("x y")
 
@@ -96,9 +94,10 @@ Now call:
 result = algsolve(
     equations,
     (x, y),
-    digits=70,
-    max_precision_digits=280,
+    digits=40,
+    max_precision_digits=160,
     method="auto",
+    recognize=False,  # recognition is demonstrated explicitly below
 )
 ```
 
@@ -216,13 +215,12 @@ print(result.auxiliary_variables)
 
 ## 10. Default best-effort exact recognition
 
-If exact algebraic forms are useful:
+If exact algebraic forms are useful (this optional recognition step is not part of the executable documentation smoke test because LLL/certification runtime is backend- and platform-dependent):
 
-<!-- algroots: execute -->
 ```python
 recognized = recognize_system_roots(
     result,
-    max_degree=8,
+    max_degree=4,
     require_certified=False,
 )
 
@@ -244,7 +242,7 @@ The recognition layer:
 With:
 
 ```python
-require_certified=True
+require_certified = True
 ```
 
 failure to obtain the stronger scalar-plus-joint certification raises `ExactCertificationError`.

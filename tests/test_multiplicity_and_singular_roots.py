@@ -1,8 +1,9 @@
 import pytest
 import sympy as sp
 
-from algroots import ActionMatrixError, polysolve
-from algroots.solver import _standard_monomials
+from algroots import polysolve
+from algroots.errors import ActionMatrixError
+from algroots.quotient import QuotientAlgebra
 
 x, y = sp.symbols("x y")
 
@@ -24,7 +25,9 @@ def test_nonradical_distinct_roots_differ_from_quotient_dimension(
 
     basis = sp.groebner(equations, *variables, order="lex")
     assert basis.is_zero_dimensional
-    quotient_basis = _standard_monomials(basis, variables, 64)
+    quotient_basis = QuotientAlgebra.from_groebner_basis(
+        basis, variables, max_dimension=64
+    ).standard_exponents
     assert len(quotient_basis) == expected_dimension
     assert expected_dimension >= expected_distinct
 

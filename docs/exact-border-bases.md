@@ -22,7 +22,7 @@ in the quotient algebra. These relations determine exact normal forms and multip
 <!-- algroots: execute -->
 ```python
 import sympy as sp
-from algroots import compute_border_basis
+from algroots.border_basis import compute_border_basis
 
 x, y = sp.symbols("x y")
 border = compute_border_basis((x**2 - 1, y - x), (x, y))

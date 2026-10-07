@@ -1,8 +1,8 @@
 import pytest
 import sympy as sp
 
-from algroots import (
-    RationalUnivariateError,
+from algroots.errors import RationalUnivariateError
+from algroots.rational_univariate import (
     compute_rational_univariate_representation,
     solve_rur_points,
     solve_rur_representation,

@@ -1,7 +1,8 @@
 import pytest
 import sympy as sp
 
-from algroots import ShapePositionError, polysolve
+from algroots import polysolve
+from algroots.errors import ShapePositionError
 
 
 def _residuals(equations, variables, root, digits=40):
@@ -13,7 +14,7 @@ def test_shape_position_cubic_system() -> None:
     x, y = sp.symbols("x y")
     equations = (x - y**2, y**3 - 2)
 
-    result = polysolve(equations, (x, y), digits=50)
+    result = polysolve(equations, (x, y), digits=50, method="shape")
 
     assert result.method == "shape_position"
     assert result.parameter_variable == y
@@ -51,7 +52,7 @@ def test_shape_position_three_variables() -> None:
     x, y, z = sp.symbols("x y z")
     equations = (x - z**2, y - z**3, z**4 - 2)
 
-    result = polysolve(equations, (x, y, z), digits=50)
+    result = polysolve(equations, (x, y, z), digits=50, method="shape")
 
     assert result.method == "shape_position"
     assert result.parameter_variable == z

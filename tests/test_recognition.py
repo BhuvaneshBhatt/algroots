@@ -8,7 +8,8 @@ def test_recognize_system_roots_with_algrecognize() -> None:
     pytest.importorskip("flint")
     pytest.importorskip("algrecognize")
 
-    from algroots import polysolve, recognize_system_roots
+    from algroots import polysolve
+    from algroots.recognition import recognize_system_roots
 
     x, y = sp.symbols("x y")
     result = polysolve((x - y, y**2 - 2), (x, y), digits=70, recognize=False)
@@ -31,8 +32,8 @@ def test_monodromy_recognition_uses_per_root_precision(monkeypatch) -> None:
 
     import mpmath as mp
 
-    from algroots import MonodromyOrbitResult, MonodromyRootInfo
     from algroots import recognition as recognition_module
+    from algroots.monodromy import MonodromyOrbitResult, MonodromyRootInfo
 
     x = sp.symbols("x")
     info = (
@@ -97,8 +98,8 @@ def test_monodromy_recognition_does_not_change_completeness(monkeypatch) -> None
 
     import mpmath as mp
 
-    from algroots import MonodromyOrbitResult, MonodromyRootInfo
     from algroots import recognition as recognition_module
+    from algroots.monodromy import MonodromyOrbitResult, MonodromyRootInfo
 
     x = sp.symbols("x")
     orbit = MonodromyOrbitResult(
@@ -150,7 +151,8 @@ def test_real_recognition_handles_rational_and_complex_algebraic_roots() -> None
     pytest.importorskip("flint")
     pytest.importorskip("algrecognize")
 
-    from algroots import polysolve, recognize_system_roots
+    from algroots import polysolve
+    from algroots.recognition import recognize_system_roots
 
     x = sp.symbols("x")
 
@@ -170,15 +172,10 @@ def test_real_recognition_handles_rational_and_complex_algebraic_roots() -> None
         max_degree=2,
         require_certified=True,
     )
-    assert len(complex_recognized) == 2
-    assert all(item.certified for item in complex_recognized)
-
-    exact_values = [item.exact_coordinates[0] for item in complex_recognized]
-
-    numerical_values = {complex(sp.N(value, 40)) for value in exact_values}
-
-    assert any(abs(value - 1j) < 1e-30 for value in numerical_values)
-    assert any(abs(value + 1j) < 1e-30 for value in numerical_values)
+    assert {sp.simplify(item.exact_coordinates[0]) for item in complex_recognized} == {
+        sp.I,
+        -sp.I,
+    }
     assert all(item.certified for item in complex_recognized)
 
 
@@ -186,7 +183,9 @@ def test_real_recognition_respects_degree_bound_failure() -> None:
     pytest.importorskip("flint")
     pytest.importorskip("algrecognize")
 
-    from algroots import ExactCertificationError, polysolve, recognize_system_roots
+    from algroots import polysolve
+    from algroots.errors import ExactCertificationError
+    from algroots.recognition import recognize_system_roots
 
     x = sp.symbols("x")
     result = polysolve((x**2 - 2,), (x,), digits=70, recognize=False)
@@ -254,8 +253,9 @@ def test_require_certified_rejects_scalar_uncertified_result(monkeypatch) -> Non
     import sys
     import types
 
-    from algroots import ExactCertificationError, polysolve
+    from algroots import polysolve
     from algroots import recognition as recognition_module
+    from algroots.errors import ExactCertificationError
 
     x = sp.symbols("x")
     result = polysolve((x - 1,), (x,), digits=40)
@@ -327,8 +327,9 @@ def test_core_solver_can_disable_automatic_recognition(monkeypatch) -> None:
 
 
 def test_automatic_recognition_failure_preserves_numerical_result(monkeypatch) -> None:
-    from algroots import ExactCertificationError, polysolve
+    from algroots import polysolve
     from algroots import recognition as recognition_module
+    from algroots.errors import ExactCertificationError
 
     x = sp.symbols("x")
 
@@ -365,8 +366,8 @@ def test_algebraic_solver_recognizes_only_final_projected_result(monkeypatch) ->
 
 
 def test_monodromy_attempts_recognition_by_default(monkeypatch) -> None:
-    from algroots import discover_monodromy_orbit
     from algroots import recognition as recognition_module
+    from algroots.monodromy import discover_monodromy_orbit
 
     x = sp.symbols("x")
     sentinel = (object(),)
@@ -390,8 +391,8 @@ def test_monodromy_attempts_recognition_by_default(monkeypatch) -> None:
 
 
 def test_algebraic_monodromy_recognizes_projected_original_result(monkeypatch) -> None:
-    from algroots import discover_monodromy_orbit
     from algroots import recognition as recognition_module
+    from algroots.monodromy import discover_monodromy_orbit
 
     x = sp.symbols("x")
     equation = sp.sqrt(x) - (x - 2)

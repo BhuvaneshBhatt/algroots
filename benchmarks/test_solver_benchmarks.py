@@ -7,7 +7,9 @@ baseline is more portable than absolute timing thresholds.
 
 import sympy as sp
 
-from algroots import PathTrackerOptions, closed_additive_loop, polysolve, track_loop
+from algroots import polysolve
+from algroots.continuation import PathTrackerOptions
+from algroots.monodromy import closed_additive_loop, track_loop
 
 x, y = sp.symbols("x y")
 
@@ -75,7 +77,7 @@ def test_benchmark_total_degree_homotopy(benchmark):
 
 
 def test_benchmark_exact_border_basis(benchmark):
-    from algroots import compute_border_basis
+    from algroots.border_basis import compute_border_basis
 
     result = benchmark(compute_border_basis, (x**2 - 1, y - x), (x, y))
     assert result.dimension == 2

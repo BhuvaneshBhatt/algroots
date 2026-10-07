@@ -1,6 +1,32 @@
 # API Reference
 
-This page summarizes the complete public API exported from `algroots`.
+## Root and specialized namespaces
+
+The root exports only `polysolve`, `algsolve`, `PolynomialSystemRoots`, `AlgebraicSystemRoots`, `CompletenessEvidence`, `HomotopyRecoveryOptions`, `PolynomialSystemError`, `PolynomialSystemInputError`, `NotZeroDimensionalError`, `SystemSolveLimitError`, `__version__`.
+
+Advanced imports use the namespaces below. Types remain public for annotations and result inspection.
+
+| Namespace | Public names |
+|---|---|
+| `algroots.algebraization` | `algebraize_system`, `AlgebraizedSystem` |
+| `algroots.border_basis` | `BorderBasisDiagnostics`, `BorderBasisResult`, `compute_border_basis`, `compute_border_basis_linear` |
+| `algroots.certification` | `RootCertificationAttempt`, `certify_numerical_roots`, `IsolatedRootCertificate`, `RationalComplexBox`, `certify_isolated_root`, `certify_root_box` |
+| `algroots.continuation` | `HomotopySystem`, `SympyHomotopy`, `PathTrackerOptions`, `PathStep`, `PathResult`, `track_path` |
+| `algroots.deflation` | `DeflatedRefinement`, `DeflationResult`, `DeflationStage`, `deflate_isolated_root` |
+| `algroots.endgames` | `EndgameResult`, `ProjectiveHomotopy`, `cauchy_endgame`, `projective_homotopy` |
+| `algroots.errors` | `RootCertificationError`, `PathTrackingError`, `PathStepError`, `ExactCertificationError`, `QuotientAlgebraError`, `ActionMatrixError`, `HomotopySolveError`, `ShapePositionError`, `TriangularSolveError`, `NumericalRootError`, `RationalUnivariateError`, `BorderBasisError` |
+| `algroots.monodromy` | `MonodromyLoop`, `MonodromyPermutation`, `MonodromyOrbitResult`, `MonodromyRootInfo`, `closed_additive_loop`, `track_loop`, `monodromy_permutation`, `discover_monodromy_orbit` |
+| `algroots.monodromy_stopping` | `CaptureRecaptureEstimate`, `capture_recapture_estimate`, `second_order_trace_test` |
+| `algroots.projective_tracking` | `ChartSwitch`, `ProjectivePathResult`, `track_projective_path` |
+| `algroots.quotient` | `QuotientAlgebra`, `SeparatingElement` |
+| `algroots.rational_univariate` | `RationalUnivariateRepresentation`, `RationalUnivariatePoint`, `compute_rational_univariate_representation`, `solve_zero_dimensional_system_with_rur`, `solve_rur_representation`, `solve_rur_points` |
+| `algroots.recognition` | `recognize_system_roots`, `RecognizedSystemRoot` |
+| `algroots.recovery` | `PathRecoveryRecord` |
+| `algroots.root_output` | `RootOrderingEvidence` |
+| `algroots.solver` | `SolveCostDiagnostics`, `RootDiagnostics` |
+
+
+This page covers the high-level root API and the specialized public namespaces.
 
 ## Public functions
 
@@ -10,6 +36,16 @@ This page summarizes the complete public API exported from `algroots`.
 | `polysolve` | Solve an exact zero-dimensional polynomial system | `PolynomialSystemRoots` | numerically verified polynomial roots, with exact structural preprocessing |
 | `algebraize_system` | Convert supported algebraic equations to an augmented exact polynomial system | `AlgebraizedSystem` | exact transformation data; not itself a root solve |
 | `recognize_system_roots` | Reconstruct exact algebraic coordinates from already-found numerical roots | `tuple[RecognizedSystemRoot, ...]` | optional scalar and exact joint certification |
+
+## Exact quotient-algebra API
+
+`QuotientAlgebra` is the expert-facing structural representation of a finite exact quotient algebra. It centralizes the Gröbner basis, standard-monomial staircase, quotient dimension, exact normal forms and coordinate vectors, variable and general multiplication matrices, trace pairing, and separating-element construction used by the RUR, action-matrix, and exact border-basis backends.
+
+Construct it with `QuotientAlgebra.from_polynomials(polynomials, variables, order="grevlex", max_dimension=None)` or, when a compatible exact Gröbner basis already exists, `QuotientAlgebra.from_groebner_basis(...)`. Positive-dimensional ideals, inexact coefficients, or an exceeded dimension guard raise `QuotientAlgebraError`.
+
+`SeparatingElement` is the exact structural record returned by `QuotientAlgebra.separating_element(...)`; it contains the successful linear form and coefficients, its squarefree defining polynomial, the coordinate denominator, trace vector, Krylov power vectors, and geometric solution count.
+
+This API is equality-only. Boolean formulas, inequalities, real-sign filtering, and quantifier elimination belong in downstream semialgebraic packages rather than this quotient layer.
 
 ## `algsolve`
 
@@ -34,6 +70,13 @@ algsolve(
     homotopy_gamma_attempts=4,
     homotopy_parallel=False,
     homotopy_max_workers=None,
+    presolve=True,
+    variable_order="auto",
+    root_mode="distinct",
+    multiplicity="auto",
+    root_order="canonical",
+    max_returned_roots=10_000,
+    ordering_max_refinements=64,
 )
 ```
 
@@ -88,6 +131,22 @@ polysolve(
     homotopy_gamma_attempts=4,
     homotopy_parallel=False,
     homotopy_max_workers=None,
+    presolve=True,
+    variable_order="auto",
+    presolve_max_terms=1000,
+    presolve_max_degree=16,
+    presolve_growth_factor=4,
+    certify=False,
+    certification_max_dimension=128,
+    certification_max_refinements=128,
+    certification_max_box_attempts=16,
+    homotopy_recovery=False,
+    recovery_options=None,
+    root_mode="distinct",
+    multiplicity="auto",
+    root_order="canonical",
+    max_returned_roots=10_000,
+    ordering_max_refinements=64,
 )
 ```
 
@@ -163,7 +222,7 @@ See [Exact Recognition](exact-recognition.md) for the recognition pipeline, trus
 | `discover_monodromy_orbit` | repeated random-loop orbit discovery for supported polynomial/algebraic systems from supplied seeds |
 | `MonodromyOrbitResult` | discovered orbit, stopping evidence, and per-root verification metadata |
 | `MonodromyRootInfo` | working precision, verification precision, scaled residual, verification status, and discovery provenance for one orbit root |
-| `second_order_trace_test` | numerical second-order trace residual for a supplied root set |
+| `second_order_trace_test` | additive-family coordinate curvature; no completeness implication |
 | `capture_recapture_estimate` | Chapman-corrected mark/recapture population estimate |
 | `CaptureRecaptureEstimate` | estimate, standard deviation, confidence interval, and sample counts |
 
@@ -198,7 +257,7 @@ The high-level orbit-discovery function accepts the same algebraic expression su
 
 Low-level `closed_additive_loop`, `track_loop`, and `monodromy_permutation` remain polynomial-system APIs.
 
-Monodromy results record `stopping_reason` and `completeness_basis`. Their `root_info` tuple aligns one-to-one with `roots`; each entry records the endpoint precision, an arbitrary-precision scaled residual recomputed against the original algebraic system after projection, a verification Boolean, and the loop/path that first supplied the retained representative. Only an independently supplied exact root count is an exact-count stopping basis; trace and capture-recapture stopping remain numerical/statistical evidence.
+Monodromy results record `stopping_reason` and `completeness_basis`. Their `root_info` tuple aligns one-to-one with `roots`; each entry records the endpoint precision, an arbitrary-precision scaled residual recomputed against the original algebraic system after projection, a verification Boolean, and the loop/path that first supplied the retained representative. Only an independently supplied exact root count is an exact-count stopping basis; curvature stopping records `completeness_basis="none"`, while capture-recapture stopping records statistical evidence.
 
 For algebraic input, `tracking_variables` and `tracking_equations` expose the augmented polynomial problem, while `auxiliary_variables` and `nonzero_constraints` expose its algebraization metadata. Perturbations are aligned with `tracking_equations`.
 
@@ -248,6 +307,10 @@ Per-root numerical refinement diagnostics.
 | `homotopy_endpoint_condition_estimates` | scale-normalized endpoint Jacobian condition estimates |
 | `recognized_roots` | certified exact root records from automatic recognition, or `None` if disabled/unsuccessful |
 | `recognition_attempted` | whether automatic recognition was attempted |
+| `completeness` | first-class enumeration evidence, separate from coordinate certification |
+| `total_multiplicity`, `geometric_solution_count` | global exact quotient counts when applicable |
+| `is_radical`, `has_multiple_roots` | exact quotient reducedness when applicable |
+| `solver_variables`, `affine_substitutions` | reduced-coordinate provenance and exact reconstruction |
 | `recognition_error` | recognition failure diagnostic when the numerical solve succeeded but recognition did not |
 
 There is currently no public `complete` Boolean field. See [Guarantees and Result Semantics](guarantees-and-result-semantics.md).
@@ -297,7 +360,7 @@ The inherited `roots` are projected back to the user's original variables and fi
 
 ## Public exceptions
 
-All solver-specific exceptions are exported from `algroots`.
+Common solver exceptions are available at the root. All public exception types are available from `algroots.errors`.
 
 | Exception | Meaning / typical source |
 |---|---|
@@ -327,7 +390,7 @@ See [Troubleshooting](troubleshooting.md) for recovery guidance.
 | Exact recognition | attempted by default; certified exact algebraic coordinates are attached when found |
 | Exact joint certification | reconstructed tuple satisfies original equations exactly |
 
-Root ordering is not stable. Multiplicity is not currently reported as a per-root field.
+Canonical coordinate ordering is reported by `result.ordering`; numerical fallback does not promise precision-independent near-ties. `result.multiplicities` and `multiplicity_evidence` report per-root counts or explicit unknowns. Exact local proofs remain available through `IsolatedRootCertificate`.
 
 ## Rational univariate representations
 
@@ -447,3 +510,400 @@ Construct an exact border basis using Macaulay linear algebra, with a supporting
 ### `HomotopySolveError`
 
 Raised when the explicit total-degree homotopy backend cannot track every required path to a distinct regular finite endpoint.
+
+
+### `CompletenessEvidence`
+
+Enumeration evidence on `PolynomialSystemRoots.completeness` separates an exact
+backend count from coordinate certification. `conditional` means the backend
+has an exact expected count but the coordinates are numerical residual-verified
+approximations. `numerical` is used for regular homotopy path accounting.
+`quotient_dimension` / `total_multiplicity` count algebraic multiplicity;
+`geometric_solution_count` counts distinct points. `is_radical` and
+`has_multiple_roots` compare these exact counts; no per-point local multiplicity
+is claimed. Under presolve, `solver_variables`, `affine_substitutions`, staircase
+exponents and Gröbner expressions describe the reduced computation. Roots and
+RUR coordinates use the original variable order.
+
+### `EndgameResult` and `cauchy_endgame`
+
+`cauchy_endgame(system, start, target=1, radius=0.1, samples=32, max_cycle=8,
+levels=4, tolerance=None, options=None)` follows shrinking Cauchy circles with
+cycle detection. Supply a path point at `target-radius`. The returned endpoint,
+cycle number, successive estimates and endpoint residual are numerical evidence only. The reported error estimate is a difference of sampled means, not a rigorous bound. Convergence
+does not prove isolation, local multiplicity, completeness, or a rigorous error
+bound. Other branch points within the disk, nonclosing cycles, and divergent
+paths may prevent convergence. A failed tracking segment raises `PathTrackingError`.
+
+### `ProjectiveHomotopy` and `projective_homotopy`
+
+`projective_homotopy(expressions, variables, parameter, patch=...)` homogenizes
+an analytic polynomial homotopy and adds a constant linear patch. Track its
+`system` using `track_path`, starting from `lift(affine_point)`; recover finite
+coordinates with `dehomogenize(point)`. Paths reaching the patch hyperplane
+require chart switching, which this first implementation does not provide.
+This expert API supports some affine paths to infinity and reports no proof of
+projective coverage. These endgame and projective APIs are opt-in; `polysolve`
+homotopy keeps its conservative finite regular endpoint contract.
+
+
+## Rigorous singular certificates and deflation
+
+`IsolatedRootCertificate` records an exact point, original equations and Gröbner
+basis, finite quotient dimension, geometric count, exact Jacobian rank, local
+multiplicity, separating characteristic polynomial and optional isolation box.
+`certify_isolated_root(equations, variables, point, max_quotient_dimension=256)`
+requires exact algebraic coordinates and a globally zero-dimensional ideal.
+`verify()` independently replays the proof. Small numerical residuals never
+replace these checks.
+
+`RationalComplexBox` holds open exact rational rectangles per coordinate.
+`certify_root_box(equations, variables, box, max_quotient_dimension=256,
+max_refinements=64)` proves exactly one root lies in the box using exact RUR
+parameter isolation, root counting and rational coordinate enclosures. Rational
+coefficients are currently required for this box API. `RootCertificationError`
+is raised when the requested proof cannot be established.
+
+`deflate_isolated_root(equations, variables, point, max_stages=8,
+max_added_equations=1024, max_quotient_dimension=256)` returns `DeflationResult`.
+`DeflationStage` records exact Jacobian pivots and added bordered-minor equations.
+Full column rank is proved before `regular=True`. `verify()` replays the proof.
+Deflation preserves the target but may delete other roots. `.refine(approximate,
+digits=50, maxsteps=50)` returns `DeflatedRefinement` with numerical original and
+deflated residuals; it does not automatically certify that approximation.
+
+`cauchy_endgame` now accepts `certify=False`, `certification_box=None`,
+`deflate=False` and `max_quotient_dimension=256`. A converged endgame can carry a
+unique-root box certificate and targeted deflation. `deflate=True` requires
+`certify=True`. The target parameter must be exact for certification. Exact
+endpoint certification does not certify path tracking or completeness.
+
+## Automatic charts
+
+`track_projective_path(projective, start, t_start=0, t_end=1, options=None,
+segment_size=0.05, min_segment=1e-8, switch_ratio=0.5, max_segments=1000,
+max_chart_switches=128)` tracks a homogeneous seed using adaptive coordinate
+charts. `ProjectivePathResult` records homogeneous endpoint, current patch,
+segments and `ChartSwitch` events. All path evidence remains numerical.
+`classification` is `finite`, `numerically_near_infinity` or `unresolved`.
+`affine_endpoint()` is available only for numerically resolved finite endpoints.
+
+See [Singular Certification and Charts](singular-certification-and-charts.md)
+for proof scope, examples, deflation's local semantics and remaining limitations.
+
+The public entry points are `certify_isolated_root`, `certify_root_box`,
+`deflate_isolated_root` and `track_projective_path`.
+
+### Shared extraction, guarded substitution and automatic certificates (0.5.0)
+
+`polysolve` now performs constant-unit polynomial substitution in addition to
+linear elimination. `presolve_max_terms=1000`, `presolve_max_degree=16` and
+`presolve_growth_factor=4` bound expansion before it happens. An input equation
+already exceeding an absolute limit may keep its input size, but cannot grow
+past that size. Term growth is also bounded relative to each input row. A
+rejected pivot remains in the system; division by variable-dependent pivots is
+never allowed. `presolve=False` disables substitution. The compatibility field
+`affine_substitutions` records all eliminated variables, including polynomial
+substitutions. Original coordinate order and lifted RUR maps are preserved.
+
+`polysolve(..., certify="auto")` (or `certify=True`) attaches a
+`RootCertificationAttempt` to every returned numerical root, aligned in
+`result.root_certifications`. An attempt has `status`, `certificate` and `error`.
+Statuses are `certified`, `failed` or `unavailable`; a failed proof never becomes
+a tolerance-based certificate. `certify="required"` raises
+`RootCertificationError` if any proof cannot be established. `certify=False`
+(the default) disables explicit endpoint certification. The separate default
+`multiplicity="auto"` policy can still request exact local proofs for nonreduced
+quotients; use `multiplicity=False` to disable that added work. Empty results have no per-root
+proof obligations, and return an empty attempt tuple when certification is on.
+
+`certify_numerical_roots(result, max_quotient_dimension=128,
+max_refinements=128, required=False)` runs the same batched proof independently
+on an existing result. It builds one quotient from the original equations and
+shares its separator, RUR, exact parameter roots and characteristic polynomial.
+Rational boxes center on the exact binary values of the numerical coordinates;
+the default radius is `10**(-min(12, verification_digits, precision_digits//2))`,
+with a minimum exponent of six, scaled per coordinate by
+`max(1, abs(real_center), abs(imag_center))`. Box uniqueness and coordinate containment are
+proved exactly. Closely clustered points may require manually chosen boxes;
+`certify_root_box` remains available. Automatic boxes currently require rational
+coefficients and globally zero-dimensional ideals. The proof establishes an
+endpoint and its multiplicity, never a numerical path or global completeness.
+
+RUR numerical extraction shares the Arb-backed squarefree univariate extractor
+with shape/triangular solving. `numerical_rur_roots` accepts
+`max_precision_digits`; `polysolve` forwards the same budget. Returned coordinates
+remain numerical midpoints and still undergo original-equation verification.
+The extraction budget bounds Arb coefficient-ball and root-isolation precision.
+Each isolation call uses the current working bit precision as its ceiling;
+bounded retries increase this only up to `max_precision_digits`. Exact centroid
+translation reduces cancellation before ball conversion. Triangular substitutions
+retain exact rational midpoints of prior coordinates before polynomial construction,
+so coefficient rounding cannot manufacture repeated factors. As with all numerical
+branches, the reconstructed points must pass original-equation verification.
+Algebraic coefficient conversion uses additional SymPy evaluation guard digits;
+the ceiling refers to Arb working and isolation precision, not symbolic evaluation.
+
+Trace vectors, pairings and general element actions stream basis multiplication
+matrices rather than caching all of them. The explicit expert property
+`basis_multiplication_matrices` still materializes them when requested. The
+pairing and variable-action storage remain quadratic in quotient dimension
+(per variable), and exactness is unchanged.
+
+Additional public batched proof function: `certify_numerical_roots`.
+
+
+### Adaptive certification, cache diagnostics and bounded recovery (0.6.0)
+
+`certify_numerical_roots` now accepts `max_box_attempts=16`. The matching solver
+control is `certification_max_box_attempts`. Neighbour distances propose initial
+boxes only when numerical candidates match the exact geometric count; duplicate
+singular path proposals do not dictate a tiny radius. Exact separator counts and
+coordinate isolation remain the proof. Ambiguous images tighten by sixteen;
+zero-count images widen by two. Refinement and attempt budgets are independent.
+`RootCertificationAttempt.box_attempts` records the work; exhausted attempts
+return explicit failure or raise under the required policy.
+
+`QuotientAlgebra.from_polynomials` and `from_groebner_basis` accept
+`normal_form_cache_size=128` (zero disables caching). Cache admission bounds both
+input and remainder expression complexity and rational coefficient bit length
+(8,192 bits); LRU eviction bounds entry count.
+`normal_form_cache_info` returns hits, misses, evictions, entries, capacity and
+reduction seconds. `clear_normal_form_cache` resets the cache and counters.
+Cache values belong to one exact quotient and cannot leak across ideals.
+
+`SolveCostDiagnostics`, available as `result.cost_diagnostics`, reports
+`phase_seconds`, `structural_estimates`, `normal_form_statistics` and `policy`.
+Normal-form counters describe the solving quotient; certification time includes
+any separate original-system proof work.
+Timings are observations, not reproducible proof evidence. Nested timing names
+such as `solve.groebner` are included in `solve`, so their sums are not total time.
+The calibrated portfolio preserves action solving for small regular quotients,
+tries RUR first when repeated univariate relations suggest singularity, and
+retains existing exact fallback validation. Ordering compares occurrence/degree
+and minimum-fill candidates; it changes only when structural graph cost falls.
+These estimates do not prove runtime improvement or radicality.
+
+`HomotopyRecoveryOptions` bounds path count (64), gamma attempts (2), original
+quotient dimension (128), tracker steps per segment (600), projective segments
+(256), chart switches (32), endgame samples (16), cycles (4), levels (3), deflation
+stages (4), and added deflation equations (128). Every limit is a positive integer;
+endgame samples must be at least eight and levels at least two.
+
+Use `polysolve(..., method="homotopy", homotopy_recovery=True,
+recovery_options=HomotopyRecoveryOptions(...))` for sequential bounded recovery.
+It retains the original square system, attempts an affine prefix and Cauchy
+endgame, then projective chart tracking on failure. Candidates are proved against
+one shared original quotient; singular certified endpoints undergo bounded
+exact deflation using their existing certificates. `PathRecoveryRecord` entries
+in `result.recovery_records` report every path stage, outcome, message, cycle and
+chart switch count and per-path phase timings. `root_deflations` aligns with returned roots; a deflation limit
+does not invalidate an already proved endpoint.
+
+Recovery currently requires rational coefficients and a globally finite ideal.
+It always requires exact endpoint proofs, regardless of the ordinary `certify`
+flag. Completeness is certified only when distinct exact endpoint certificates
+match the finite quotient's geometric count. This proves finite root accounting,
+not numerical paths, roots at infinity or projective path completeness. Failed
+budgets raise `HomotopySolveError` with `recovery_records` and
+`certification_attempts` and `certified_endpoints`; incomplete root sets are never returned. Parallel
+recovery is explicitly unsupported. Ordinary homotopy behavior is preserved
+when recovery is disabled.
+
+
+### Calibrated dispatch, diagnostic retries and cancellation probes (0.7.0)
+
+`SolveCostDiagnostics.policy` is `calibrated-v2`. The expanded benchmark driver
+and JSON cover 17 cases across nine families, including algebraic fields,
+nonreduced systems, clusters and large coefficients. Repeated multivariate input
+factors can favor RUR: square-free analysis is limited to 16 small inputs of degree
+at most eight and at most 32 terms. It is a cost hint, not a nonradicality proof.
+Explicit backend requests, dimension budgets and exact fallbacks are retained.
+
+`HomotopyRecoveryOptions.max_retry_rounds=1` permits one additional round per
+gamma; zero disables same-gamma retries. `retry_precision_growth=2` must be an
+integer at least two. Retries only track unproved paths/candidates, increase
+precision and correction accuracy within `max_precision_digits`, and reuse exact
+certification kernels. Successful certificates are preserved. Reported projective
+segment/chart budgets and numerical near-infinity classifications do not trigger
+precision-only retries. A new gamma must reconsider every start: path indices
+cannot be identified across different homotopies. Each gamma and retry retains
+all existing path, step, segment, chart, endgame and proof budgets.
+
+`PathRecoveryRecord` adds `retry_round`, `working_digits`, `retry_reason`,
+`certification_status` and `retry_disposition`. Certification errors appear in
+`message`. A numerical near-infinity decision is a scheduling hint, not a proof.
+Completeness still requires exact distinct endpoint certificates and the exact
+finite quotient count; partial sets are never returned as complete.
+
+Presolve can probe substitutions rejected by its growth estimate using exact
+sparse arithmetic. Final term/degree limits remain unchanged. The probe bounds
+intermediate support to at most 4,096 terms, multiplication/accumulation work to
+32,768 operations, rational products to 8,192 bits and exponent bit length to 64.
+A refused probe leaves the pivot intact. `AffinePresolve.cancellation_probes` and
+`cancellation_acceptances` count this work; high-level cost estimates expose them
+as `presolve_cancellation_probes` and `presolve_cancellation_acceptances`.
+
+`QuotientAlgebra.operation_diagnostics` returns a copy of exact-operation timing
+and counter observations. `SolveCostDiagnostics.quotient_operation_statistics`
+exposes these for the solving quotient, including action construction, traces,
+rank, standard-basis coordinate shortcuts and streamed-action reuse. Nested
+trace-pairing time includes trace-vector work if the latter was not already
+cached. Rational geometric counts use exact-domain rank; algebraic fields retain
+the profiled expression-rank route. Streamed multivariate traces retain at most
+eight basis actions, so temporary matrix storage remains quadratic in dimension.
+
+
+### Certification and continuation call signatures
+
+These signatures are checked against the runtime public API. See the workflow
+guides for proof scope, resource semantics and executable examples.
+
+`certify_isolated_root`
+
+```python
+certify_isolated_root(
+    equations,
+    variables,
+    point,
+    *,
+    max_quotient_dimension=256,
+)
+```
+
+`certify_root_box`
+
+```python
+certify_root_box(
+    equations,
+    variables,
+    box,
+    *,
+    max_quotient_dimension=256,
+    max_refinements=64,
+)
+```
+
+`certify_numerical_roots`
+
+```python
+certify_numerical_roots(
+    result,
+    *,
+    max_quotient_dimension=128,
+    max_refinements=128,
+    required=False,
+    max_box_attempts=16,
+)
+```
+
+`deflate_isolated_root`
+
+```python
+deflate_isolated_root(
+    equations,
+    variables,
+    point,
+    *,
+    max_stages=8,
+    max_added_equations=1024,
+    max_quotient_dimension=256,
+)
+```
+
+`cauchy_endgame`
+
+```python
+cauchy_endgame(
+    system,
+    start,
+    *,
+    target=1,
+    radius=0.1,
+    samples=32,
+    max_cycle=8,
+    levels=4,
+    tolerance=None,
+    options=None,
+    certify=False,
+    certification_box=None,
+    deflate=False,
+    max_quotient_dimension=256,
+)
+```
+
+`track_projective_path`
+
+```python
+track_projective_path(
+    projective,
+    start,
+    *,
+    t_start=0,
+    t_end=1,
+    options=None,
+    segment_size=0.05,
+    min_segment=1e-08,
+    switch_ratio=0.5,
+    max_segments=1000,
+    max_chart_switches=128,
+)
+```
+
+## Root multiplicity views and ordering
+
+Both solvers accept `root_mode="distinct"` or `"with_multiplicity"`. `.roots`
+and `.distinct_roots` always contain one record per point, with aligned diagnostics
+and certificates. Iteration, `len(result)` and `.output_roots` follow the selected
+mode. `.iter_roots(with_multiplicity=True)` expands lazily; `.roots_with_multiplicity`
+materializes the same view. Expansion requires established local multiplicities
+and checks `max_returned_roots` before allocating or yielding any duplicates.
+
+`.multiplicities` aligns with distinct roots and contains positive integers or
+`None`; `.multiplicity_evidence` distinguishes exact radical structure, exact local
+quotient certificates and unknown/projected-cover data. `multiplicity="auto"`
+uses existing proofs and attempts a bounded batched proof for nonreduced polynomial
+systems. `False` disables extra multiplicity proof work; `"required"` raises
+`RootMultiplicityError` when a local multiplicity is unavailable. Proof attempts
+are in `.multiplicity_certifications`, separate from explicitly requested
+`.root_certifications`. Certification dimension, refinement and box budgets bound
+polynomial solver proof attempts. Automatic box proofs currently require rational
+coefficients. Numerical homotopy path counts are never multiplicities.
+
+Canonical ordering is lexicographic in `(Re(x1), Im(x1), Re(x2), Im(x2), ...)`,
+using the supplied variable order after reconstruction and filtering. Exact
+certified/recognized points are compared algebraically using root separation
+and rational isolating intervals. All point metadata is permuted together.
+Otherwise arbitrary-precision numerical coordinates provide a deterministic
+order for that result; precision/backend-independent ordering remains unproved.
+`.ordering.status` is `"certified"` or `"numerical"` and `.ordering.basis` explains
+which route was used. Ordering evidence does not certify completeness or membership.
+
+`root_order="required"` requests bounded exact point certification if necessary
+and raises `RootOrderingError` if exact ordering cannot be established. Interval
+refinement is limited by `ordering_max_refinements`; exact comparison currently
+supports algebraic differences of degree at most 64 (including a conservative composite-degree guard). Opaque real/imaginary projections that cannot be resolved by certificate boxes or exact equality are reported as unresolved, rather than forcing an unbounded symbolic comparison. These are structural budgets,
+not wall-clock limits. Zero/one-point order is trivially certified. Principal-branch
+and pole filtering in `algsolve` never transfers polynomial-cover multiplicities;
+repeated output is refused for such projected roots when multiplicities are unknown.
+
+<!-- algroots: execute -->
+```python
+import sympy as sp
+from algroots import polysolve
+
+x = sp.Symbol("x")
+result = polysolve(
+    ((x - 1) ** 3 * (x + 2),),
+    (x,),
+    recognize=False,
+    root_mode="with_multiplicity",
+    root_order="required",
+)
+assert result.multiplicities == (1, 3)
+assert len(result.roots) == 2 and len(result) == 4
+assert len(result.roots_with_multiplicity) == 4
+assert result.ordering.status == "certified"
+```
+
+`RootMultiplicityError` and `RootOrderingError` are available from `algroots.errors`.

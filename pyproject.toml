@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "algroots"
-version = "0.1.0"
-description = "Numerical and exact methods for zero-dimensional polynomial and algebraic systems"
+version = "0.2.0"
+description = "Exact and approximate methods for solving zero-dimensional polynomial and algebraic systems."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-3.0-only"
 license-files = ["LICENSE"]
-authors = [{name = "Bhuvanesh Bhatt"}]
+authors = [{name = "Bhuvanesh Bhatt", email = "bhuvaneshbhatt@gmail.com"}]
 keywords = [
     "algebraic-equations",
     "polynomial-systems",
@@ -75,7 +75,7 @@ packages = ["src/algroots"]
 testpaths = ["tests"]
 addopts = "-ra"
 markers = [
-    "flint: requires the python-flint Arb/ACB backend",
+    "flint: requires the python-flint Arb/Acb backend",
     "slow: tests that are intentionally slower than the normal suite",
     "recognition: tests requiring real algrecognize/python-flint recognition",
 ]

@@ -1,7 +1,8 @@
 import pytest
 import sympy as sp
 
-from algroots import RationalUnivariateError, polysolve
+from algroots import polysolve
+from algroots.errors import RationalUnivariateError
 
 
 def _sorted_numeric(roots, digits=25):
@@ -52,7 +53,7 @@ def test_rur_backend_supports_exact_algebraic_coefficients():
 
 
 def test_rur_constructor_rejects_inexact_coefficients():
-    from algroots import compute_rational_univariate_representation
+    from algroots.rational_univariate import compute_rational_univariate_representation
 
     x = sp.symbols("x")
     with pytest.raises(RationalUnivariateError, match="exact"):
@@ -60,7 +61,7 @@ def test_rur_constructor_rejects_inexact_coefficients():
 
 
 def test_rur_constructor_rejects_transcendental_coefficients():
-    from algroots import compute_rational_univariate_representation
+    from algroots.rational_univariate import compute_rational_univariate_representation
 
     x = sp.symbols("x")
     with pytest.raises(RationalUnivariateError, match="algebraic"):
@@ -92,7 +93,7 @@ def test_numerical_rur_backend_does_not_require_exact_root_enumeration(monkeypat
 
 
 def test_rur_normalized_coordinate_polynomials_are_cached(monkeypatch):
-    from algroots import compute_rational_univariate_representation
+    from algroots.rational_univariate import compute_rational_univariate_representation
 
     x, y = sp.symbols("x y")
     representation = compute_rational_univariate_representation((x**2 - 2, y - x), (x, y))

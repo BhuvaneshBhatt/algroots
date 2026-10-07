@@ -1,11 +1,9 @@
 import sympy as sp
 
+from algroots.quotient import QuotientAlgebra
 from algroots.solver import (
-    _coordinate_normal_forms,
     _groebner_basis,
     _normalize_equations,
-    _separator_matrix_coeffs,
-    _standard_monomials,
 )
 
 
@@ -14,10 +12,11 @@ def test_separator_matrix_and_coordinate_normal_forms() -> None:
     variables = (x, y)
     normalized = _normalize_equations((x**2 - 2, y**2 - 3), variables)
     basis = _groebner_basis(normalized, variables)
-    monomials = _standard_monomials(basis, variables, 16)
+    quotient = QuotientAlgebra.from_groebner_basis(basis, variables, max_dimension=16)
+    monomials = quotient.standard_exponents
 
-    columns = _separator_matrix_coeffs(basis, variables, monomials, (1, 2))
-    coordinate_forms = _coordinate_normal_forms(basis, variables, monomials)
+    columns = quotient.separator_matrix_columns((1, 2))
+    coordinate_forms = quotient.coordinate_normal_forms
 
     assert len(monomials) == 4
     assert len(columns) == 4

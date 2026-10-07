@@ -1,15 +1,18 @@
 import sympy as sp
 
+from algroots.quotient import QuotientAlgebra, monomial_from_exponent
 from algroots.solver import (
-    _coordinate_normal_forms,
     _groebner_basis,
-    _monomial_expr,
-    _normal_form_coeffs,
-    _separator_matrix_coeffs,
-    _standard_monomials,
 )
 
 x, y = sp.symbols("x y")
+
+
+def _reference_coordinates(basis, expression, variables, monomials):
+    """Independent Groebner reduction oracle for quotient coordinates."""
+    remainder = basis.reduce(expression)[1]
+    polynomial = sp.Poly(remainder, *variables, extension=True)
+    return tuple(polynomial.coeff_monomial(exponent) for exponent in monomials)
 
 
 def _matrix_from_columns(columns):
@@ -21,19 +24,19 @@ def test_separator_matrix_equals_linear_combination_of_coordinate_matrices():
     variables = (x, y)
     equations = (x**2 - 2, y**2 - 3)
     basis = _groebner_basis(equations, variables)
-    monomials = _standard_monomials(basis, variables, 16)
-    index = {exp: i for i, exp in enumerate(monomials)}
+    quotient = QuotientAlgebra.from_groebner_basis(basis, variables, max_dimension=16)
+    monomials = quotient.standard_exponents
 
     coordinate_matrices = []
     for variable in variables:
         columns = []
         for exponent in monomials:
-            product = variable * _monomial_expr(exponent, variables)
-            columns.append(_normal_form_coeffs(basis, product, variables, index))
+            product = variable * monomial_from_exponent(variables, exponent)
+            columns.append(_reference_coordinates(basis, product, variables, monomials))
         coordinate_matrices.append(_matrix_from_columns(columns))
 
     coeffs = (2, 5)
-    separator_columns = _separator_matrix_coeffs(basis, variables, monomials, coeffs)
+    separator_columns = quotient.separator_matrix_columns(coeffs)
     separator = _matrix_from_columns(separator_columns)
     reference = sum(
         (c * matrix for c, matrix in zip(coeffs, coordinate_matrices, strict=True)),
@@ -46,8 +49,9 @@ def test_coordinate_normal_forms_recover_variable_values_from_evaluation_vector(
     variables = (x, y)
     equations = (x**2 - 2, y**2 - 3)
     basis = _groebner_basis(equations, variables)
-    monomials = _standard_monomials(basis, variables, 16)
-    forms = _coordinate_normal_forms(basis, variables, monomials)
+    quotient = QuotientAlgebra.from_groebner_basis(basis, variables, max_dimension=16)
+    monomials = quotient.standard_exponents
+    forms = quotient.coordinate_normal_forms
 
     root = (sp.sqrt(2), -sp.sqrt(3))
     evaluation = sp.Matrix(

@@ -61,10 +61,11 @@ def test_invalid_precision_ceiling_is_rejected():
 
 
 def test_internal_root_deduplication_uses_requested_precision():
-    from algroots.solver import _deduplicate_roots
+    from algroots.solver import RootDiagnostics, _deduplicate_records
 
     digits = 80
     delta = sp.Float(10, digits) ** -60
     roots = [(sp.Float(1, digits),), (sp.Float(1, digits) + delta,)]
-    unique = _deduplicate_roots(roots, digits)
+    diagnostics = RootDiagnostics(0, 0, False, False, False)
+    unique = _deduplicate_records([(root, diagnostics) for root in roots], digits)
     assert len(unique) == 2

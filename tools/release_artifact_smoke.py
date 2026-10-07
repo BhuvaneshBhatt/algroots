@@ -4,11 +4,8 @@ from __future__ import annotations
 
 import sympy as sp
 
-from algroots import (
-    algsolve,
-    compute_border_basis,
-    polysolve,
-)
+from algroots import algsolve, polysolve
+from algroots.border_basis import compute_border_basis
 from algroots.numerical import flint_available
 
 

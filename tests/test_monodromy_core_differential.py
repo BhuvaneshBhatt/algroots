@@ -2,8 +2,9 @@
 
 import sympy as sp
 
-from algroots import PathTrackerOptions, closed_additive_loop, polysolve, track_loop
-from algroots.monodromy import deduplicate_roots, match_root
+from algroots import polysolve
+from algroots.continuation import PathTrackerOptions
+from algroots.monodromy import closed_additive_loop, deduplicate_roots, match_root, track_loop
 
 x, y = sp.symbols("x y")
 OPTIONS = PathTrackerOptions(

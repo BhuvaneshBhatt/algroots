@@ -1,191 +1,22 @@
-# Examples Gallery
+# Examples gallery
 
-These examples emphasize systems that exercise different parts of `algroots`, not just isolated textbook polynomials.
+The [examples catalog](../examples/README.md) contains 16 standalone public-API
+scripts. Each supplies its own imports/input, prints results and asserts its
+mathematical or evidence contract. Timings are not fixed outputs; example 16 checks certified canonical order.
 
-## 1. Intersecting two conics
+| Goal | Runnable examples |
+|---|---|
+| Start solving | [Polynomials](../examples/01_polynomial_system.py), [branches/poles](../examples/02_branches_and_poles.py) |
+| Obtain exact coordinates | [Recognition](../examples/03_exact_recognition.py), [exact RUR](../examples/05_exact_rur.py), [algebraic fields](../examples/06_algebraic_coefficients.py) |
+| Inspect finite algebra | [Quotient/cache](../examples/04_quotient_and_cache.py), [border bases](../examples/10_border_bases.py) |
+| Understand proofs and multiplicities | [Boxes/multiplicity](../examples/07_multiplicity_and_boxes.py), [clusters](../examples/08_clustered_roots.py), [deflation](../examples/11_singular_deflation.py), [repeated views/order](../examples/16_multiplicity_views_and_order.py) |
+| Diagnose cost or refusal | [Presolve/costs](../examples/09_presolve_and_costs.py), [limits/failures](../examples/15_limits_and_failures.py) |
+| Explore continuation | [Bounded recovery](../examples/12_bounded_homotopy_recovery.py), [automatic charts](../examples/13_projective_chart_switching.py), [seeded monodromy](../examples/14_seeded_monodromy.py) |
 
-```python
-import sympy as sp
-from algroots import polysolve
-
-x, y = sp.symbols("x y")
-
-result = polysolve(
-    [
-        x**2 + y**2 - 1,
-        x*y - sp.Rational(1, 4),
-    ],
-    (x, y),
-    digits=60,
-)
+```bash
+python examples/run_all.py --list
+python examples/run_all.py 01_polynomial_system.py 07_multiplicity_and_boxes.py
 ```
 
-This is a finite coupled polynomial system. It is useful for comparing the shape and action backends.
-
-## 2. Sphere, plane, and quadratic constraint
-
-```python
-x, y, z = sp.symbols("x y z")
-
-result = polysolve(
-    [
-        x**2 + y**2 + z**2 - 1,
-        x + y + z,
-        x**2 - y**2 - sp.Rational(1, 5),
-    ],
-    (x, y, z),
-    digits=60,
-)
-```
-
-This illustrates a genuinely multivariate zero-dimensional intersection.
-
-## 3. Exact algebraic coefficients
-
-```python
-x, y = sp.symbols("x y")
-
-result = polysolve(
-    [
-        x - sp.sqrt(2)*y,
-        y**2 - 3,
-    ],
-    (x, y),
-    digits=70,
-)
-```
-
-`sp.sqrt(2)` is an exact algebraic coefficient; it is not treated as a variable-dependent radical requiring an auxiliary variable.
-
-## 4. Rational equation with a removable-looking pole
-
-```python
-x = sp.symbols("x")
-
-expr = sp.Mul(
-    x**2 - 1,
-    sp.Pow(x - 1, -1, evaluate=False),
-    evaluate=False,
-)
-
-result = algsolve([expr], (x,))
-```
-
-The polynomial numerator vanishes at $x=1$, but the original expression is undefined there. The pole is excluded.
-
-## 5. Principal square-root branch
-
-```python
-x = sp.symbols("x")
-
-result = algsolve(
-    [sp.sqrt(x) - (x - 2)],
-    (x,),
-    digits=60,
-)
-```
-
-Polynomialization produces an extra candidate. Original-expression validation removes it.
-
-## 6. Coupled radical system
-
-```python
-x, y = sp.symbols("x y")
-
-result = algsolve(
-    [
-        sp.sqrt(x + y) - x,
-        y - 2,
-    ],
-    (x, y),
-    digits=60,
-)
-```
-
-The radical is algebraized with an auxiliary relation, then projected candidates are checked against the original principal branch.
-
-## 7. Rational power
-
-```python
-x = sp.symbols("x")
-
-result = algsolve(
-    [x**sp.Rational(2, 3) - 4],
-    (x,),
-    digits=60,
-)
-```
-
-This demonstrates why rational-power polynomialization and principal-branch filtering are separate steps.
-
-## 8. Nearly colliding roots
-
-```python
-x = sp.symbols("x")
-eps = sp.Rational(1, 10**30)
-
-result = polysolve(
-    [(x - eps)*(x + eps)],
-    (x,),
-    digits=60,
-    max_precision_digits=240,
-)
-```
-
-Compare `result.working_digits` with an easy system such as `x**2 - 1`. See [Precision and Conditioning](precision-and-conditioning.md).
-
-## 9. Backend comparison
-
-```python
-system = [
-    x**2 + y**2 - 1,
-    x*y - sp.Rational(1, 4),
-]
-
-shape = polysolve(system, (x, y), method="shape")
-action = polysolve(system, (x, y), method="action")
-```
-
-When both backends succeed, compare the roots as unordered numerical sets.
-
-## 10. Exact recognition after numerical solving
-
-```python
-from algroots import recognize_system_roots
-
-numerical = polysolve(
-    [x - y, y**2 - 2],
-    (x, y),
-    digits=80,
-)
-
-recognized = recognize_system_roots(
-    numerical,
-    max_degree=2,
-    require_certified=True,
-)
-
-for root in recognized:
-    print(root.exact_coordinates)
-    print(root.certified)
-```
-
-Recognition occurs **after** all-roots numerical solving. It does not replace completeness reasoning.
-
-## 11. Unsupported positive-dimensional system
-
-```python
-x, y = sp.symbols("x y")
-
-polysolve([x + y], (x, y))
-```
-
-The solution is a line, so an all-distinct-roots list is not the right representation. `algroots` rejects positive-dimensional systems.
-
-## 12. Unsupported transcendental system
-
-```python
-algsolve([sp.sin(x) - x], (x,))
-```
-
-Generic transcendental equations are outside the algebraic quotient model.
+Read [Reading Results](reading-results.md) for evidence semantics, and the
+[End-to-End Worked Example](end-to-end-example.md) for a longer algebraic tutorial.

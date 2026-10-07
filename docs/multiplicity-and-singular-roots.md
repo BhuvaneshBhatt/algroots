@@ -67,7 +67,7 @@ The action backend forms multiplication by a separating linear form $L$ in the q
 
 For a non-radical ideal, multiplication matrices can contain repeated eigenvalues or nontrivial Jordan structure. The current action path deliberately expects an isolated simple eigensystem. It does not pretend that a defective or repeated eigensystem is a collection of well-separated simple roots.
 
-The automatic solver can try another backend, including triangular solving, but **multiplicity reporting is not currently a first-class result feature**.
+The automatic solver can use RUR for nonreduced quotients, then triangular solving if needed. `total_multiplicity`, `geometric_solution_count`, `is_radical` and `has_multiple_roots` expose global quotient metadata. Exact per-root multiplicity is now reported by `certify_isolated_root` and `certify_root_box`. Full local dual bases and primary decomposition remain unsupported.
 
 ## Singular roots
 
@@ -120,8 +120,8 @@ At present:
 
 - `result.roots` contains distinct returned numerical points;
 - `result.quotient_dimension` records quotient dimension when the backend constructs it;
-- multiplicities are not returned alongside roots;
-- a repeated root should not be interpreted as several entries merely because the quotient dimension is larger;
+- global multiplicity is in `total_multiplicity`; `multiplicities` reports aligned individual counts and `None` for unknown counts;
+- `root_mode="with_multiplicity"` expands the public view using established local counts, never the global dimension or path count;
 - failure to obtain a simple action eigensystem can trigger a separator retry or backend fallback.
 
-Future multiplicity support would ideally expose local multiplicities explicitly rather than overloading the numerical root list.
+Exact per-root multiplicity is available through `multiplicities` and its evidence, reusing certificates or exact radical structure. `multiplicity="required"` refuses unknown counts, and repeated views enforce a size limit. Principal-branch projection never inherits multiplicities from its polynomial cover. Full local dual bases and primary decomposition remain unsupported. See [Reading Results](reading-results.md) and [multiplicity example](../examples/07_multiplicity_and_boxes.py).

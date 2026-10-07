@@ -1,6 +1,6 @@
 import sympy as sp
 
-from algroots import PathTrackerOptions, SympyHomotopy, track_path
+from algroots.continuation import PathTrackerOptions, SympyHomotopy, track_path
 
 x, y, t = sp.symbols("x y t")
 

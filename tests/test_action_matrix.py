@@ -1,7 +1,8 @@
 import pytest
 import sympy as sp
 
-from algroots import ActionMatrixError, polysolve
+from algroots import polysolve
+from algroots.errors import ActionMatrixError
 
 
 def _max_residual(equations, variables, root, digits=35):
@@ -81,7 +82,7 @@ def test_auto_falls_back_for_nonradical_ideal() -> None:
 
     result = polysolve((x**2, y), (x, y), digits=40)
 
-    assert result.method == "triangular_groebner"
+    assert result.method == "shape_position"
     assert len(result.roots) == 1
     assert all(abs(sp.N(value, 30)) < sp.Float("1e-25") for value in result.roots[0])
 
@@ -118,7 +119,7 @@ def test_action_dimension_budget_is_enforced() -> None:
         method="auto",
         max_action_dimension=3,
     )
-    assert fallback.method == "triangular_groebner"
+    assert fallback.method == "rational_univariate"
     assert len(fallback.roots) == 4
 
 

@@ -3,7 +3,7 @@
 import mpmath as mp
 import pytest
 
-from algroots import MonodromyOrbitResult, MonodromyRootInfo
+from algroots.monodromy import MonodromyOrbitResult, MonodromyRootInfo
 
 hypothesis = pytest.importorskip("hypothesis")
 st = pytest.importorskip("hypothesis.strategies")

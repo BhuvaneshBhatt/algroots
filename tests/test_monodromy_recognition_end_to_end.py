@@ -3,12 +3,10 @@
 import pytest
 import sympy as sp
 
-from algroots import (
-    PathTrackerOptions,
-    discover_monodromy_orbit,
-    polysolve,
-    recognize_system_roots,
-)
+from algroots import polysolve
+from algroots.continuation import PathTrackerOptions
+from algroots.monodromy import discover_monodromy_orbit
+from algroots.recognition import recognize_system_roots
 
 pytestmark = pytest.mark.recognition
 

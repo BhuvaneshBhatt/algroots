@@ -42,7 +42,7 @@ Examples include:
 Normally use:
 
 ```python
-method="auto"
+method = "auto"
 ```
 
 so another separator/backend can be tried.
@@ -114,8 +114,8 @@ A configured structural safety limit was exceeded.
 Relevant controls include:
 
 ```python
-max_solutions=10_000
-max_action_dimension=256
+max_solutions = 10_000
+max_action_dimension = 256
 ```
 
 ### What to do

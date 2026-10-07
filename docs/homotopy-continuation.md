@@ -109,3 +109,16 @@ Not yet implemented:
 - automatic selection of homotopy by `method="auto"`.
 
 For the generic path-tracking engine and monodromy loops, see [Continuation and Monodromy](continuation-and-monodromy.md).
+
+
+## Opt-in bounded recovery
+
+The regular-endpoint contract above describes ordinary homotopy. Set
+`homotopy_recovery=True` to request bounded Cauchy endgames, automatic projective
+charts, exact rational endpoint certificates and targeted deflation. This route
+builds an original finite quotient and certifies completeness of finite endpoints
+only when their exact distinct count matches the quotient geometric count.
+It accepts rational finite square systems, is sequential and retains explicit
+retry/precision/resource limits. It does not certify paths or infinity.
+See [Recovery Workflow](recovery-workflow.md) and the
+[runnable example](../examples/12_bounded_homotopy_recovery.py).

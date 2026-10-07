@@ -4,9 +4,10 @@ import mpmath as mp
 import pytest
 import sympy as sp
 
-from algroots import PathTrackerOptions, discover_monodromy_orbit
+from algroots.continuation import PathTrackerOptions
 from algroots.monodromy import (
     deduplicate_roots,
+    discover_monodromy_orbit,
     match_root,
     normalized_root_distance,
     random_perturbation,
@@ -287,7 +288,7 @@ def test_exact_count_early_return_retains_seed_verification_metadata():
 
 
 def test_orbit_result_rejects_misaligned_root_metadata():
-    from algroots import MonodromyOrbitResult, MonodromyRootInfo
+    from algroots.monodromy import MonodromyOrbitResult, MonodromyRootInfo
 
     info = MonodromyRootInfo(40, 24, mp.mpf("1e-30"), True)
     with pytest.raises(ValueError, match="one-to-one"):

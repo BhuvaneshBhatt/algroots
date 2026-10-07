@@ -1,8 +1,8 @@
 import pytest
 import sympy as sp
 
-from algroots import HomotopySolveError, algsolve, polysolve
-from algroots.errors import SystemSolveLimitError
+from algroots import algsolve, polysolve
+from algroots.errors import HomotopySolveError, SystemSolveLimitError
 
 x, y = sp.symbols("x y")
 
@@ -128,7 +128,7 @@ def test_total_degree_homotopy_parallel_tracking_matches_serial():
 
 def test_total_degree_homotopy_retries_gamma_after_path_failure(monkeypatch):
     import algroots.solver as solver_module
-    from algroots import PathResult
+    from algroots.continuation import PathResult
 
     original = solver_module._track_total_degree_problem
     calls = 0
@@ -216,7 +216,7 @@ def test_algebraic_homotopy_exposes_tracking_controls_and_projection_counts():
 
 def test_total_degree_homotopy_gamma_retry_exhaustion_reports_attempts(monkeypatch):
     import algroots.solver as solver_module
-    from algroots import PathResult
+    from algroots.continuation import PathResult
 
     def always_fail(problem, gamma, options):
         return tuple(

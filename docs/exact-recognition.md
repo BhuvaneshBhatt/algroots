@@ -22,7 +22,8 @@ Thus scalar recognition and system certification are distinct. A scalar relation
 ```python
 import sympy as sp
 
-from algroots import polysolve, recognize_system_roots
+from algroots import polysolve
+from algroots.recognition import recognize_system_roots
 
 x, y = sp.symbols("x y")
 result = polysolve((x - y, y**2 - 2), (x, y), digits=70, recognize=False)
@@ -62,7 +63,7 @@ A returned `RecognizedSystemRoot` has two relevant properties:
 
 `certified` is true only when both are true.
 
-For monodromy, this says nothing about whether all roots have been found. An orbit with `completeness_basis="none"`, `"trace_test"`, or `"statistical"` can contain individually exact-certified roots. Recognition never changes `stopping_reason` or `completeness_basis`.
+For monodromy, this says nothing about whether all roots have been found. An orbit with `completeness_basis="none"` or `"statistical"` can contain individually exact-certified roots. Recognition never changes `stopping_reason` or `completeness_basis`.
 
 ## Choosing recognition bounds
 

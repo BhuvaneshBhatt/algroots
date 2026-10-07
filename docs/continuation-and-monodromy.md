@@ -4,7 +4,7 @@
 
 `algroots` includes a reusable numerical continuation layer, an explicit `method="homotopy"` backend for regular square polynomial systems, and an experimental monodromy-orbit layer.
 
-The monodromy layer discovers roots reachable from supplied seed roots and can stop using an externally supplied exact root count, a numerical second-order trace test, or a Chapman-corrected capture-recapture estimate. The result records the evidence used; trace/statistical stopping is not mislabeled as an exact completeness proof.
+The monodromy layer discovers roots reachable from supplied seed roots and can stop using an externally supplied exact root count, a numerical second-order curvature heuristic, or a Chapman-corrected capture-recapture estimate. The result records the evidence used; curvature stopping records no completeness evidence; statistical stopping records only its population estimate.
 
 
 ## Total-degree homotopy backend
@@ -34,7 +34,7 @@ $$
 <!-- algroots: execute -->
 ```python
 import sympy as sp
-from algroots import PathTrackerOptions, SympyHomotopy, track_path
+from algroots.continuation import PathTrackerOptions, SympyHomotopy, track_path
 
 x, t = sp.symbols("x t")
 homotopy = SympyHomotopy([x**2 - (1 + t)], (x,), t)
@@ -117,7 +117,7 @@ Construct a loop with:
 
 <!-- algroots: execute -->
 ```python
-from algroots import closed_additive_loop
+from algroots.monodromy import closed_additive_loop
 
 loop = closed_additive_loop(
     [x**2 - 1],
@@ -130,7 +130,7 @@ For this example the loop winds the corresponding squared-root value around zero
 
 <!-- algroots: execute -->
 ```python
-from algroots import monodromy_permutation
+from algroots.monodromy import monodromy_permutation
 
 permutation = monodromy_permutation(
     loop,
@@ -158,7 +158,7 @@ The result keeps both views: `variables`/`equations` and `roots` describe the or
 
 <!-- algroots: execute -->
 ```python
-from algroots import discover_monodromy_orbit
+from algroots.monodromy import discover_monodromy_orbit
 
 orbit = discover_monodromy_orbit(
     [x**2 - 1],
@@ -190,7 +190,7 @@ Each `MonodromyRootInfo` records `digits`, `verification_digits`, an arbitrary-p
 
 ```python
 import sympy as sp
-from algroots import discover_monodromy_orbit
+from algroots.monodromy import discover_monodromy_orbit
 
 x = sp.symbols("x")
 orbit = discover_monodromy_orbit(
@@ -225,7 +225,7 @@ Processes are used rather than threads because arbitrary-precision numerical con
 
 If an independently justified **distinct** root count is supplied through `expected_root_count`, discovery stops when that many distinct verified **returned roots of the original system** have been found. For algebraic inputs, branch-invalid or pole roots in the augmented polynomial cover do not count toward this total. The result records `completeness_basis="exact_root_count"`.
 
-### Second-order trace test
+### Second-order curvature diagnostic
 
 For the additive parameter family $F(x)-sr=0$, implicit differentiation gives
 
@@ -237,7 +237,11 @@ $$
 Jx''=-H_F[x',x'].
 $$
 
-For a complete generic fiber, the coordinate trace is affine in the slicing parameter, so the summed second derivative vanishes. `second_order_trace_test` evaluates this residual numerically. A passing trace test is recorded as `completeness_basis="trace_test"`; it is numerical evidence, not an exact algebraic certificate.
+`second_order_trace_test` measures the summed coordinate acceleration under the additive deformation `F(x) - s*r = 0`. The function name refers to this second derivative of the coordinate trace; it does not implement the generic linear-slice trace theorem.
+
+Complete nonlinear fibers can have nonzero curvature. For `F=(x-y**4, y**2-1)` and `r=(0,1)`, the complete fiber has coordinate sum `2*(1+s)**2`, whose second derivative is four. Incomplete subsets can also have zero curvature. Consequently neither a small nor a large residual establishes completeness.
+
+With `trace_test=True`, a small residual may stop exploration with `stopping_reason="trace_test"`, but `completeness_basis="none"`. Use an independently established `expected_root_count` when completeness matters. Singular roots return an infinite residual.
 
 ### Capture-recapture statistical stopping
 
@@ -260,7 +264,7 @@ Monodromy results now retain the per-root precision and verification metadata ne
 `recognize_system_roots` accepts `MonodromyOrbitResult` directly. Recognition uses each root's own `verification_digits` when constructing the input to `algrecognize`, while `digits` controls exact-root matching precision. The reconstructed exact tuple is then substituted into every original equation stored on the orbit result.
 
 ```python
-from algroots import recognize_system_roots
+from algroots.recognition import recognize_system_roots
 
 recognized = recognize_system_roots(
     orbit,
@@ -294,12 +298,10 @@ The following example uses the core solver to obtain one numerically verified se
 ```python
 import sympy as sp
 
-from algroots import (
-    PathTrackerOptions,
-    discover_monodromy_orbit,
-    polysolve,
-    recognize_system_roots,
-)
+from algroots.continuation import PathTrackerOptions
+from algroots.monodromy import discover_monodromy_orbit
+from algroots import polysolve
+from algroots.recognition import recognize_system_roots
 
 x = sp.symbols("x")
 core = polysolve((x**2 - 1,), (x,), digits=50, recognize=False)

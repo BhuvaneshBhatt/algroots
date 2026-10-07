@@ -1,0 +1,207 @@
+{
+  "policy": "calibrated-v1",
+  "scope": "small rational finite systems; no universal guarantee",
+  "backends": [
+    {
+      "dimension": 4,
+      "median_seconds": {
+        "action": 0.010296416992787272,
+        "rur": 0.013044209001236595
+      }
+    },
+    {
+      "dimension": 9,
+      "median_seconds": {
+        "action": 0.03194204100873321,
+        "rur": 0.03779766599473078
+      }
+    },
+    {
+      "dimension": 16,
+      "median_seconds": {
+        "action": 0.07308466699032579,
+        "rur": 0.14037454199569765
+      }
+    },
+    {
+      "dimension": 25,
+      "median_seconds": {
+        "action": 0.13859195800614543,
+        "rur": 0.358298332997947
+      }
+    },
+    {
+      "dimension": 36,
+      "median_seconds": {
+        "action": 0.26687262499763165,
+        "rur": 1.0662550419947365
+      }
+    }
+  ],
+  "ordering": [
+    {
+      "equations": [
+        "v0**2 - v2 - v4 - 1",
+        "-v0 + v1**2 - 2",
+        "v2**2 - v3 - 3",
+        "-v1 + v3**2 - 4",
+        "-v0 + v4**2 - 5"
+      ],
+      "policies": {
+        "frequency": {
+          "order": [
+            "v1",
+            "v2",
+            "v3",
+            "v4",
+            "v0"
+          ],
+          "graph_cost": [
+            3,
+            2
+          ],
+          "basis_terms": 16,
+          "median_seconds": 0.0021740829979535192
+        },
+        "auto": {
+          "order": [
+            "v4",
+            "v1",
+            "v2",
+            "v3",
+            "v0"
+          ],
+          "graph_cost": [
+            2,
+            1
+          ],
+          "basis_terms": 16,
+          "median_seconds": 0.0019565830007195473
+        }
+      }
+    },
+    {
+      "equations": [
+        "v0**2 - v1 - v4 - 1",
+        "v1**2 - v4 - 2",
+        "-v0 + v2**2 - v3 - 3",
+        "-v2 + v3**2 - v4 - 4",
+        "-v2 - v3 + v4**2 - 5"
+      ],
+      "policies": {
+        "frequency": {
+          "order": [
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4"
+          ],
+          "graph_cost": [
+            4,
+            2
+          ],
+          "basis_terms": 19,
+          "median_seconds": 0.002161791009712033
+        },
+        "auto": {
+          "order": [
+            "v1",
+            "v0",
+            "v2",
+            "v3",
+            "v4"
+          ],
+          "graph_cost": [
+            3,
+            0
+          ],
+          "basis_terms": 19,
+          "median_seconds": 0.002262042005895637
+        }
+      }
+    },
+    {
+      "equations": [
+        "v0**2 - v1 - v2 - 1",
+        "v1**2 - v2 - 2",
+        "-v1 + v2**2 - 3",
+        "-v0 + v3**2 - 4",
+        "-v1 - v3 + v4**2 - 5"
+      ],
+      "policies": {
+        "frequency": {
+          "order": [
+            "v4",
+            "v0",
+            "v3",
+            "v2",
+            "v1"
+          ],
+          "graph_cost": [
+            3,
+            1
+          ],
+          "basis_terms": 17,
+          "median_seconds": 0.002270958008011803
+        },
+        "auto": {
+          "order": [
+            "v4",
+            "v3",
+            "v0",
+            "v2",
+            "v1"
+          ],
+          "graph_cost": [
+            2,
+            0
+          ],
+          "basis_terms": 17,
+          "median_seconds": 0.001865749989519827
+        }
+      }
+    },
+    {
+      "equations": [
+        "v0**2 - v1 - 1",
+        "v1**2 - v2 - 1",
+        "v2**2 - v3 - 1",
+        "v3**2 - v4 - 1",
+        "-v0 + v4**2 - 1"
+      ],
+      "policies": {
+        "frequency": {
+          "order": [
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4"
+          ],
+          "graph_cost": [
+            2,
+            2
+          ],
+          "basis_terms": 15,
+          "median_seconds": 0.0015627500106347725
+        },
+        "auto": {
+          "order": [
+            "v0",
+            "v1",
+            "v2",
+            "v3",
+            "v4"
+          ],
+          "graph_cost": [
+            2,
+            2
+          ],
+          "basis_terms": 15,
+          "median_seconds": 0.001603666998562403
+        }
+      }
+    }
+  ]
+}

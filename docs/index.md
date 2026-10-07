@@ -1,6 +1,6 @@
 # algroots documentation
 
-`algroots` is an all-roots solver for supported **exact, zero-dimensional algebraic equation systems**. The core solver combines exact finite-dimensional structure with arbitrary-precision numerical extraction and verification; the continuation/monodromy subsystem has a separate experimental guarantee level. It combines exact algebraic preprocessing with arbitrary-precision numerical root extraction and default best-effort exact algebraic recognition.
+`algroots` is an all-roots solver for supported **exact, zero-dimensional algebraic equation systems**. The core solver combines exact finite-dimensional structure with arbitrary-precision numerical extraction and verification; the continuation/monodromy subsystem has a separate experimental guarantee level. Default exact recognition is best effort and remains separate from isolated-root proofs.
 
 ## Start here
 
@@ -36,3 +36,14 @@
 The core design principle is:
 
 > Exact algebra determines the finite solution structure; arbitrary-precision numerical algebra extracts roots efficiently; default best-effort exact recognition reconstructs and certifies algebraic coordinates afterward.
+
+- [Singular Certification, Deflation and Chart Switching](singular-certification-and-charts.md)
+
+## Practical workflows and validation
+
+- [Reading Results](reading-results.md)
+- [Certification Workflow](certification-workflow.md)
+- [Recovery Workflow](recovery-workflow.md)
+- [Quotient Tools](quotient-tools.md)
+- [Testing and Validation](testing-and-validation.md)
+- [Standalone runnable examples](../examples/README.md)

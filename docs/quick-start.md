@@ -19,7 +19,7 @@ print(result.method)
 print(result.roots)
 ```
 
-`algroots` finds all three complex solutions. The default `method="auto"` tries shape position, then action matrices, then triangular Gröbner back-substitution.
+`algroots` finds all three complex solutions. The default `method="auto"` applies exact affine presolve and grevlex first, then tries exposed shape position, bounded action matrices, shared-quotient RUR, and finally FGLM/triangular back-substitution.
 
 ## Radical equations
 
@@ -43,7 +43,7 @@ Squaring would also produce `x = 1`, but that value violates the original princi
 <!-- algroots: execute -->
 ```python
 result = algsolve(
-    [(x + 1)/(x - 2) - 3],
+    [(x + 1) / (x - 2) - 3],
     (x,),
 )
 ```
@@ -54,7 +54,7 @@ Denominator constraints are retained exactly, and denominator-zero components ar
 
 <!-- algroots: execute -->
 ```python
-from algroots import recognize_system_roots
+from algroots.recognition import recognize_system_roots
 
 recognized = recognize_system_roots(
     result,
@@ -64,3 +64,11 @@ recognized = recognize_system_roots(
 ```
 
 The solvers attempt this recognition automatically by default using a degree-8 search budget. Call `recognize_system_roots` explicitly when you need custom recognition bounds, or pass `recognize=False` to the solver to disable automatic recognition. Recognition delegates scalar relation finding to `algrecognize`, reconstructs exact algebraic coordinates, and verifies the tuple jointly against the original equations.
+
+
+## Next steps
+
+Use [Reading Results](reading-results.md) to distinguish counts, numerical
+verification, recognition and proofs. For automatic boxes and exact points, see
+[Certification Workflow](certification-workflow.md). The [examples catalog](../examples/README.md)
+contains standalone scripts; the snippets above are sequential steps in one tutorial.

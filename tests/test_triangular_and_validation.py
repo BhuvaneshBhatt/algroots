@@ -1,11 +1,7 @@
 import pytest
 import sympy as sp
 
-from algroots import (
-    NotZeroDimensionalError,
-    PolynomialSystemInputError,
-    polysolve,
-)
+from algroots import NotZeroDimensionalError, PolynomialSystemInputError, polysolve
 
 
 def test_branch_dependent_triangular_system() -> None:

@@ -1,6 +1,7 @@
 import sympy as sp
 
-from algroots import PathTrackerOptions, discover_monodromy_orbit
+from algroots.continuation import PathTrackerOptions
+from algroots.monodromy import discover_monodromy_orbit
 from algroots.monodromy_stopping import (
     capture_recapture_estimate,
     second_order_trace_test,
@@ -66,7 +67,7 @@ def test_trace_test_can_stop_closed_known_orbit():
         min_loops_before_stopping=1,
     )
     assert result.stopping_reason == "trace_test"
-    assert result.completeness_basis == "trace_test"
+    assert result.completeness_basis == "none"
     assert result.trace_residual is not None
     assert result.trace_residual < 1e-10
 
@@ -89,3 +90,19 @@ def test_statistical_stop_records_statistical_basis_not_exact_completion():
     assert result.population_estimate is not None
     assert result.population_estimate.upper <= len(result.roots) + 0.5
     assert not hasattr(result, "complete")
+
+
+def test_complete_nonlinear_fiber_can_have_nonzero_curvature():
+    y = sp.Symbol("y")
+    residual = second_order_trace_test(
+        (x - y**4, y**2 - 1), (x, y), ((1, 1), (1, -1)), direction=(0, 1)
+    )
+    assert residual == 2.0
+
+
+def test_incomplete_fiber_can_have_zero_curvature():
+    y = sp.Symbol("y")
+    residual = second_order_trace_test(
+        (x**2 - 1, y**2 - 1), (x, y), ((1, 1), (-1, -1)), direction=(1, 1)
+    )
+    assert residual < 1e-25

@@ -130,3 +130,70 @@ The hardest problems tend to combine:
 - many algebraization auxiliaries.
 
 For backend selection, see [Choosing a Backend](choosing-a-backend.md).
+
+
+## New front-end and storage heuristics
+
+Presolve uses exact constant-unit pivots, including polynomial relations such as x-y**2. Degree, term-count and relative-growth bounds are checked before expansion. It cannot divide by a variable-dependent coefficient.
+After substitution, automatic ordering sorts remaining variables by equation
+occurrence count, maximum degree, then supplied position. The public coordinate
+order is unchanged. This is a simple reproducible heuristic; adversarial systems
+can prefer the input order.
+
+Exact coordinate multiplication matrices retain sparse storage below 10% measured
+density. Separators of dimension at least 12 with sparse storage try incremental
+packed Krylov elimination. Only full cyclic closure may replace the characteristic
+polynomial; noncyclic closure falls back exactly, preserving nonreduced multiplicity.
+The dense numerical action eigensolver and potentially expensive trace-pairing
+rank calculation remain limits. No general speedup claim is made for the thresholds.
+
+## Attached `gb.txt` implementation review
+
+The supplied C/Mathematica-style implementation contains sugar-degree pair selection
+with term-order tie breaking (around lines 3832–3844), Buchberger triple-criterion
+pair deferral (around lines 195–197), optional F4 machinery, modular trace basis
+initialization, and consistent term-order updates when variables are rearranged
+(around lines 5564–5574). These support separating computation order from extraction
+order and retaining explicit variable-order provenance in this release.
+
+Sugar scheduling and critical-pair criteria belong inside the Gröbner engine.
+Algroots continues to delegate that engine to SymPy; this release does not claim
+new F4, modular reconstruction, trace learning, or a port of those internals.
+A future modular backend must verify reconstructed exact generators and ideal
+equality before treating a learned trace or modular rank as evidence. The thresholds
+in the supplied code are implementation-specific and were not copied.
+
+As of 0.5.0, trace vectors/pairings stream one basis operator at a time; their normal path does not populate the cubic basis-operator cache. Exact rank still requires the quadratic trace pairing. RUR shares the bounded Arb extractor with shape solving. Automatic certificate attempts share one original-system quotient and exact parameter isolation across all numerical endpoints.
+
+In 0.6.0, bounded selective normal-form caching has a default capacity of 128
+entries and rejects large expression trees and oversized rational coefficients.
+Observed phase timings and structural cost estimates are available through
+`cost_diagnostics`; these are measurements and hints, not proof evidence.
+`benchmarks/portfolio_calibration.py` supplies a small reproducible calibration
+corpus. Ordering uses graph fill only on a lower predicted graph cost; measured
+wall-time improvements are not universal. Repeated univariate relations favour
+RUR before action matrices, while exact validation and fallbacks remain in place.
+
+
+In 0.7.0, `benchmarks/expanded_calibration.py` compares explicit action, RUR and
+automatic solving over 17 exact systems from nine families. It counterbalances
+three repetitions, retains backend failures, checks geometric counts against an
+exact quotient, and matches successful points against explicit RUR solutions.
+The measured corpus supports keeping the small-system action preference and
+avoiding action attempts for bounded repeated-factor hints. It does not establish
+universal thresholds or performance guarantees.
+
+`benchmarks/quotient_profile.py` separates quotient construction, coordinate
+actions, trace vectors, pairings and rank, and includes a cumulative-time profile.
+Repeated monomial matrix powers dominated the measured multivariate cases.
+A bounded eight-action predecessor cache now reuses exact products; standard
+basis coordinate vectors avoid unnecessary reductions. Rational domain rank
+outperformed expression rank in the measured rational cases, while algebraic
+conversion lost in the algebraic case, so only rational rank uses that route.
+Exact dense oracles, cache bounds and rank backend guards test correctness and
+resource behavior without asserting wall-clock speed.
+
+Root-output preparation has its own `root_output` cost phase and is included in
+reported total time. Exact local multiplicity proofs may add work for nonreduced
+quotients. `multiplicity=False` skips that automatic work; strict multiplicity or
+ordering requests can require additional proof work or refuse at their budgets.

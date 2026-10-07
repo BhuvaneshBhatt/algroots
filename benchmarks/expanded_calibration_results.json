@@ -1,0 +1,2200 @@
+{
+  "policy": "calibrated-v2",
+  "repetitions": 3,
+  "scope": "17 finite exact cases across nine families; local medians, no universal speed guarantee",
+  "cases": [
+    {
+      "name": "separable-4",
+      "family": "separable",
+      "equations": [
+        "x**2 - 2",
+        "y**2 - 3"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 4,
+      "geometric_count": 4,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.014298500012955628,
+        "rur": 0.018036959008895792,
+        "auto": 0.01486575001035817
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0006363330030580983,
+            "input": 0.0014200000005075708,
+            "presolve_and_ordering": 1.4125005691312253e-05,
+            "solve": 0.024442374997306615,
+            "reconstruction_and_validation": 0.0040877499995986,
+            "recognition": 3.6249984987080097e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.02997091700672172
+          },
+          {
+            "solve.groebner": 0.0005898749950574711,
+            "input": 0.0003817079996224493,
+            "presolve_and_ordering": 9.374998626299202e-06,
+            "solve": 0.01049291699018795,
+            "reconstruction_and_validation": 0.003381125003215857,
+            "recognition": 3.1249946914613247e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.014269374994910322
+          },
+          {
+            "solve.groebner": 0.0006110410031396896,
+            "input": 0.00043200000072829425,
+            "presolve_and_ordering": 9.750001481734216e-06,
+            "solve": 0.010381915999460034,
+            "reconstruction_and_validation": 0.0033323749958071858,
+            "recognition": 2.207991201430559e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.01416162500390783
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0006385839951690286,
+            "input": 0.0004445829981705174,
+            "presolve_and_ordering": 9.957992006093264e-06,
+            "solve": 0.025402624989510514,
+            "reconstruction_and_validation": 0.003251208006986417,
+            "recognition": 1.7920101527124643e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.029112167001585476
+          },
+          {
+            "solve.groebner": 0.000611540992395021,
+            "input": 0.00038020800275262445,
+            "presolve_and_ordering": 8.207993232645094e-06,
+            "solve": 0.014170750000630505,
+            "reconstruction_and_validation": 0.0031708329916000366,
+            "recognition": 1.6669946489855647e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.017732624997734092
+          },
+          {
+            "solve.groebner": 0.0006186669925227761,
+            "input": 0.0004118329961784184,
+            "presolve_and_ordering": 1.058299676515162e-05,
+            "solve": 0.014299249989562668,
+            "reconstruction_and_validation": 0.003278832999058068,
+            "recognition": 2.291999408043921e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.01800433399330359
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0006323750130832195,
+            "input": 0.0003910000086762011,
+            "presolve_and_ordering": 7.875001756474376e-06,
+            "solve": 0.011162333001266234,
+            "reconstruction_and_validation": 0.003266500003519468,
+            "recognition": 1.624997821636498e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.014830916989012621
+          },
+          {
+            "solve.groebner": 0.0005999169952701777,
+            "input": 0.00037208299909252673,
+            "presolve_and_ordering": 8.125003660097718e-06,
+            "solve": 0.011582791004911996,
+            "reconstruction_and_validation": 0.003225749998819083,
+            "recognition": 1.167005393654108e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.015191333994152956
+          },
+          {
+            "solve.groebner": 0.0006036249978933483,
+            "input": 0.00042300000495743006,
+            "presolve_and_ordering": 8.917006198316813e-06,
+            "solve": 0.010551417013630271,
+            "reconstruction_and_validation": 0.0032847499969648197,
+            "recognition": 2.582994056865573e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.014272041997173801
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "separable-16",
+      "family": "separable",
+      "equations": [
+        "x**4 - 2",
+        "y**4 - 3"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 16,
+      "geometric_count": 16,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.12264000000141095,
+        "rur": 0.12961416599864606,
+        "auto": 0.12311691700597294
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0006177090108394623,
+            "input": 0.00044841600174549967,
+            "presolve_and_ordering": 1.09999964479357e-05,
+            "solve": 0.10062429099343717,
+            "reconstruction_and_validation": 0.021510958002181724,
+            "recognition": 2.91600008495152e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.12259975000051782
+          },
+          {
+            "solve.groebner": 0.000619333004578948,
+            "input": 0.0004413330025272444,
+            "presolve_and_ordering": 8.957998943515122e-06,
+            "solve": 0.10180750000290573,
+            "reconstruction_and_validation": 0.021812499995576218,
+            "recognition": 3.875000402331352e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.12407608299690764
+          },
+          {
+            "solve.groebner": 0.0005902499979129061,
+            "input": 0.00039566599298268557,
+            "presolve_and_ordering": 8.792005246505141e-06,
+            "solve": 0.09731262500281446,
+            "reconstruction_and_validation": 0.02174216699495446,
+            "recognition": 3.000008291564882e-06,
+            "certification": 1.249863998964429e-07,
+            "total": 0.11946412500401493
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0005963750008959323,
+            "input": 0.0004133329930482432,
+            "presolve_and_ordering": 8.999995770864189e-06,
+            "solve": 0.11081712499435525,
+            "reconstruction_and_validation": 0.021584417001577094,
+            "recognition": 4.374989657662809e-06,
+            "certification": 4.100729711353779e-08,
+            "total": 0.1328300000022864
+          },
+          {
+            "solve.groebner": 0.0006049170042388141,
+            "input": 0.00042216699512209743,
+            "presolve_and_ordering": 8.540999260731041e-06,
+            "solve": 0.10710533300880343,
+            "reconstruction_and_validation": 0.021769832994323224,
+            "recognition": 2.749991836026311e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.1293102500058012
+          },
+          {
+            "solve.groebner": 0.0006002919981256127,
+            "input": 0.00040862499736249447,
+            "presolve_and_ordering": 9.000010322779417e-06,
+            "solve": 0.10805883399734739,
+            "reconstruction_and_validation": 0.021099165998748504,
+            "recognition": 3.2500101951882243e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.12958012500894256
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0006461669981945306,
+            "input": 0.0005116670072311535,
+            "presolve_and_ordering": 1.2666991096921265e-05,
+            "solve": 0.09919145799358375,
+            "reconstruction_and_validation": 0.021538749992032535,
+            "recognition": 2.8340000426396728e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.12125975001254119
+          },
+          {
+            "solve.groebner": 0.0006449999928008765,
+            "input": 0.0004945409891661257,
+            "presolve_and_ordering": 1.087499549612403e-05,
+            "solve": 0.10118279099697247,
+            "reconstruction_and_validation": 0.021377708006184548,
+            "recognition": 3.4580007195472717e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.12307133300055284
+          },
+          {
+            "solve.groebner": 0.0006908749928697944,
+            "input": 0.0004613750061253086,
+            "presolve_and_ordering": 9.082999895326793e-06,
+            "solve": 0.10339933300565463,
+            "reconstruction_and_validation": 0.020605375000741333,
+            "recognition": 2.8329959604889154e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.12447974999668077
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "separable-36",
+      "family": "separable",
+      "equations": [
+        "x**6 - 2",
+        "y**6 - 3"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 36,
+      "geometric_count": 36,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.29416404200310353,
+        "rur": 0.3721781250060303,
+        "auto": 0.29419516600319184
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0005947919999016449,
+            "input": 0.00044299999717622995,
+            "presolve_and_ordering": 1.0624993592500687e-05,
+            "solve": 0.24884349999774713,
+            "reconstruction_and_validation": 0.04480729199713096,
+            "recognition": 3.416003892198205e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.29410962499969173
+          },
+          {
+            "solve.groebner": 0.0006092079856898636,
+            "input": 0.0004195000074105337,
+            "presolve_and_ordering": 8.625007467344403e-06,
+            "solve": 0.2456282079947414,
+            "reconstruction_and_validation": 0.04541862499900162,
+            "recognition": 3.416993422433734e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.29148020800494123
+          },
+          {
+            "solve.groebner": 0.0005936670058872551,
+            "input": 0.00041933299507945776,
+            "presolve_and_ordering": 8.957998943515122e-06,
+            "solve": 0.2593107080028858,
+            "reconstruction_and_validation": 0.046850375001668,
+            "recognition": 3.6249984987080097e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.30659437499707565
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0005966250027995557,
+            "input": 0.00043333398934919387,
+            "presolve_and_ordering": 8.66700429469347e-06,
+            "solve": 0.3297480830078712,
+            "reconstruction_and_validation": 0.046920458000386134,
+            "recognition": 4.5000051613897085e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.377117249998264
+          },
+          {
+            "solve.groebner": 0.0005996669933665544,
+            "input": 0.0004338750004535541,
+            "presolve_and_ordering": 8.834002073854208e-06,
+            "solve": 0.3214017920108745,
+            "reconstruction_and_validation": 0.04191520900349133,
+            "recognition": 3.082997864112258e-06,
+            "certification": 4.100729711353779e-08,
+            "total": 0.363764292007545
+          },
+          {
+            "solve.groebner": 0.0006320839893305674,
+            "input": 0.00043995800660923123,
+            "presolve_and_ordering": 8.791001164354384e-06,
+            "solve": 0.328127583998139,
+            "reconstruction_and_validation": 0.04355270799715072,
+            "recognition": 2.8329959604889154e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.37213383299240377
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0006367080059135333,
+            "input": 0.00046624999959021807,
+            "presolve_and_ordering": 9.41699545364827e-06,
+            "solve": 0.265697665992775,
+            "reconstruction_and_validation": 0.045739791996311396,
+            "recognition": 3.1660019885748625e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.31191837500955444
+          },
+          {
+            "solve.groebner": 0.0006449579959735274,
+            "input": 0.000440875010099262,
+            "presolve_and_ordering": 9.583003702573478e-06,
+            "solve": 0.24857700000575278,
+            "reconstruction_and_validation": 0.045111166007700376,
+            "recognition": 2.91600008495152e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.2941436669934774
+          },
+          {
+            "solve.groebner": 0.0005849170120200142,
+            "input": 0.0004327500064391643,
+            "presolve_and_ordering": 8.66700429469347e-06,
+            "solve": 0.24674775000312366,
+            "reconstruction_and_validation": 0.04514816700248048,
+            "recognition": 2.7909991331398487e-06,
+            "certification": 4.20113792642951e-08,
+            "total": 0.29234183399239555
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "univariate-8",
+      "family": "univariate",
+      "equations": [
+        "x**8 - x - 1"
+      ],
+      "variables": [
+        "x"
+      ],
+      "dimension": 8,
+      "geometric_count": 8,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.054528042004676536,
+        "rur": 0.05907812500663567,
+        "auto": 0.05161058300291188
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0003967500088037923,
+            "input": 0.00034870799572672695,
+            "presolve_and_ordering": 1.0957999620586634e-05,
+            "solve": 0.04585170900099911,
+            "reconstruction_and_validation": 0.008211499996832572,
+            "recognition": 1.8749997252598405e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.05442608300654683
+          },
+          {
+            "solve.groebner": 0.0004811669932678342,
+            "input": 0.0003549170069163665,
+            "presolve_and_ordering": 8.95900302566588e-06,
+            "solve": 0.04596049999236129,
+            "reconstruction_and_validation": 0.008174124988727272,
+            "recognition": 1.7080019460991025e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.054501500009791926
+          },
+          {
+            "solve.groebner": 0.00048083398723974824,
+            "input": 0.0003629589919000864,
+            "presolve_and_ordering": 8.999995770864189e-06,
+            "solve": 0.04745862500567455,
+            "reconstruction_and_validation": 0.00861679199442733,
+            "recognition": 2.8329959604889154e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.05645170800562482
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.00046887500502634794,
+            "input": 0.00035945800482295454,
+            "presolve_and_ordering": 8.540999260731041e-06,
+            "solve": 0.05041816599259619,
+            "reconstruction_and_validation": 0.008261541996034794,
+            "recognition": 1.834006980061531e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.05905095799244009
+          },
+          {
+            "solve.groebner": 0.0004719580028904602,
+            "input": 0.00035400000342633575,
+            "presolve_and_ordering": 8.874994819052517e-06,
+            "solve": 0.04803974999231286,
+            "reconstruction_and_validation": 0.0081461250083521,
+            "recognition": 1.624997821636498e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.05655162499169819
+          },
+          {
+            "solve.groebner": 0.0007332920067710802,
+            "input": 0.00044070799776818603,
+            "presolve_and_ordering": 9.791998309083283e-06,
+            "solve": 0.05082187498919666,
+            "reconstruction_and_validation": 0.008165624996763654,
+            "recognition": 1.8330028979107738e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.0594409170007566
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0004992500034859404,
+            "input": 0.00035966699942946434,
+            "presolve_and_ordering": 8.917006198316813e-06,
+            "solve": 0.042699541998445056,
+            "reconstruction_and_validation": 0.008178249991033226,
+            "recognition": 2.415996277704835e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.051250207994598895
+          },
+          {
+            "solve.groebner": 0.0004962079983670264,
+            "input": 0.00035458400088828057,
+            "presolve_and_ordering": 8.08399636298418e-06,
+            "solve": 0.04385849999380298,
+            "reconstruction_and_validation": 0.008168749991455115,
+            "recognition": 1.791995600797236e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.05239295799401589
+          },
+          {
+            "solve.groebner": 0.00045820800005458295,
+            "input": 0.00035083301190752536,
+            "presolve_and_ordering": 8.83398752193898e-06,
+            "solve": 0.043164667004020885,
+            "reconstruction_and_validation": 0.008051665994571522,
+            "recognition": 1.9169965526089072e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.051579167004092596
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "shape_position"
+        ]
+      }
+    },
+    {
+      "name": "univariate-16",
+      "family": "univariate",
+      "equations": [
+        "x**16 - x - 1"
+      ],
+      "variables": [
+        "x"
+      ],
+      "dimension": 16,
+      "geometric_count": 16,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.2207464999955846,
+        "rur": 0.22160170901042875,
+        "auto": 0.21077204200264532
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0004566249990602955,
+            "input": 0.00035887499689124525,
+            "presolve_and_ordering": 9.41699545364827e-06,
+            "solve": 0.1730934579973109,
+            "reconstruction_and_validation": 0.03811225001118146,
+            "recognition": 2.6670022634789348e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.2115780000021914
+          },
+          {
+            "solve.groebner": 0.0005992079968564212,
+            "input": 0.00041537500510457903,
+            "presolve_and_ordering": 8.874994819052517e-06,
+            "solve": 0.19812079198891297,
+            "reconstruction_and_validation": 0.03490108301048167,
+            "recognition": 2.9999937396496534e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.23345083300955594
+          },
+          {
+            "solve.groebner": 0.0005604170000879094,
+            "input": 0.0006450829969253391,
+            "presolve_and_ordering": 1.3125012628734112e-05,
+            "solve": 0.18586737499572337,
+            "reconstruction_and_validation": 0.034184083007858135,
+            "recognition": 2.7089990908280015e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.22071458298887592
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0005008750013075769,
+            "input": 0.0004859159962506965,
+            "presolve_and_ordering": 1.0332994861528277e-05,
+            "solve": 0.18388066699844785,
+            "reconstruction_and_validation": 0.03451500000664964,
+            "recognition": 2.749991836026311e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.21889645799819846
+          },
+          {
+            "solve.groebner": 0.0005212090036366135,
+            "input": 0.00047766699572093785,
+            "presolve_and_ordering": 1.2959004379808903e-05,
+            "solve": 0.21181908299331553,
+            "reconstruction_and_validation": 0.04796487500425428,
+            "recognition": 2.833010512404144e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.2602797910076333
+          },
+          {
+            "solve.groebner": 0.0004869580006925389,
+            "input": 0.00037924999196548015,
+            "presolve_and_ordering": 8.457995136268437e-06,
+            "solve": 0.18497408299299423,
+            "reconstruction_and_validation": 0.036206332995789126,
+            "recognition": 2.5420013116672635e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.2215719999949215
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0005046670121373609,
+            "input": 0.0004090000002179295,
+            "presolve_and_ordering": 9.625000529922545e-06,
+            "solve": 0.17442325000592973,
+            "reconstruction_and_validation": 0.035877207992598414,
+            "recognition": 4.125002305954695e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.2107254590082448
+          },
+          {
+            "solve.groebner": 0.0005182500026421621,
+            "input": 0.0004497500049183145,
+            "presolve_and_ordering": 1.0250005288980901e-05,
+            "solve": 0.19046329100092407,
+            "reconstruction_and_validation": 0.037025249999715015,
+            "recognition": 3.2079988159239292e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.22795345800113864
+          },
+          {
+            "solve.groebner": 0.0004868749965680763,
+            "input": 0.0004031249991385266,
+            "presolve_and_ordering": 9.875002433545887e-06,
+            "solve": 0.15905908300192095,
+            "reconstruction_and_validation": 0.03617374999157619,
+            "recognition": 3.374996595084667e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.19565120800689328
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "shape_position"
+        ]
+      }
+    },
+    {
+      "name": "shape-chain",
+      "family": "shape",
+      "equations": [
+        "x - y**2",
+        "y - z**2",
+        "z**3 - 2"
+      ],
+      "variables": [
+        "x",
+        "y",
+        "z"
+      ],
+      "dimension": 3,
+      "geometric_count": 3,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.04187837499193847,
+        "rur": 0.04458245799469296,
+        "auto": 0.03738933301065117
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0008108750043902546,
+            "input": 0.0007866669911891222,
+            "presolve_and_ordering": 1.0624993592500687e-05,
+            "solve": 0.025315708000562154,
+            "reconstruction_and_validation": 0.007762084002024494,
+            "recognition": 3.082997864112258e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.03387937499792315
+          },
+          {
+            "solve.groebner": 0.001021957999910228,
+            "input": 0.0009091249958146363,
+            "presolve_and_ordering": 1.2042000889778137e-05,
+            "solve": 0.03168341700802557,
+            "reconstruction_and_validation": 0.009232540993252769,
+            "recognition": 3.541994374245405e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.041842874998110346
+          },
+          {
+            "solve.groebner": 0.0010025420051533729,
+            "input": 0.0008602500020060688,
+            "presolve_and_ordering": 8.70799703989178e-06,
+            "solve": 0.03422829198825639,
+            "reconstruction_and_validation": 0.009735290994285606,
+            "recognition": 3.2079988159239292e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.0448369170044316
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0008607500058133155,
+            "input": 0.0008387499983655289,
+            "presolve_and_ordering": 8.957998943515122e-06,
+            "solve": 0.031192707989248447,
+            "reconstruction_and_validation": 0.007197208993602544,
+            "recognition": 1.4999968698248267e-06,
+            "certification": 4.20113792642951e-08,
+            "total": 0.039240416008397005
+          },
+          {
+            "solve.groebner": 0.000937999997404404,
+            "input": 0.0008365000103367493,
+            "presolve_and_ordering": 1.1750002158805728e-05,
+            "solve": 0.03463954200560693,
+            "reconstruction_and_validation": 0.009056665992829949,
+            "recognition": 3.915993147529662e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.044549875005031936
+          },
+          {
+            "solve.groebner": 0.0008937500097090378,
+            "input": 0.0009047499916050583,
+            "presolve_and_ordering": 1.0000003385357559e-05,
+            "solve": 0.03564366701175459,
+            "reconstruction_and_validation": 0.011182458998518996,
+            "recognition": 5.49999822396785e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.047748083001351915
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0008523330034222454,
+            "input": 0.0007926660036901012,
+            "presolve_and_ordering": 8.37500556372106e-06,
+            "solve": 0.026703041003202088,
+            "reconstruction_and_validation": 0.007264041996677406,
+            "recognition": 2.0000006770715117e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.03477145799843129
+          },
+          {
+            "solve.groebner": 0.0009076670103240758,
+            "input": 0.0009202079963870347,
+            "presolve_and_ordering": 9.666007827036083e-06,
+            "solve": 0.029501208002329804,
+            "reconstruction_and_validation": 0.0073825420113280416,
+            "recognition": 2.7089990908280015e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.03781804100435693
+          },
+          {
+            "solve.groebner": 0.000905084001715295,
+            "input": 0.0009080000018002465,
+            "presolve_and_ordering": 1.0042000212706625e-05,
+            "solve": 0.027926166003453545,
+            "reconstruction_and_validation": 0.008506624988513067,
+            "recognition": 2.707995008677244e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.037355792010203004
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "shape-permuted",
+      "family": "shape",
+      "equations": [
+        "x - y**2",
+        "y - z**2",
+        "z**3 - 2"
+      ],
+      "variables": [
+        "z",
+        "y",
+        "x"
+      ],
+      "dimension": 3,
+      "geometric_count": 3,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.03688479198899586,
+        "rur": 0.045739334003883414,
+        "auto": 0.03896166699996684
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.001953332990524359,
+            "input": 0.001866416001575999,
+            "presolve_and_ordering": 1.4208999346010387e-05,
+            "solve": 0.033327999990433455,
+            "reconstruction_and_validation": 0.011254542012466118,
+            "recognition": 3.2079988159239292e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.046469167005852796
+          },
+          {
+            "solve.groebner": 0.0012002909934381023,
+            "input": 0.0009049579966813326,
+            "presolve_and_ordering": 9.41699545364827e-06,
+            "solve": 0.027262458999757655,
+            "reconstruction_and_validation": 0.008668542010127567,
+            "recognition": 3.0840019462630153e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.036850125005003065
+          },
+          {
+            "solve.groebner": 0.0012022500013699755,
+            "input": 0.0008512080094078556,
+            "presolve_and_ordering": 8.917006198316813e-06,
+            "solve": 0.028300459001911804,
+            "reconstruction_and_validation": 0.007307749998290092,
+            "recognition": 1.7080019460991025e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.036471457991865464
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0012757499935105443,
+            "input": 0.0009160000045085326,
+            "presolve_and_ordering": 1.0250005288980901e-05,
+            "solve": 0.034987957988050766,
+            "reconstruction_and_validation": 0.009789834002731368,
+            "recognition": 3.3329997677356005e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.04570899999816902
+          },
+          {
+            "solve.groebner": 0.0015333750052377582,
+            "input": 0.0009388749895151705,
+            "presolve_and_ordering": 1.1249998351559043e-05,
+            "solve": 0.03756875000544824,
+            "reconstruction_and_validation": 0.007651958003407344,
+            "recognition": 3.2919924706220627e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.04617625000537373
+          },
+          {
+            "solve.groebner": 0.00129704199207481,
+            "input": 0.0008632920071249828,
+            "presolve_and_ordering": 1.0499992640689015e-05,
+            "solve": 0.031846083991695195,
+            "reconstruction_and_validation": 0.008333416990353726,
+            "recognition": 3.2079988159239292e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.04105833299399819
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0012752919865306467,
+            "input": 0.0009326669969595969,
+            "presolve_and_ordering": 9.791998309083283e-06,
+            "solve": 0.03464829199947417,
+            "reconstruction_and_validation": 0.00800241700198967,
+            "recognition": 3.16700607072562e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.043598250005743466
+          },
+          {
+            "solve.groebner": 0.001219500001752749,
+            "input": 0.0009136250009760261,
+            "presolve_and_ordering": 2.5959001504816115e-05,
+            "solve": 0.0299701659969287,
+            "reconstruction_and_validation": 0.00800133400480263,
+            "recognition": 3.6249984987080097e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.03891687499708496
+          },
+          {
+            "solve.groebner": 0.0011890829919138923,
+            "input": 0.0008595419931225479,
+            "presolve_and_ordering": 8.791001164354384e-06,
+            "solve": 0.026722958995378576,
+            "reconstruction_and_validation": 0.008066458991379477,
+            "recognition": 2.8329959604889154e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.035661834001075476
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "sparse-cycle",
+      "family": "sparse",
+      "equations": [
+        "x**2 - y",
+        "y**2 - z",
+        "-x + z**2 - 1"
+      ],
+      "variables": [
+        "x",
+        "y",
+        "z"
+      ],
+      "dimension": 8,
+      "geometric_count": 8,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.11249254200083669,
+        "rur": 0.1310172500088811,
+        "auto": 0.1077872500027297
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0011111660132883117,
+            "input": 0.0008369580027647316,
+            "presolve_and_ordering": 1.0707997716963291e-05,
+            "solve": 0.09060420900641475,
+            "reconstruction_and_validation": 0.02099562498915475,
+            "recognition": 2.7500063879415393e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.11245174999930896
+          },
+          {
+            "solve.groebner": 0.000833250000141561,
+            "input": 0.0010089580027852207,
+            "presolve_and_ordering": 1.1165990144945681e-05,
+            "solve": 0.08477424999000505,
+            "reconstruction_and_validation": 0.021232416009297594,
+            "recognition": 3.4580007195472717e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.1070319999998901
+          },
+          {
+            "solve.groebner": 0.0008333340083481744,
+            "input": 0.0009229580027749762,
+            "presolve_and_ordering": 9.625000529922545e-06,
+            "solve": 0.09518545800528955,
+            "reconstruction_and_validation": 0.02333304200146813,
+            "recognition": 3.16700607072562e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.119456332991831
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.000748124992242083,
+            "input": 0.0008981660066638142,
+            "presolve_and_ordering": 9.167008101940155e-06,
+            "solve": 0.10710945799655747,
+            "reconstruction_and_validation": 0.021019417006755248,
+            "recognition": 3.0420051189139485e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.12904058299318422
+          },
+          {
+            "solve.groebner": 0.000768458005040884,
+            "input": 0.0009145840012934059,
+            "presolve_and_ordering": 9.666007827036083e-06,
+            "solve": 0.1075108340010047,
+            "reconstruction_and_validation": 0.02266833400062751,
+            "recognition": 3.583001671358943e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.13110870799573604
+          },
+          {
+            "solve.groebner": 0.0008062499982770532,
+            "input": 0.000964457998634316,
+            "presolve_and_ordering": 1.116600469686091e-05,
+            "solve": 0.10917087500274647,
+            "reconstruction_and_validation": 0.020829666987992823,
+            "recognition": 3.249995643272996e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.1309812499966938
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0007401249895337969,
+            "input": 0.0008875409985193983,
+            "presolve_and_ordering": 9.208000847138464e-06,
+            "solve": 0.08438887499505654,
+            "reconstruction_and_validation": 0.022455166006693617,
+            "recognition": 3.4999975468963385e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.10774575000687037
+          },
+          {
+            "solve.groebner": 0.0009253749885829166,
+            "input": 0.0009883329912554473,
+            "presolve_and_ordering": 1.2083997717127204e-05,
+            "solve": 0.09137387500959449,
+            "reconstruction_and_validation": 0.022071667001000606,
+            "recognition": 4.125002305954695e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.11445249999815132
+          },
+          {
+            "solve.groebner": 0.0007589580054627731,
+            "input": 0.000899125006981194,
+            "presolve_and_ordering": 1.008401159197092e-05,
+            "solve": 0.08374404200003482,
+            "reconstruction_and_validation": 0.021899416009546258,
+            "recognition": 3.2090028980746865e-06,
+            "certification": 4.100729711353779e-08,
+            "total": 0.10655733299790882
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "dense-coupled",
+      "family": "coupled",
+      "equations": [
+        "x**2 + y**2 - 3",
+        "x*y - 1"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 4,
+      "geometric_count": 4,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.015376625000499189,
+        "rur": 0.019984958998975344,
+        "auto": 0.015455917004146613
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0006265839911065996,
+            "input": 0.00047808399540372193,
+            "presolve_and_ordering": 1.008401159197092e-05,
+            "solve": 0.011351250010193326,
+            "reconstruction_and_validation": 0.0034717079979600385,
+            "recognition": 1.3749959180131555e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.015313374999095686
+          },
+          {
+            "solve.groebner": 0.0006933749973541126,
+            "input": 0.0005857920041307807,
+            "presolve_and_ordering": 9.166993550024927e-06,
+            "solve": 0.011055875002057292,
+            "reconstruction_and_validation": 0.003538916993420571,
+            "recognition": 1.791995600797236e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.015192999999271706
+          },
+          {
+            "solve.groebner": 0.0007058749906718731,
+            "input": 0.0005189160001464188,
+            "presolve_and_ordering": 9.625000529922545e-06,
+            "solve": 0.011482583999168128,
+            "reconstruction_and_validation": 0.004431499997735955,
+            "recognition": 2.9170041671022773e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.016447375004645437
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0006652909942204133,
+            "input": 0.00048804099787957966,
+            "presolve_and_ordering": 7.833004929125309e-06,
+            "solve": 0.015506833995459601,
+            "reconstruction_and_validation": 0.0036344589898362756,
+            "recognition": 1.6669946489855647e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.01964029199734796
+          },
+          {
+            "solve.groebner": 0.0007236660021590069,
+            "input": 0.0004999579978175461,
+            "presolve_and_ordering": 9.540992323309183e-06,
+            "solve": 0.015639417004422285,
+            "reconstruction_and_validation": 0.003797124998527579,
+            "recognition": 2.7919886633753777e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.019950417001382448
+          },
+          {
+            "solve.groebner": 0.0007261249993462116,
+            "input": 0.0006096249999245629,
+            "presolve_and_ordering": 1.09999964479357e-05,
+            "solve": 0.015731749997939914,
+            "reconstruction_and_validation": 0.003907958001946099,
+            "recognition": 2.3750035325065255e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.020264083999791183
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.000745249999454245,
+            "input": 0.0005537500110222027,
+            "presolve_and_ordering": 9.834009688347578e-06,
+            "solve": 0.011399084003642201,
+            "reconstruction_and_validation": 0.0034591250005178154,
+            "recognition": 1.2920063454657793e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.015424291996168904
+          },
+          {
+            "solve.groebner": 0.0007017080060904846,
+            "input": 0.000566834001801908,
+            "presolve_and_ordering": 8.457995136268437e-06,
+            "solve": 0.011394917004508898,
+            "reconstruction_and_validation": 0.0044600419932976365,
+            "recognition": 2.8750073397532105e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.016434916004072875
+          },
+          {
+            "solve.groebner": 0.0007151250028982759,
+            "input": 0.0005844160041306168,
+            "presolve_and_ordering": 8.666000212542713e-06,
+            "solve": 0.011153541010571644,
+            "reconstruction_and_validation": 0.0035124579881085083,
+            "recognition": 1.4999968698248267e-06,
+            "certification": 4.099274519830942e-08,
+            "total": 0.015262209009961225
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "algebraic-separable",
+      "family": "algebraic",
+      "equations": [
+        "x**2 - sqrt(2)",
+        "y**2 - 3"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 4,
+      "geometric_count": 4,
+      "domain": "QQ<sqrt(2)>",
+      "median_seconds": {
+        "action": 0.027284957992378622,
+        "rur": 0.09271916700527072,
+        "auto": 0.028043958998750895
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0013216669904068112,
+            "input": 0.0018141250038752332,
+            "presolve_and_ordering": 1.1791998986154795e-05,
+            "solve": 0.02067158301360905,
+            "reconstruction_and_validation": 0.0047883749939501286,
+            "recognition": 1.624997821636498e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.027289500008919276
+          },
+          {
+            "solve.groebner": 0.001324249999015592,
+            "input": 0.001708582989522256,
+            "presolve_and_ordering": 8.957998943515122e-06,
+            "solve": 0.020326249999925494,
+            "reconstruction_and_validation": 0.0049318750097882,
+            "recognition": 2.6669877115637064e-06,
+            "certification": 4.100729711353779e-08,
+            "total": 0.026979917005519383
+          },
+          {
+            "solve.groebner": 0.0014179160061758012,
+            "input": 0.0017025419947458431,
+            "presolve_and_ordering": 8.83398752193898e-06,
+            "solve": 0.020814208997762762,
+            "reconstruction_and_validation": 0.00472795900714118,
+            "recognition": 1.4590041246265173e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.027256832996499725
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0016515840106876567,
+            "input": 0.0018751659954432398,
+            "presolve_and_ordering": 1.0167001164518297e-05,
+            "solve": 0.13800416600133758,
+            "reconstruction_and_validation": 0.0047087499988265336,
+            "recognition": 1.7080019460991025e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.1446016249974491
+          },
+          {
+            "solve.groebner": 0.0013370829983614385,
+            "input": 0.001902832998894155,
+            "presolve_and_ordering": 9.249997674487531e-06,
+            "solve": 0.08615804099827074,
+            "reconstruction_and_validation": 0.0046198339987313375,
+            "recognition": 1.2079981388524175e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.09269266700721346
+          },
+          {
+            "solve.groebner": 0.0013122090022079647,
+            "input": 0.0017397080082446337,
+            "presolve_and_ordering": 8.791001164354384e-06,
+            "solve": 0.07901570799003821,
+            "reconstruction_and_validation": 0.004695541996625252,
+            "recognition": 1.4999968698248267e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.08546237499103881
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0013248750037746504,
+            "input": 0.0018058749992633238,
+            "presolve_and_ordering": 9.249997674487531e-06,
+            "solve": 0.020573874993715435,
+            "reconstruction_and_validation": 0.0050067500123986974,
+            "recognition": 2.959000994451344e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.02740054199239239
+          },
+          {
+            "solve.groebner": 0.0014281249896157533,
+            "input": 0.0016911670099943876,
+            "presolve_and_ordering": 8.540999260731041e-06,
+            "solve": 0.022027375001925975,
+            "reconstruction_and_validation": 0.004728917003376409,
+            "recognition": 1.5419936971738935e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.028459000008297153
+          },
+          {
+            "solve.groebner": 0.0013607500004582107,
+            "input": 0.001897875001304783,
+            "presolve_and_ordering": 9.499999578110874e-06,
+            "solve": 0.02140437500202097,
+            "reconstruction_and_validation": 0.0047015000018291175,
+            "recognition": 1.3339886208996177e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.028016208991175517
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "algebraic-shape",
+      "family": "algebraic",
+      "equations": [
+        "x - y**2",
+        "y**3 - sqrt(2)"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 3,
+      "geometric_count": 3,
+      "domain": "QQ<sqrt(2)>",
+      "median_seconds": {
+        "action": 0.038574667007196695,
+        "rur": 0.08048283300013281,
+        "auto": 0.03877374999865424
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0014844580000499263,
+            "input": 0.0018212909926660359,
+            "presolve_and_ordering": 1.0750009096227586e-05,
+            "solve": 0.03040774998953566,
+            "reconstruction_and_validation": 0.006370584000251256,
+            "recognition": 1.5840050764381886e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.03861320800206158
+          },
+          {
+            "solve.groebner": 0.0014637919957749546,
+            "input": 0.0019256250088801607,
+            "presolve_and_ordering": 9.041992598213255e-06,
+            "solve": 0.030192083009751514,
+            "reconstruction_and_validation": 0.006294792008702643,
+            "recognition": 1.45800004247576e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.03842395800165832
+          },
+          {
+            "solve.groebner": 0.001480999999330379,
+            "input": 0.002138832991477102,
+            "presolve_and_ordering": 1.0625008144415915e-05,
+            "solve": 0.029799374999129213,
+            "reconstruction_and_validation": 0.00659283300046809,
+            "recognition": 2.7089990908280015e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.038545999996131286
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0016143329994520172,
+            "input": 0.001835792005294934,
+            "presolve_and_ordering": 8.834002073854208e-06,
+            "solve": 0.07351241599826608,
+            "reconstruction_and_validation": 0.006326040995190851,
+            "recognition": 1.5829864423722029e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.0816858749894891
+          },
+          {
+            "solve.groebner": 0.0014856659981887788,
+            "input": 0.0023171670036390424,
+            "presolve_and_ordering": 1.0707997716963291e-05,
+            "solve": 0.07187812500342261,
+            "reconstruction_and_validation": 0.006240249989787117,
+            "recognition": 1.7090060282498598e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.08045016600226518
+          },
+          {
+            "solve.groebner": 0.0014683330082334578,
+            "input": 0.0019042080093640834,
+            "presolve_and_ordering": 9.166993550024927e-06,
+            "solve": 0.06938962500134949,
+            "reconstruction_and_validation": 0.006089792004786432,
+            "recognition": 1.624997821636498e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.07739570899866521
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.001513750001322478,
+            "input": 0.0018491659866413102,
+            "presolve_and_ordering": 9.082999895326793e-06,
+            "solve": 0.030507582996506244,
+            "reconstruction_and_validation": 0.006357417005347088,
+            "recognition": 2.8329959604889154e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.03872741700615734
+          },
+          {
+            "solve.groebner": 0.0018027499900199473,
+            "input": 0.002047792004304938,
+            "presolve_and_ordering": 1.0916002793237567e-05,
+            "solve": 0.03291558299679309,
+            "reconstruction_and_validation": 0.006790750005166046,
+            "recognition": 2.5000044843181968e-06,
+            "certification": 4.100729711353779e-08,
+            "total": 0.04176916599681135
+          },
+          {
+            "solve.groebner": 0.0015286659909179434,
+            "input": 0.0017987500032177195,
+            "presolve_and_ordering": 8.417002391070127e-06,
+            "solve": 0.02975108299870044,
+            "reconstruction_and_validation": 0.006838415996753611,
+            "recognition": 2.2080057533457875e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.038399875003960915
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "nonreduced-separable",
+      "family": "nonreduced",
+      "equations": [
+        "x**3",
+        "y**2"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 6,
+      "geometric_count": 1,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": null,
+        "rur": 0.00813570800528396,
+        "auto": 0.008488874998874962
+      },
+      "failures": {
+        "action": [
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving",
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving",
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving"
+        ],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [],
+        "rur": [
+          {
+            "solve.groebner": 0.0004817500011995435,
+            "input": 0.00024516700068488717,
+            "presolve_and_ordering": 8.167000487446785e-06,
+            "solve": 0.007243833999382332,
+            "reconstruction_and_validation": 0.00082470900088083,
+            "recognition": 1.291991793550551e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.008324041002197191
+          },
+          {
+            "solve.groebner": 0.000450834006187506,
+            "input": 0.00023837499611545354,
+            "presolve_and_ordering": 6.4159976318478584e-06,
+            "solve": 0.007017833006102592,
+            "reconstruction_and_validation": 0.0008169170032488182,
+            "recognition": 1.167005393654108e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.008081583000603132
+          },
+          {
+            "solve.groebner": 0.0004457500035641715,
+            "input": 0.00023295900609809905,
+            "presolve_and_ordering": 6.874994141981006e-06,
+            "solve": 0.007063249999191612,
+            "reconstruction_and_validation": 0.0008067079907050356,
+            "recognition": 1.0420044418424368e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.00811174999398645
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.00046624999959021807,
+            "input": 0.00024125000345520675,
+            "presolve_and_ordering": 6.9590023485943675e-06,
+            "solve": 0.00740408300771378,
+            "reconstruction_and_validation": 0.0008133340015774593,
+            "recognition": 1.167005393654108e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.008467708001262508
+          },
+          {
+            "solve.groebner": 0.000450624997029081,
+            "input": 0.00023887499992270023,
+            "presolve_and_ordering": 6.08300615567714e-06,
+            "solve": 0.007375250002951361,
+            "reconstruction_and_validation": 0.0008167500054696575,
+            "recognition": 1.1250085663050413e-06,
+            "certification": 4.20113792642951e-08,
+            "total": 0.008438958000624552
+          },
+          {
+            "solve.groebner": 0.00044454199087340385,
+            "input": 0.00023633299861103296,
+            "presolve_and_ordering": 7.374997949227691e-06,
+            "solve": 0.007442290996550582,
+            "reconstruction_and_validation": 0.0008256659930339083,
+            "recognition": 1.0829971870407462e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.00851362501271069
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "rational_univariate"
+        ]
+      }
+    },
+    {
+      "name": "nonreduced-coupled",
+      "family": "nonreduced",
+      "equations": [
+        "(x - y)**2",
+        "y**2 - 1"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 4,
+      "geometric_count": 2,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": null,
+        "rur": 0.0135133329895325,
+        "auto": 0.014068750009755604
+      },
+      "failures": {
+        "action": [
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving",
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving",
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving"
+        ],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [],
+        "rur": [
+          {
+            "solve.groebner": 0.0005187499918974936,
+            "input": 0.0007376249996013939,
+            "presolve_and_ordering": 7.499998901039362e-06,
+            "solve": 0.01070524999522604,
+            "reconstruction_and_validation": 0.0018483749881852418,
+            "recognition": 1.124994014389813e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.013300750011694618
+          },
+          {
+            "solve.groebner": 0.0005156250117579475,
+            "input": 0.0007290000066859648,
+            "presolve_and_ordering": 7.042006473056972e-06,
+            "solve": 0.010929374999250285,
+            "reconstruction_and_validation": 0.0018220420024590567,
+            "recognition": 1.0840012691915035e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.013489500008290634
+          },
+          {
+            "solve.groebner": 0.0005124159943079576,
+            "input": 0.0007371660030912608,
+            "presolve_and_ordering": 7.4169947765767574e-06,
+            "solve": 0.011070499997003935,
+            "reconstruction_and_validation": 0.0018634169973665848,
+            "recognition": 1.167005393654108e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.013680625008419156
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0005111670034239069,
+            "input": 0.0007258749974425882,
+            "presolve_and_ordering": 7.167007424868643e-06,
+            "solve": 0.011004874992067926,
+            "reconstruction_and_validation": 0.0018547079962445423,
+            "recognition": 1.124994014389813e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.013594750009360723
+          },
+          {
+            "solve.groebner": 0.0005088339967187494,
+            "input": 0.0007291660003829747,
+            "presolve_and_ordering": 7.084003300406039e-06,
+            "solve": 0.01158245799888391,
+            "reconstruction_and_validation": 0.0018840839911717921,
+            "recognition": 1.1669908417388797e-06,
+            "certification": 4.100729711353779e-08,
+            "total": 0.014205125000444241
+          },
+          {
+            "solve.groebner": 0.0005457920051412657,
+            "input": 0.000799542001914233,
+            "presolve_and_ordering": 7.875001756474376e-06,
+            "solve": 0.011393875000067055,
+            "reconstruction_and_validation": 0.001839958000346087,
+            "recognition": 1.0830117389559746e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.014043208007933572
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "rational_univariate"
+        ]
+      }
+    },
+    {
+      "name": "nonreduced-hidden",
+      "family": "nonreduced",
+      "equations": [
+        "x**2 - y",
+        "y**2"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 4,
+      "geometric_count": 1,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": null,
+        "rur": 0.00802558301074896,
+        "auto": 0.009588166998582892
+      },
+      "failures": {
+        "action": [
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving",
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving",
+          "ActionMatrixError: nonreduced quotient requires RUR or triangular solving"
+        ],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [],
+        "rur": [
+          {
+            "solve.groebner": 0.0005826249980600551,
+            "input": 0.0004421669873408973,
+            "presolve_and_ordering": 1.1208991054445505e-05,
+            "solve": 0.006615125006646849,
+            "reconstruction_and_validation": 0.0009230840078089386,
+            "recognition": 1.167005393654108e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.007994375002454035
+          },
+          {
+            "solve.groebner": 0.0006095410062698647,
+            "input": 0.000502583003253676,
+            "presolve_and_ordering": 9.70800465438515e-06,
+            "solve": 0.006789958002627827,
+            "reconstruction_and_validation": 0.0009154580038739368,
+            "recognition": 1.167005393654108e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.00822033300937619
+          },
+          {
+            "solve.groebner": 0.0005001669924240559,
+            "input": 0.000395416995161213,
+            "presolve_and_ordering": 7.6669966802001e-06,
+            "solve": 0.006457583003793843,
+            "reconstruction_and_validation": 0.0008833750034682453,
+            "recognition": 1.167005393654108e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.007746166011202149
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0005452079931274056,
+            "input": 0.0004293329984648153,
+            "presolve_and_ordering": 8.70799703989178e-06,
+            "solve": 0.007885791987064295,
+            "reconstruction_and_validation": 0.0012277079949853942,
+            "recognition": 2.3330067051574588e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.00955537501431536
+          },
+          {
+            "solve.groebner": 0.000553625010070391,
+            "input": 0.00043095801083836704,
+            "presolve_and_ordering": 8.540999260731041e-06,
+            "solve": 0.00841120800760109,
+            "reconstruction_and_validation": 0.0009363330027554184,
+            "recognition": 1.2079981388524175e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.009789624993572943
+          },
+          {
+            "solve.groebner": 0.000735708003048785,
+            "input": 0.0009706670098239556,
+            "presolve_and_ordering": 1.1458003427833319e-05,
+            "solve": 0.00758016700274311,
+            "reconstruction_and_validation": 0.0008895840001059696,
+            "recognition": 1.2500095181167126e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.009454332990571856
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "rational_univariate"
+        ]
+      }
+    },
+    {
+      "name": "clustered",
+      "family": "clustered",
+      "equations": [
+        "(x - 1000000000001/1000000000000)*(x - 1)",
+        "-x + y"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 2,
+      "geometric_count": 2,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.011631500005023554,
+        "rur": 0.012043416005326435,
+        "auto": 0.009860082995146513
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.000592917000176385,
+            "input": 0.0008050000033108518,
+            "presolve_and_ordering": 9.166004019789398e-06,
+            "solve": 0.009233749995473772,
+            "reconstruction_and_validation": 0.0022658339876215905,
+            "recognition": 1.5410041669383645e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.01231687499966938
+          },
+          {
+            "solve.groebner": 0.0005932919884799048,
+            "input": 0.0008741250057937577,
+            "presolve_and_ordering": 8.167000487446785e-06,
+            "solve": 0.008578000008128583,
+            "reconstruction_and_validation": 0.0021445829916046932,
+            "recognition": 1.2090022210031748e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.011607250009546988
+          },
+          {
+            "solve.groebner": 0.0006147499952930957,
+            "input": 0.0008479169919155538,
+            "presolve_and_ordering": 7.916998583823442e-06,
+            "solve": 0.008517166003002785,
+            "reconstruction_and_validation": 0.002108333006617613,
+            "recognition": 1.1660013115033507e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.011483291003969498
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0006612909928662702,
+            "input": 0.0009090839885175228,
+            "presolve_and_ordering": 1.0000003385357559e-05,
+            "solve": 0.010143666993826628,
+            "reconstruction_and_validation": 0.0021029170020483434,
+            "recognition": 1.2079981388524175e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.013168332996428944
+          },
+          {
+            "solve.groebner": 0.0006648749986197799,
+            "input": 0.0008650000090710819,
+            "presolve_and_ordering": 8.916002116166055e-06,
+            "solve": 0.009046124992892146,
+            "reconstruction_and_validation": 0.0020957090018782765,
+            "recognition": 1.0829971870407462e-06,
+            "certification": 4.100729711353779e-08,
+            "total": 0.012018124994938262
+          },
+          {
+            "solve.groebner": 0.0005476670048665255,
+            "input": 0.0008079580002231523,
+            "presolve_and_ordering": 7.0829992182552814e-06,
+            "solve": 0.008589666002080776,
+            "reconstruction_and_validation": 0.0020667500066338107,
+            "recognition": 1.124994014389813e-06,
+            "certification": 8.298957254737616e-08,
+            "total": 0.011473749997094274
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0006095420103520155,
+            "input": 0.0008495829970343038,
+            "presolve_and_ordering": 8.624992915429175e-06,
+            "solve": 0.006855665997136384,
+            "reconstruction_and_validation": 0.002115583003615029,
+            "recognition": 1.291002263315022e-06,
+            "certification": 4.20113792642951e-08,
+            "total": 0.009831959003349766
+          },
+          {
+            "solve.groebner": 0.0005810000002384186,
+            "input": 0.0008185830083675683,
+            "presolve_and_ordering": 8.000002708286047e-06,
+            "solve": 0.00665191700682044,
+            "reconstruction_and_validation": 0.0022770419891458005,
+            "recognition": 1.624997821636498e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.009758333006175235
+          },
+          {
+            "solve.groebner": 0.0005552920047193766,
+            "input": 0.0008148750057443976,
+            "presolve_and_ordering": 7.20900425221771e-06,
+            "solve": 0.006993041999521665,
+            "reconstruction_and_validation": 0.0021089580113766715,
+            "recognition": 1.2499949662014842e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.009926583006745204
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "shape_position"
+        ]
+      }
+    },
+    {
+      "name": "large-coefficients",
+      "family": "coefficient_growth",
+      "equations": [
+        "x**3 - 1000000000000000000000000000000*y",
+        "y**2 - 2"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 6,
+      "geometric_count": 6,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.048901166999712586,
+        "rur": 0.04360316600650549,
+        "auto": 0.04567504199803807
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0005512919888133183,
+            "input": 0.0005332090076990426,
+            "presolve_and_ordering": 9.207986295223236e-06,
+            "solve": 0.03738599999633152,
+            "reconstruction_and_validation": 0.00771212499239482,
+            "recognition": 4.041008651256561e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.04564583300088998
+          },
+          {
+            "solve.groebner": 0.0005700829933630303,
+            "input": 0.000558999992790632,
+            "presolve_and_ordering": 8.709001122042537e-06,
+            "solve": 0.04093175000161864,
+            "reconstruction_and_validation": 0.007627958999364637,
+            "recognition": 2.7500063879415393e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.04913124999438878
+          },
+          {
+            "solve.groebner": 0.0006194159941514954,
+            "input": 0.0005903330020373687,
+            "presolve_and_ordering": 9.583003702573478e-06,
+            "solve": 0.04009137499087956,
+            "reconstruction_and_validation": 0.0081848340050783,
+            "recognition": 2.8750073397532105e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.04888074999325909
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0006342499982565641,
+            "input": 0.0006205420067999512,
+            "presolve_and_ordering": 1.0499992640689015e-05,
+            "solve": 0.038291958000627346,
+            "reconstruction_and_validation": 0.007228500006021932,
+            "recognition": 1.4170072972774506e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.04615458300395403
+          },
+          {
+            "solve.groebner": 0.000563582987524569,
+            "input": 0.0005134999955771491,
+            "presolve_and_ordering": 8.20901186671108e-06,
+            "solve": 0.034143750002840534,
+            "reconstruction_and_validation": 0.007112916995538399,
+            "recognition": 1.5419936971738935e-06,
+            "certification": 8.399365469813347e-08,
+            "total": 0.04178158400463872
+          },
+          {
+            "solve.groebner": 0.000596290992689319,
+            "input": 0.0005631670064758509,
+            "presolve_and_ordering": 8.625007467344403e-06,
+            "solve": 0.03577837500779424,
+            "reconstruction_and_validation": 0.007221834006486461,
+            "recognition": 1.8749997252598405e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.04357479099417105
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0005707499949494377,
+            "input": 0.0005225419881753623,
+            "presolve_and_ordering": 8.625007467344403e-06,
+            "solve": 0.0355830829939805,
+            "reconstruction_and_validation": 0.00785029199323617,
+            "recognition": 1.624997821636498e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.04396749999432359
+          },
+          {
+            "solve.groebner": 0.0005675410066032782,
+            "input": 0.0005153329984750599,
+            "presolve_and_ordering": 8.041999535635114e-06,
+            "solve": 0.039573749992996454,
+            "reconstruction_and_validation": 0.008524375007255003,
+            "recognition": 2.125001628883183e-06,
+            "certification": 1.2500095181167126e-07,
+            "total": 0.04862520800088532
+          },
+          {
+            "solve.groebner": 0.0005879579985048622,
+            "input": 0.0005550000059884042,
+            "presolve_and_ordering": 8.374991011805832e-06,
+            "solve": 0.03686504099459853,
+            "reconstruction_and_validation": 0.00821191600698512,
+            "recognition": 3.000008291564882e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.045645250007510185
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    },
+    {
+      "name": "rational-denominators",
+      "family": "coefficient_growth",
+      "equations": [
+        "x**3 - y/1000003",
+        "y**2 - 2/1000033"
+      ],
+      "variables": [
+        "x",
+        "y"
+      ],
+      "dimension": 6,
+      "geometric_count": 6,
+      "domain": "QQ",
+      "median_seconds": {
+        "action": 0.03902199999720324,
+        "rur": 0.04464158299379051,
+        "auto": 0.03960200000437908
+      },
+      "failures": {
+        "action": [],
+        "rur": [],
+        "auto": []
+      },
+      "phase_samples": {
+        "action": [
+          {
+            "solve.groebner": 0.0005122500006109476,
+            "input": 0.0005539999983739108,
+            "presolve_and_ordering": 1.0292002116329968e-05,
+            "solve": 0.028999666988966055,
+            "reconstruction_and_validation": 0.007522458006860688,
+            "recognition": 1.4169927453622222e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.037089167002704926
+          },
+          {
+            "solve.groebner": 0.0005855839990545064,
+            "input": 0.0006655000033788383,
+            "presolve_and_ordering": 9.249997674487531e-06,
+            "solve": 0.030583375002606772,
+            "reconstruction_and_validation": 0.007823207997716963,
+            "recognition": 3.416003892198205e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.039086250006221235
+          },
+          {
+            "solve.groebner": 0.0006364580040099099,
+            "input": 0.0006969579990254715,
+            "presolve_and_ordering": 1.012500433716923e-05,
+            "solve": 0.0302214169932995,
+            "reconstruction_and_validation": 0.008054625010117888,
+            "recognition": 4.165995051153004e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.03898879200278316
+          }
+        ],
+        "rur": [
+          {
+            "solve.groebner": 0.0005667499935952947,
+            "input": 0.0005965419986750931,
+            "presolve_and_ordering": 8.417002391070127e-06,
+            "solve": 0.036399124990566634,
+            "reconstruction_and_validation": 0.007375374989351258,
+            "recognition": 1.5410041669383645e-06,
+            "certification": 4.20113792642951e-08,
+            "total": 0.044382583000697196
+          },
+          {
+            "solve.groebner": 0.0005417080101324245,
+            "input": 0.0005823749961564317,
+            "presolve_and_ordering": 8.83299799170345e-06,
+            "solve": 0.03652012499514967,
+            "reconstruction_and_validation": 0.007497832993976772,
+            "recognition": 1.9169965526089072e-06,
+            "certification": 4.1996827349066734e-08,
+            "total": 0.04461224999977276
+          },
+          {
+            "solve.groebner": 0.0006318329978967085,
+            "input": 0.0006945419881958514,
+            "presolve_and_ordering": 9.958996088244021e-06,
+            "solve": 0.03816325000661891,
+            "reconstruction_and_validation": 0.0073783749976428226,
+            "recognition": 1.7090060282498598e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.046249416991486214
+          }
+        ],
+        "auto": [
+          {
+            "solve.groebner": 0.0005430000019259751,
+            "input": 0.0005838329961989075,
+            "presolve_and_ordering": 8.709001122042537e-06,
+            "solve": 0.030400167001062073,
+            "reconstruction_and_validation": 0.007460749999154359,
+            "recognition": 1.2920063454657793e-06,
+            "certification": 8.400820661336184e-08,
+            "total": 0.03845604199159425
+          },
+          {
+            "solve.groebner": 0.0005427080031950027,
+            "input": 0.0005985830066492781,
+            "presolve_and_ordering": 8.208007784560323e-06,
+            "solve": 0.03239291699719615,
+            "reconstruction_and_validation": 0.008230500010540709,
+            "recognition": 3.540990292094648e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.04123554199759383
+          },
+          {
+            "solve.groebner": 0.0005469999887282029,
+            "input": 0.0006274170009419322,
+            "presolve_and_ordering": 8.499991963617504e-06,
+            "solve": 0.03075520900893025,
+            "reconstruction_and_validation": 0.008171708002919331,
+            "recognition": 3.249995643272996e-06,
+            "certification": 8.300412446260452e-08,
+            "total": 0.039567750005517155
+          }
+        ]
+      },
+      "selected_methods": {
+        "action": [
+          "action_matrix"
+        ],
+        "rur": [
+          "rational_univariate"
+        ],
+        "auto": [
+          "action_matrix"
+        ]
+      }
+    }
+  ]
+}

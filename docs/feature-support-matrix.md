@@ -1,42 +1,37 @@
-# Feature and Support Matrix
+# Feature and support matrix
 
-This matrix is a compact statement of the current public support boundary. “Supported” means the package has an intentional public route for that input or operation; it does not imply that every mathematically valid instance is computationally easy.
+Support means there is an intentional public route; it does not promise that
+every instance is computationally tractable. All polynomial inputs require exact
+coefficients and a globally finite complex solution set unless explicitly noted.
 
-| Problem or feature | Status | Primary route | Important notes |
+| Feature | Status | Route | Boundary |
 |---|---|---|---|
-| Exact polynomial systems | Supported | `polysolve` | Requires a zero-dimensional complex solution set. |
-| Rational-function equations | Supported | `algsolve` | Denominator nonzero constraints are retained and saturated. |
-| Principal rational powers and radicals | Supported | `algsolve` | Polynomial candidates are filtered against original principal-branch semantics. |
-| Exact algebraic coefficients | Supported | Both solvers | Includes exact algebraic constants representable by SymPy. |
-| Complex roots | Supported | Both solvers | Core solving is over the complex numbers. |
-| Shape-position backend | Supported | `method="shape"` | Useful when a separating parameter gives a univariate eliminant. |
-| Action-matrix backend | Supported | `method="action"` | Dense quotient-algebra backend; bounded by `max_action_dimension`. |
-| Triangular fallback | Supported | `method="triangular"` | Important for some non-radical or non-simple action cases. |
-| Rational-univariate backend | Supported | `method="rur"` | Exact RUR construction for rational or exact algebraic coefficients using native number-field arithmetic, followed by verified numerical evaluation. |
-| Total-degree homotopy | Supported (explicit, limited scope) | `method="homotopy"` | Regular square polynomial systems whose Bézout paths all terminate at finite nonsingular endpoints; not part of `auto`. |
-| Automatic backend routing | Supported | `method="auto"` | Selects among implemented core backends. |
-| Rational univariate representation | Supported | `compute_rational_univariate_representation` | Exact zero-dimensional representation over `QQ` or an exact algebraic number field, with distinct-root extraction. |
-| Exact border basis | Supported | `compute_border_basis` | Gröbner-derived and Macaulay linear-algebra construction; not approximate AVI/SVD. |
-| Arbitrary-precision numerical extraction | Supported | Core numerical layer | Working precision may increase when conditioning requires it. |
-| Numerical residual verification | Supported | Core validation layer | Establishes numerical consistency of returned candidates, not completeness by itself. |
-| Default best-effort exact recognition | Supported | public solvers / `recognize_system_roots` | Solvers attempt certified recognition through `algrecognize` with degree bound 8 by default; `recognize=False` disables it, while `recognize_system_roots` exposes custom bounds. |
-| Multiplicity reporting | Partial | Core solvers | Distinct roots are returned; multiplicity is not a first-class result field. |
-| Singular/multiple-root solving | Partial | Core solvers | Some cases use fallback routes; not every singular system is equally robust. |
-| Positive-dimensional varieties | Not supported | — | There is no finite all-roots list. |
-| Inequalities / semialgebraic regions | Not supported | — | Equalities only. |
-| Generic transcendental equations | Not supported | — | `sin`, `exp`, `log`, etc. are outside the algebraic model. |
-| Predictor/corrector path tracking | Experimental | `track_path` | Intended for nonsingular paths; adaptive step size and precision are implemented. |
-| Closed-loop monodromy permutations | Experimental | `monodromy_permutation` | Requires supplied roots/seeds; ambiguous endpoint matches are left unmatched. |
-| Monodromy orbit discovery | Experimental | `discover_monodromy_orbit` | Accepts the same supported polynomial/algebraic expression subset as `algsolve`; algebraic tracking uses an augmented polynomial cover and filters returned roots against original branch/domain semantics. |
-| Exact-count monodromy stopping | Experimental | `expected_root_count` | Exact only when the supplied count is independently exact. |
-| Trace-test stopping | Experimental | `trace_test=True` | Numerical evidence, not an exact completeness certificate. |
-| Capture-recapture stopping | Experimental | `statistical_stop=True` | Statistical evidence, not an exact completeness certificate. |
-| Singular endpoint endgames | Not implemented | — | Future continuation work. |
-| Projective path tracking | Not implemented | — | Future continuation work. |
-| Automatic monodromy seed generation | Not implemented | — | Core solver and experimental monodromy remain separate subsystems. |
-| `polysolve(method="monodromy")` | Not implemented | — | Monodromy is not currently an alternate core backend. |
+| Exact polynomial systems | Supported | `polysolve` | Rational or exact algebraic coefficients |
+| Rational functions, principal rational powers, nested radicals | Supported | `algsolve` | Original branches and retained pole constraints are checked |
+| Complex numerical roots | Supported | Both solvers | Distinct metadata records; optional repeated views; canonical order with explicit evidence |
+| Automatic portfolio | Supported | `method="auto"` | Guarded presolve, grevlex, shared quotient, calibrated action/RUR and exact fallbacks |
+| Shape / triangular extraction | Supported | `method="shape"`, `method="triangular"` | Lex conversion on demand; shape can be refused |
+| Action matrices | Supported | `method="action"` | Bounded dimension and a usable simple separator eigensystem |
+| Numerical RUR | Supported | `method="rur"` | Exact representation retained; rational/algebraic fields |
+| Exact RUR and algebraic points | Supported | `compute_rational_univariate_representation`, `solve_rur_representation` | Globally finite ideals |
+| Quotient tools and bounded cache | Supported | `QuotientAlgebra` | Exact normal forms, actions, traces and counts |
+| Border bases | Supported | `compute_border_basis`, `compute_border_basis_linear` | Exact rational coefficients; no noisy AVI/SVD |
+| Arb extraction and numerical validation | Supported | Core numerical layer | Residuals alone do not prove completeness |
+| Best-effort recognition | Supported, default | Solvers / `recognize_system_roots` | Recognition does not find missing roots or certify paths |
+| Global multiplicity/radical metadata | Supported | Polynomial result fields | Not generally transferred through nontrivial algebraic projections |
+| Individual multiplicity and singular-root proof | Supported | Isolated-root certificates | Exact finite ideal; exact target point |
+| Automatic adaptive boxes | Supported, opt-in | `certify="auto"` / `"required"` | Rational coefficients; explicit dimension/refinement/attempt limits |
+| Exact local deflation | Supported, bounded | `deflate_isolated_root` | Local regularization; no full primary decomposition |
+| Ordinary total-degree homotopy | Explicit numerical route | `method="homotopy"` | Square systems, finite regular required endpoints; not selected by auto |
+| Bounded certified endpoint recovery | Opt-in | `homotopy_recovery=True` | Rational finite square systems, sequential; proof is finite-root accounting |
+| Numerical Cauchy endgame | Experimental numerical route | `cauchy_endgame` | Cycle/level budgets; optional rational endpoint proof |
+| Automatic projective charts | Experimental numerical route | `track_projective_path` | No interval path tubes or certified infinity |
+| Seeded monodromy | Experimental | `discover_monodromy_orbit` | Supplied seeds; no `polysolve(method="monodromy")` |
+| Trace / capture-recapture stopping | Numerical / statistical | Monodromy controls | Not exact completeness evidence |
+| Certified numerical paths / projective completeness | Unsupported | — | Endpoint proofs do not supply these |
+| Positive/mixed-dimensional varieties | Unsupported | — | No finite all-roots representation |
+| Noisy coefficients, inequalities, generic transcendental equations | Unsupported | — | Outside the exact equality problem contract |
+| Full local dual bases / primary decomposition | Unsupported | — | Global and individual multiplicities do not provide full local structure |
 
-For the underlying mathematical conditions, see [Supported Problems](supported-problems.md), [Guarantees and Result Semantics](guarantees-and-result-semantics.md), and [Limitations](limitations.md).
-
-
-For the explicit total-degree backend, see [Total-Degree Homotopy Continuation](homotopy-continuation.md).
+See [Reading Results](reading-results.md), [Certification Workflow](certification-workflow.md),
+[Recovery Workflow](recovery-workflow.md) and [Limitations](limitations.md).

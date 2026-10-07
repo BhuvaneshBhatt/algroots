@@ -4,12 +4,8 @@ import mpmath as mp
 import pytest
 import sympy as sp
 
-from algroots import (
-    PathTrackerOptions,
-    closed_additive_loop,
-    monodromy_permutation,
-    track_loop,
-)
+from algroots.continuation import PathTrackerOptions
+from algroots.monodromy import closed_additive_loop, monodromy_permutation, track_loop
 
 x = sp.symbols("x")
 OPTIONS = PathTrackerOptions(

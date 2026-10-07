@@ -63,7 +63,7 @@ This distinction is important:
 - **verification** asks whether each returned point satisfies the equations;
 - **completeness** asks whether all roots that should be represented have been recovered.
 
-A future explicit completeness-status object could expose more of this reasoning, especially for multiplicities and fallback paths. Users should not invent a `complete` attribute or infer completeness solely from a small `max_relative_residual`.
+`result.completeness` now records status, evidence basis, expected distinct count, returned count, quotient dimension and notes. Exact-backend numerical coordinates receive `conditional` status; inconsistent ideals receive `certified` empty-set evidence. Ordinary homotopy accounting receives `numerical` status. Opt-in bounded recovery receives `certified` finite-root accounting only when distinct exact endpoint proofs match the exact quotient count. Coordinate recognition is separate and does not automatically upgrade completeness. `total_multiplicity`, `geometric_solution_count`, `is_radical` and `has_multiple_roots` describe exact finite polynomial quotients. For algebraic branch/pole projections these fields remain unknown unless the projection is the polynomial identity; the polynomial cover dimension remains available.
 
 See [Completeness versus Verification](completeness-versus-verification.md).
 
@@ -143,11 +143,13 @@ These are intentionally separate layers:
 | Equation check | numerical residual | exact substitution |
 | Branch/domain check | original algebraic expression evaluated numerically | original equations checked again after reconstruction |
 | Completeness structure | exact Gröbner/quotient information where applicable | does not discover missing numerical roots |
-| Multiplicity | not first-class | not currently reported |
+| Multiplicity | exact per-root counts where established, explicit unknowns otherwise; global quotient metadata | exact individual multiplicity through isolated-root certificates |
 
 ## Root ordering
 
-Root ordering is not a stable mathematical API. Do not attach semantic meaning to the order of tuples in `result.roots`. Compare root sets by numerical matching.
+Roots use lexicographic coordinate order in the original supplied variable order, comparing real then imaginary parts. `result.ordering.status == "certified"` establishes that order exactly; numerical fallback uses arbitrary-precision coordinates and can change near ties. Use `root_order="required"` to require exact ordering or receive an explicit refusal. Metadata follows the same permutation.
+
+`result.roots` always stores distinct points. `root_mode="with_multiplicity"` selects repeated iteration and `.output_roots`, bounded by `max_returned_roots`. Per-root counts require exact evidence; unknown counts cause repeated output to refuse. See [multiplicity semantics](multiplicity-and-singular-roots.md).
 
 ## What the result types mean
 
@@ -158,3 +160,10 @@ Root ordering is not a stable mathematical API. Do not attach semantic meaning t
 `RecognizedSystemRoot` describes one numerical root after optional exact coordinate reconstruction and joint certification.
 
 For singular and repeated roots, read [Multiplicity and Singular Roots](multiplicity-and-singular-roots.md).
+
+
+Exact singular-root certificates prove the target's existence, isolation, rank
+and individual multiplicity. They do not establish numerical path tracking or
+all-path completeness. See [Singular Certification and Charts](singular-certification-and-charts.md).
+
+For attribute-by-attribute usage and optional values, see [Reading Results](reading-results.md).

@@ -5,7 +5,7 @@ import pytest
 import sympy as sp
 
 import algroots.continuation as continuation
-from algroots import PathTrackerOptions, SympyHomotopy, track_path
+from algroots.continuation import PathTrackerOptions, SympyHomotopy, track_path
 
 x, y, t = sp.symbols("x y t")
 

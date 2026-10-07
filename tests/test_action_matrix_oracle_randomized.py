@@ -2,25 +2,27 @@ import random
 
 import sympy as sp
 
+from algroots.quotient import QuotientAlgebra, monomial_from_exponent
 from algroots.solver import (
-    _coordinate_normal_forms,
     _groebner_basis,
-    _monomial_expr,
-    _normal_form_coeffs,
     _normalize_equations,
-    _separator_matrix_coeffs,
-    _standard_monomials,
 )
 
 x, y = sp.symbols("x y")
 
 
+def _reference_coordinates(basis, expression, variables, monomials):
+    """Independent Groebner reduction oracle for quotient coordinates."""
+    remainder = basis.reduce(expression)[1]
+    polynomial = sp.Poly(remainder, *variables, extension=True)
+    return tuple(polynomial.coeff_monomial(exponent) for exponent in monomials)
+
+
 def _reference_multiplication_matrix(basis, variables, monomials, variable):
-    basis_index = {exponent: index for index, exponent in enumerate(monomials)}
     columns = []
     for exponent in monomials:
-        product = variable * _monomial_expr(exponent, variables)
-        columns.append(_normal_form_coeffs(basis, product, variables, basis_index))
+        product = variable * monomial_from_exponent(variables, exponent)
+        columns.append(_reference_coordinates(basis, product, variables, monomials))
     return sp.Matrix.hstack(*(sp.Matrix(column) for column in columns))
 
 
@@ -34,19 +36,19 @@ def test_separator_and_coordinate_normal_forms_match_reference_matrices_randomiz
         variables = (x, y)
         normalized = _normalize_equations(equations, variables)
         basis = _groebner_basis(normalized, variables)
-        monomials = _standard_monomials(basis, variables, 32)
+        quotient = QuotientAlgebra.from_groebner_basis(basis, variables, max_dimension=32)
+        monomials = quotient.standard_exponents
 
         mx = _reference_multiplication_matrix(basis, variables, monomials, x)
         my = _reference_multiplication_matrix(basis, variables, monomials, y)
         coeffs = (2, 3)
-        columns = _separator_matrix_coeffs(basis, variables, monomials, coeffs)
+        columns = quotient.separator_matrix_columns(coeffs)
         ml = sp.Matrix.hstack(*(sp.Matrix(column) for column in columns))
         assert ml == 2 * mx + 3 * my
 
-        forms = _coordinate_normal_forms(basis, variables, monomials)
-        basis_index = {exponent: index for index, exponent in enumerate(monomials)}
+        forms = quotient.coordinate_normal_forms
         for form, variable in zip(forms, variables, strict=True):
-            expected = _normal_form_coeffs(basis, variable, variables, basis_index)
+            expected = _reference_coordinates(basis, variable, variables, monomials)
             assert form == expected
 
 
@@ -62,16 +64,16 @@ def test_randomized_coordinate_forms_remain_exact_under_affine_coupling():
         variables = (x, y)
         normalized = _normalize_equations(equations, variables)
         basis = _groebner_basis(normalized, variables)
-        monomials = _standard_monomials(basis, variables, 32)
-        forms = _coordinate_normal_forms(basis, variables, monomials)
-        basis_index = {exponent: index for index, exponent in enumerate(monomials)}
+        quotient = QuotientAlgebra.from_groebner_basis(basis, variables, max_dimension=32)
+        monomials = quotient.standard_exponents
+        forms = quotient.coordinate_normal_forms
 
         for form, variable in zip(forms, variables, strict=True):
-            expected = _normal_form_coeffs(basis, variable, variables, basis_index)
+            expected = _reference_coordinates(basis, variable, variables, monomials)
             assert form == expected
 
         coeffs = (rng.randint(1, 4), rng.randint(1, 4))
-        columns = _separator_matrix_coeffs(basis, variables, monomials, coeffs)
+        columns = quotient.separator_matrix_columns(coeffs)
         matrix = sp.Matrix.hstack(*(sp.Matrix(column) for column in columns))
         reference = sum(
             (

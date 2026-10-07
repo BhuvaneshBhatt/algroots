@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import sympy as sp
 
-from algroots import BorderBasisError, compute_border_basis, compute_border_basis_linear
+from algroots.border_basis import compute_border_basis, compute_border_basis_linear
+from algroots.errors import BorderBasisError
 
 
 def test_border_basis_for_two_reduced_points():

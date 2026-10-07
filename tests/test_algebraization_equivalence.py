@@ -1,7 +1,8 @@
 import pytest
 import sympy as sp
 
-from algroots import algebraize_system, algsolve, polysolve
+from algroots import algsolve, polysolve
+from algroots.algebraization import algebraize_system
 
 x, y = sp.symbols("x y")
 

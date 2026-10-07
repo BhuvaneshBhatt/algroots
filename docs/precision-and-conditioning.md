@@ -116,7 +116,13 @@ The exact Gröbner basis, staircase, and quotient dimension do not need to be re
 
 `verification_digits` controls the residual-verification target. If omitted, the solver chooses its normal default relative to `digits`.
 
-`max_precision_digits` limits adaptive retries. It must be `None` or at least `digits`.
+`max_precision_digits` limits adaptive Arb working precision, including its internal univariate isolation ceiling. Algebraic coefficient conversion uses additional SymPy evaluation guard digits; the Arb ceiling does not limit that symbolic conversion. Each Arb call receives the current working precision as its bit ceiling; retries may increase it up to the requested decimal limit. If the ceiling cannot isolate the roots, the solver raises an error instead of exceeding it. The option must be `None` or a Python integer at least `digits`.
+
+Univariate extraction translates the polynomial exactly to its root centroid before converting coefficients to Arb balls, then reconstructs the original coordinates. This reduces cancellation for clusters around a nonzero center without changing the roots or increasing the precision ceiling.
+
+Numerical conversions preserve nonzero real and imaginary components regardless of their absolute size. Root comparison uses coordinate-relative distances, without an absolute unit-scale floor. This preserves small roots near zero while still recognizing repeated numerical candidates. Numerical midpoints of real roots may retain small imaginary noise; use recognized exact coordinates or exact certification to determine realness. Numerical rounding can still prevent resolving extremely close roots relative to their coordinate magnitudes; a root-count mismatch raises an error rather than claiming completeness. Increase `digits` in that case.
+
+`polysolve`, quotient construction and numerical extraction integer budgets reject Boolean values, floating-point values (including NaN and infinity), and values outside their documented range. `certify` accepts only Boolean values or the strings `"auto"` and `"required"`.
 
 ## Residuals are scale aware
 

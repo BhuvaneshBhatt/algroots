@@ -3,7 +3,8 @@ from types import SimpleNamespace
 import pytest
 import sympy as sp
 
-from algroots import ExactCertificationError, PolynomialSystemRoots
+from algroots import PolynomialSystemRoots
+from algroots.errors import ExactCertificationError
 from algroots.recognition import _recognize_exact_roots
 from algroots.solver import polysolve
 

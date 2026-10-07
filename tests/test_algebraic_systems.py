@@ -1,12 +1,8 @@
 import pytest
 import sympy as sp
 
-from algroots import (
-    AlgebraicSystemRoots,
-    PolynomialSystemInputError,
-    algebraize_system,
-    algsolve,
-)
+from algroots import AlgebraicSystemRoots, PolynomialSystemInputError, algsolve
+from algroots.algebraization import algebraize_system
 
 
 def _near(value, expected, digits=30):

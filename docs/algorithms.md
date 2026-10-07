@@ -15,7 +15,7 @@ zero-dimensionality + quotient structure (`QuotientAlgebra`)
         ↓
 auto: cheap exposed shape → bounded action → shared-quotient RUR
         ↓ if exact RUR declines
-FGLM to lex → triangular fallback
+FGLM to lexicographic → triangular fallback
 
 explicit shape/triangular: FGLM to lex on demand
 
@@ -72,7 +72,7 @@ After normalizing the constant basis component to one, each coordinate is recove
 
 This backend belongs to the classical **multiplication-matrix / action-matrix / endomorphism-matrix eigenmethod** family. Multiplication by a polynomial in the finite-dimensional quotient algebra defines a linear endomorphism, and the matrix representing that map is variously called a multiplication matrix, action matrix, endomorphism matrix, or (in related literature) a Stetter matrix. `algroots` uses the modern term *action matrix* in its public API, while constructing the endomorphism associated with a separating linear form rather than a separate coordinate matrix for every variable.
 
-Useful references for this viewpoint include:
+Useful references:
 
 - W. Auzinger and H. Stetter, “An elimination algorithm for the computation of all zeros of a system of multivariate polynomial equations,” *International Series of Numerical Mathematics* **86** (1988), 11–31.
 - H. M. Möller, “Systems of algebraic equations solved by means of endomorphisms,” in *Applied Algebra, Algebraic Algorithms, and Error-Correcting Codes*, Lecture Notes in Computer Science **673** (1993), Springer-Verlag, 43–56.
@@ -120,7 +120,7 @@ A standard reference is Fabrice Rouillier, “Solving Zero-Dimensional Systems T
 
 The exact border-basis implementation represents the same finite quotient algebra by an order ideal and rewrite rules for its border monomials. It provides exact multiplication matrices and verifies their pairwise commutation. The current implementation is symbolic/exact; it is not an approximate AVI/SVD border-basis algorithm for noisy coefficients.
 
-Border bases are related to the action-matrix roadmap because they provide another basis and reduction mechanism for the quotient algebra from which multiplication operators can be constructed. See [Exact Border Bases](exact-border-bases.md) for the public objects and exact commutation diagnostics.
+Border bases are related to the action-matrix roadmap because they provide another basis and reduction mechanism for the quotient algebra from which multiplication operators can be constructed. See [Exact Border Bases](exact-border-bases.md) for the public objects and exact commutation diagnostisc.
 
 
 ### Rational-univariate root backend
@@ -148,8 +148,4 @@ The ordinary homotopy backend does not compute a Gröbner basis before path trac
 `method="auto"` remains `shape → action → triangular`; total-degree homotopy must be requested explicitly. See [Total-Degree Homotopy Continuation](homotopy-continuation.md) for path counts, gamma retries, regularity diagnostics, and current limitations.
 
 
-The current automatic cost policy retains small action solving and can favor RUR
-for bounded repeated-factor hints. Such hints do not prove nonradicality.
-Cancellation-aware presolve probes exact sparse substitutions under final and
-intermediate resource bounds. Quotient operations use standard-basis shortcuts,
-eight-action streamed reuse and rational exact-domain rank. See [Performance Model](performance-model.md).
+The current automatic cost policy retains small action solving and can favor RUR for bounded repeated-factor hints. Such hints do not prove nonradicality. Cancellation-aware presolve probes exact sparse substitutions under final and intermediate resource bounds. Quotient operations use standard-basis shortcuts, eight-action streamed reuse and rational exact-domain rank. See [Performance Model](performance-model.md).

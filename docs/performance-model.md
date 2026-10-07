@@ -147,42 +147,6 @@ polynomial; noncyclic closure falls back exactly, preserving nonreduced multipli
 The dense numerical action eigensolver and potentially expensive trace-pairing
 rank calculation remain limits. No general speedup claim is made for the thresholds.
 
-## Attached `gb.txt` implementation review
-
-The supplied C/Mathematica-style implementation contains sugar-degree pair selection
-with term-order tie breaking (around lines 3832–3844), Buchberger triple-criterion
-pair deferral (around lines 195–197), optional F4 machinery, modular trace basis
-initialization, and consistent term-order updates when variables are rearranged
-(around lines 5564–5574). These support separating computation order from extraction
-order and retaining explicit variable-order provenance in this release.
-
-Sugar scheduling and critical-pair criteria belong inside the Gröbner engine.
-Algroots continues to delegate that engine to SymPy; this release does not claim
-new F4, modular reconstruction, trace learning, or a port of those internals.
-A future modular backend must verify reconstructed exact generators and ideal
-equality before treating a learned trace or modular rank as evidence. The thresholds
-in the supplied code are implementation-specific and were not copied.
-
-As of 0.5.0, trace vectors/pairings stream one basis operator at a time; their normal path does not populate the cubic basis-operator cache. Exact rank still requires the quadratic trace pairing. RUR shares the bounded Arb extractor with shape solving. Automatic certificate attempts share one original-system quotient and exact parameter isolation across all numerical endpoints.
-
-In 0.6.0, bounded selective normal-form caching has a default capacity of 128
-entries and rejects large expression trees and oversized rational coefficients.
-Observed phase timings and structural cost estimates are available through
-`cost_diagnostics`; these are measurements and hints, not proof evidence.
-`benchmarks/portfolio_calibration.py` supplies a small reproducible calibration
-corpus. Ordering uses graph fill only on a lower predicted graph cost; measured
-wall-time improvements are not universal. Repeated univariate relations favour
-RUR before action matrices, while exact validation and fallbacks remain in place.
-
-
-In 0.7.0, `benchmarks/expanded_calibration.py` compares explicit action, RUR and
-automatic solving over 17 exact systems from nine families. It counterbalances
-three repetitions, retains backend failures, checks geometric counts against an
-exact quotient, and matches successful points against explicit RUR solutions.
-The measured corpus supports keeping the small-system action preference and
-avoiding action attempts for bounded repeated-factor hints. It does not establish
-universal thresholds or performance guarantees.
-
 `benchmarks/quotient_profile.py` separates quotient construction, coordinate
 actions, trace vectors, pairings and rank, and includes a cumulative-time profile.
 Repeated monomial matrix powers dominated the measured multivariate cases.

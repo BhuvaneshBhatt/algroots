@@ -16,7 +16,7 @@ from .solver import CompletenessEvidence, PolynomialSystemRoots, polysolve
 try:
     __version__ = _version("algroots")
 except _PackageNotFoundError:
-    __version__ = "0+unknown"
+    __version__ = "unknown"
 
 __all__ = [
     "polysolve",

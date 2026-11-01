@@ -162,8 +162,6 @@ Roots use lexicographic coordinate order in the original supplied variable order
 For singular and repeated roots, read [Multiplicity and Singular Roots](multiplicity-and-singular-roots.md).
 
 
-Exact singular-root certificates prove the target's existence, isolation, rank
-and individual multiplicity. They do not establish numerical path tracking or
-all-path completeness. See [Singular Certification and Charts](singular-certification-and-charts.md).
+Exact singular-root certificates prove the target's existence, isolation, rank and individual multiplicity. They do not establish numerical path tracking or all-path completeness. See [Singular Certification and Charts](singular-certification-and-charts.md).
 
 For attribute-by-attribute usage and optional values, see [Reading Results](reading-results.md).

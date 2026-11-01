@@ -36,9 +36,7 @@ def test_acb_conversion_preserves_small_imaginary_component():
 
 
 @pytest.mark.parametrize("ceiling", [35, 50, 75])
-def test_arb_isolation_never_receives_an_internal_ceiling_above_current_budget(
-    monkeypatch, ceiling
-):
+def test_arb_precision_ceiling(monkeypatch, ceiling):
     import flint
 
     calls = []

@@ -30,7 +30,7 @@ def test_quotient_algebra_normalizes_exact_algebraic_coefficient_fields() -> Non
     assert quotient.normal_form(x + y) == sp.sqrt(2) + sp.sqrt(3)
 
 
-def test_quotient_algebra_normalizes_gaussian_coefficients_to_algebraic_field() -> None:
+def test_gaussian_field_normalization() -> None:
     x = sp.Symbol("x")
     quotient = QuotientAlgebra.from_polynomials((x**2 - (1 + sp.I),), (x,))
 
@@ -95,7 +95,7 @@ def test_quotient_from_lex_groebner_basis_respects_actual_basis_order() -> None:
     assert quotient.normal_form(z - x * y) == 0
 
 
-def test_separator_matrix_direct_path_uses_one_reduction_per_basis_monomial(monkeypatch) -> None:
+def test_separator_matrix_reductions(monkeypatch) -> None:
     x, y, z = sp.symbols("x y z")
     quotient = QuotientAlgebra.from_polynomials((x**2 - 2, y**2 - 3, z**2 - 5), (x, y, z))
     original = QuotientAlgebra.coordinate_vector

@@ -65,9 +65,9 @@ This is why quotient dimension alone does not tell us the number of distinct roo
 
 The action backend forms multiplication by a separating linear form $L$ in the quotient algebra. For a radical ideal with distinct points, a generic separator produces a simple eigensystem whose eigenvectors encode evaluation at those points.
 
-For a non-radical ideal, multiplication matrices can contain repeated eigenvalues or nontrivial Jordan structure. The current action path deliberately expects an isolated simple eigensystem. It does not pretend that a defective or repeated eigensystem is a collection of well-separated simple roots.
+For a non-radical ideal, multiplication matrices can contain repeated eigenvalues or nontrivial Jordan structure. The current action path expects an isolated simple eigensystem. It does not pretend that a defective or repeated eigensystem is a collection of well-separated simple roots.
 
-The automatic solver can use RUR for nonreduced quotients, then triangular solving if needed. `total_multiplicity`, `geometric_solution_count`, `is_radical` and `has_multiple_roots` expose global quotient metadata. Exact per-root multiplicity is now reported by `certify_isolated_root` and `certify_root_box`. Full local dual bases and primary decomposition remain unsupported.
+The automatic solver can use RUR for nonreduced quotients, then triangular solving if needed. `total_multiplicity`, `geometric_solution_count`, `is_radical` and `has_multiple_roots` expose global quotient metadata. Exact per-root multiplicity is now reported by `certify_isolated_root` and `certify_root_box`. Full local dual bases and general positive-dimensional primary decomposition are not provided. The separate finite-algebra API computes primary factors of finite quotient algebras; see [Finite Algebras](finite-algebras.md).
 
 ## Singular roots
 
@@ -124,4 +124,4 @@ At present:
 - `root_mode="with_multiplicity"` expands the public view using established local counts, never the global dimension or path count;
 - failure to obtain a simple action eigensystem can trigger a separator retry or backend fallback.
 
-Exact per-root multiplicity is available through `multiplicities` and its evidence, reusing certificates or exact radical structure. `multiplicity="required"` refuses unknown counts, and repeated views enforce a size limit. Principal-branch projection never inherits multiplicities from its polynomial cover. Full local dual bases and primary decomposition remain unsupported. See [Reading Results](reading-results.md) and [multiplicity example](../examples/07_multiplicity_and_boxes.py).
+Exact per-root multiplicity is available through `multiplicities` and its evidence, reusing certificates or exact radical structure. `multiplicity="required"` refuses unknown counts, and repeated views enforce a size limit. Principal-branch projection never inherits multiplicities from its polynomial cover. Full local dual bases and general positive-dimensional primary decomposition are not provided. The separate finite-algebra API computes primary factors of finite quotient algebras; see [Finite Algebras](finite-algebras.md). See [Reading Results](reading-results.md) and [multiplicity example](../examples/07_multiplicity_and_boxes.py).

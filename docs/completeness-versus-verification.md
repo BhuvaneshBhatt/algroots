@@ -126,8 +126,4 @@ Do not treat any one of those as a synonym for all the others.
 See [Guarantees and Result Semantics](guarantees-and-result-semantics.md).
 
 
-Requested `root_certifications` prove individual endpoints and multiplicities;
-they do not automatically promote global evidence. Bounded homotopy recovery
-certifies finite-root accounting when distinct exact endpoint proofs equal the
-exact geometric count. Numerical paths and infinity remain outside that proof.
-See [Reading Results](reading-results.md).
+Requested `root_certifications` prove individual endpoints and multiplicities; they do not automatically promote global evidence. Bounded homotopy recovery certifies finite-root accounting when distinct exact endpoint proofs equal the exact geometric count. Numerical paths and infinity remain outside that proof. See [Reading Results](reading-results.md).

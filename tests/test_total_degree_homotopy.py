@@ -196,7 +196,7 @@ def test_total_degree_start_points_can_be_iterated_lazily():
     assert len(tuple(iterator)) == spec.path_count - 1
 
 
-def test_algebraic_homotopy_exposes_tracking_controls_and_projection_counts():
+def test_algebraic_homotopy_controls():
     result = algsolve(
         (sp.sqrt(x) - (x - 2),),
         (x,),
@@ -267,7 +267,7 @@ def test_total_degree_homotopy_refuses_system_with_affine_path_at_infinity():
         )
 
 
-def test_total_degree_homotopy_parallel_metadata_matches_serial_on_eight_paths():
+def test_parallel_homotopy_metadata():
     equations = (x**4 - 1, y**2 - 1)
     serial = polysolve(
         equations,

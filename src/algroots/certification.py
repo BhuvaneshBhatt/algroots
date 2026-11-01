@@ -40,6 +40,12 @@ class RationalComplexBox:
 
 @dataclass(frozen=True)
 class IsolatedRootCertificate:
+    """Exact proof that a specified point is isolated with the stated multiplicity.
+
+    Verification replays the original polynomial equations and local ideal
+    structure. Numerical residuals alone do not establish this result.
+    """
+
     equations: tuple
     variables: tuple
     point: tuple
@@ -361,6 +367,13 @@ class RootCertificationAttempt:
 def certify_numerical_roots(
     result, *, max_quotient_dimension=128, max_refinements=128, required=False, max_box_attempts=16
 ):
+    """Attempt exact proof certificates for every numerical root in a solver result.
+
+    The batch reuses the original finite quotient and isolation data. If
+    ``required`` is true, failure to certify any endpoint raises; otherwise
+    the result records an explicit failed or unavailable attempt. Proofs
+    apply to endpoints, not numerical continuation paths.
+    """
     return _certify_numerical_roots(
         result,
         max_quotient_dimension=max_quotient_dimension,

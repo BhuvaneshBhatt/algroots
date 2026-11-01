@@ -14,6 +14,11 @@ from .continuation import PathTrackerOptions, PathTrackingError, SympyHomotopy, 
 
 @dataclass(frozen=True)
 class EndgameResult:
+    """Numerical endgame outcome with optional independently certified endpoint.
+
+    Path convergence and local endpoint certification are separate evidence.
+    """
+
     endpoint: tuple
     converged: bool
     cycle_number: int | None

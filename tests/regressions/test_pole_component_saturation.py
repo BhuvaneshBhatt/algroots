@@ -5,7 +5,7 @@ from algroots import algsolve
 x, y = sp.symbols("x y")
 
 
-def test_pole_component_saturation_removes_spurious_positive_dimensional_component():
+def test_pole_saturation():
     denominator = sp.Mul(x, y - 1, evaluate=False)
     rational = sp.Mul(
         x * (y - 2),

@@ -1,21 +1,10 @@
 # Reading results
 
-`polysolve` returns `PolynomialSystemRoots`. `algsolve` returns
-`AlgebraicSystemRoots`, which also describes the augmented polynomial system,
-branch filtering and nonzero constraints. Use attributes rather than parsing
-printed representations.
+`polysolve` returns `PolynomialSystemRoots`. `algsolve` returns `AlgebraicSystemRoots`, which also describes the augmented polynomial system, branch filtering and nonzero constraints. Use attributes rather than parsing printed representations.
 
 ## Coordinates and counts
 
-`roots` contains distinct numerical tuples in the order of `variables`. The root
-list uses coordinate lexicographic ordering, with `ordering` distinguishing exact
-ordering from numerical fallback. `quotient_dimension` and `total_multiplicity` count
-algebraic multiplicity; `geometric_solution_count` counts distinct points.
-`is_radical` and `has_multiple_roots` describe the exact finite polynomial ideal.
-`multiplicities` and `multiplicity_evidence` report aligned individual counts;
-unknown counts remain `None`. The default view is distinct points. With
-`root_mode="with_multiplicity"`, iteration and `output_roots` repeat established
-points while the underlying `roots` and metadata remain distinct.
+`roots` contains distinct numerical tuples in the order of `variables`. The root list uses coordinate lexicographic ordering, with `ordering` distinguishing exact ordering from numerical fallback. `quotient_dimension` and `total_multiplicity` count algebraic multiplicity; `geometric_solution_count` counts distinct points. `is_radical` and `has_multiple_roots` describe the exact finite polynomial ideal. `multiplicities` and `multiplicity_evidence` report aligned individual counts; unknown counts remain `None`. The default view is distinct points. With `root_mode="with_multiplicity"`, iteration and `output_roots` repeat established points while the underlying `roots` and metadata remain distinct.
 
 <!-- algroots: execute -->
 ```python
@@ -32,14 +21,11 @@ multiplicities = {
 assert multiplicities == {(sp.S.Zero,): 2, (sp.S.One,): 1}
 ```
 
-For nontrivial algebraic branch/pole projections, polynomial-cover metadata does
-not automatically describe the retained original roots. Unknown original-system
-multiplicity/radical fields remain `None`; do not substitute the cover dimension.
+For nontrivial algebraic branch/pole projections, polynomial-cover metadata does not automatically describe the retained original roots. Unknown original-system multiplicity/radical fields remain `None`; do not substitute the cover dimension.
 
 ## Completeness evidence
 
-`result.completeness` contains `status`, `basis`, `expected_count`,
-`distinct_roots`, `quotient_dimension` and `notes`.
+`result.completeness` contains `status`, `basis`, `expected_count`, `distinct_roots`, `quotient_dimension` and `notes`.
 
 | Status | Interpretation |
 |---|---|
@@ -48,9 +34,7 @@ multiplicity/radical fields remain `None`; do not substitute the cover dimension
 | `unknown` | No applicable enumeration evidence has been established |
 | `certified` | Exact empty-ideal evidence, or complete finite-root accounting from exact endpoint proofs in bounded recovery |
 
-Read `basis` and `notes` as well as `status`. There is no public `complete` Boolean.
-Per-root recognition and box certificates are separate from global evidence and
-do not automatically change that status. See [Completeness versus Verification](completeness-versus-verification.md).
+Read `basis` and `notes` as well as `status`. There is no public `complete` Boolean. Per-root recognition and box certificates are separate from global evidence and do not automatically change that status. See [Completeness versus Verification](completeness-versus-verification.md).
 
 ## Recognition, proofs and diagnostics
 
@@ -63,9 +47,6 @@ do not automatically change that status. See [Completeness versus Verification](
 | `recovery_records` | Numerical path stages, precision, retry and proof outcomes |
 | `cost_diagnostics` | Observed phase/cache/quotient costs and structural hints, never evidence of correctness |
 
-Optional collections can be `None` when the operation was not requested. Nested
-phase timings overlap: `solve.groebner` is part of `solve`; trace-pairing time can
-include trace-vector work. Do not sum overlapping entries as elapsed total time.
+Optional collections can be `None` when the operation was not requested. Nested phase timings overlap: `solve.groebner` is part of `solve`; trace-pairing time can include trace-vector work. Do not sum overlapping entries as elapsed total time.
 
-See [Certification Workflow](certification-workflow.md), [Recovery Workflow](recovery-workflow.md)
-and [examples](../examples/README.md) for executable uses.
+See [Certification Workflow](certification-workflow.md), [Recovery Workflow](recovery-workflow.md) and [examples](../examples/README.md) for executable uses.

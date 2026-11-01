@@ -73,7 +73,7 @@ def test_randomized_shape_action_and_auto_agree_on_constructed_families():
         assert automatic.max_relative_residual < 1e-25
 
 
-def test_randomized_action_and_triangular_agree_on_decoupled_branching_systems():
+def test_action_triangular_differential():
     import random
 
     rng = random.Random(731)

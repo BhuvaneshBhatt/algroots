@@ -251,3 +251,29 @@ FUNCTION_MODULES = {
     "SolveCostDiagnostics": "solver",
     "polysolve": "solver",
 }
+
+
+def test_finite_algebra_capabilities():
+    guide = (DOCS / "finite-algebras.md").read_text(encoding="utf-8")
+    api = (DOCS / "api.md").read_text(encoding="utf-8")
+    matrix = (DOCS / "feature-support-matrix.md").read_text(encoding="utf-8")
+    for name in (
+        "finite_field",
+        "field_order",
+        "factor_univariate",
+        "nilradical_basis",
+        "reduced_algebra",
+        "primary_decomposition",
+        "frobenius_matrix",
+    ):
+        assert name in guide and name in api
+    assert "Finite-algebra primary decomposition | Supported" in matrix
+    assert "finite perfect" in guide
+    assert "positive-dimensional" in guide
+
+
+def test_readme_links_are_absolute():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    links = re.findall(r"\]\(([^)]+)\)", readme)
+    assert links
+    assert all(link.startswith(("https://", "#")) for link in links)

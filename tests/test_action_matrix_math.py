@@ -45,7 +45,7 @@ def test_separator_matrix_equals_linear_combination_of_coordinate_matrices():
     assert separator == reference
 
 
-def test_coordinate_normal_forms_recover_variable_values_from_evaluation_vector():
+def test_evaluation_vector_recovery():
     variables = (x, y)
     equations = (x**2 - 2, y**2 - 3)
     basis = _groebner_basis(equations, variables)

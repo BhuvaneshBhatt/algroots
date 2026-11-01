@@ -111,20 +111,25 @@ def test_deflation_limit_reported_without_losing_endpoint_proof():
     assert result.root_deflations[0].stopping_reason == "stage_limit"
 
 
-def test_recovery_reuses_one_original_groebner(monkeypatch):
-    original = sp.groebner
+def test_recovery_reuses_quotient_basis(monkeypatch):
+    import algroots.quotient as quotient_module
+
+    original = quotient_module.groebner
     calls = []
 
     def counted(*args, **kwargs):
         calls.append(args)
         return original(*args, **kwargs)
 
-    monkeypatch.setattr(sp, "groebner", counted)
+    # Quotient construction uses the native Gröbner adapter, not sp.groebner.
+    monkeypatch.setattr(quotient_module, "groebner", counted)
     result = polysolve(
         (x**2,), (x,), method="homotopy", homotopy_recovery=True, recognize=False, digits=30
     )
     assert len(calls) == 1
+    assert result.root_certifications[0].certificate.verify()
     assert result.root_deflations[0].regular
+    assert result.root_deflations[0].verify()
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,6 @@
 # Runnable algroots examples
 
-Install the package from the repository root with `python -m pip install -e ".[test,dev]"`.
-Run any script directly, or use the catalog runner:
+Install the package from the repository root with `python -m pip install -e ".[test,dev]"`. Run any script directly, or use the catalog runner:
 
 ```bash
 python examples/run_all.py --list
@@ -9,11 +8,7 @@ python examples/run_all.py
 python examples/run_all.py 01_polynomial_system.py 15_limits_and_failures.py
 ```
 
-Each script uses public APIs, supplies its own symbols and inputs, prints results,
-and asserts meaningful mathematical or evidence properties. The runner stops on
-failure. Continuation examples can take longer; every script is tested in a fresh
-process with a timeout. No script downloads data or writes output files.
-Backend timing is not asserted. Example 16 checks certified canonical ordering.
+Each script uses public APIs, supplies its own symbols and inputs, prints results, and asserts meaningful mathematical or evidence properties. The runner stops on failure. Continuation examples can take longer; every script is tested in a fresh process with a timeout. No script downloads data or writes output files. Backend timing is not asserted. Example 16 checks certified canonical ordering.
 
 | Script | Demonstrates | Proof boundary |
 |---|---|---|
@@ -34,14 +29,16 @@ Backend timing is not asserted. Example 16 checks certified canonical ordering.
 | [15_limits_and_failures.py](15_limits_and_failures.py) | Handle unsupported problems and proof budgets | Explicit refusal; no weakened proof |
 
 | [16_multiplicity_views_and_order.py](16_multiplicity_views_and_order.py) | Select repeated-root views and canonical order | Exact local multiplicities and ordering |
+| [17_generated_subfields.py](17_generated_subfields.py) | Generate fixed-base and constant-generated subfields | Exact membership and embeddings; rational maps hold on generic charts |
+| [18_normalized_curve_rationality.py](18_normalized_curve_rationality.py) | Normalize singular curves and distinguish conic rationality from genus zero | Exact genus, maps and QQ point obstructions |
+| [19_functional_decomposition.py](19_functional_decomposition.py) | Search rational compositions and reconstruct a supplied algebraic factor | Exact identities and explicit rational-search completeness |
+| [20_automatic_algebraic_discovery.py](20_automatic_algebraic_discovery.py) | Discover coefficient extensions and algebraic factors automatically | Exact factor-orbit coverage and explicit search completeness |
+| [21_multivariate_luroth.py](21_multivariate_luroth.py) | Construct multivariate Lüroth generators and test membership | Exact maps and constant/rational/higher-degree decisions |
+| [22_multivariate_decomposition.py](22_multivariate_decomposition.py) | Search multivariate rational functional compositions | Exact classes, bounded prefixes and completeness replay |
+| [23_decomposition_chains.py](23_decomposition_chains.py) | Build recursive rational and implicit decomposition chains | Exact compositions and resolved versus open leaves |
+| [24_finite_algebras.py](24_finite_algebras.py) | Construct finite fields, reduced quotients and primary factors | Exact finite-algebra invariants |
+Start with 01 and 02. Read [result semantics](../docs/reading-results.md) before using certificate or multiplicity fields. Examples 12–14 distinguish finite endpoint proofs from numerical path/orbit evidence. Example 15 catches an unsupported problem and demonstrates a proof-budget refusal.
 
-Start with 01 and 02. Read [result semantics](../docs/reading-results.md) before
-using certificate or multiplicity fields. Examples 12–14 distinguish finite
-endpoint proofs from numerical path/orbit evidence. Example 15 catches an
-unsupported problem and demonstrates a proof-budget refusal.
+For continuation controls, see the [recovery budgets](../docs/recovery-workflow.md#recovery-budgets). For result-wide claims, see [completeness evidence](../docs/reading-results.md#completeness-evidence).
 
-For continuation controls, see the [recovery budgets](../docs/recovery-workflow.md#recovery-budgets).
-For result-wide claims, see [completeness evidence](../docs/reading-results.md#completeness-evidence).
-
-The documentation [gallery](../docs/examples-gallery.md) provides a task-oriented
-index. The examples serve as executable tutorials rather than performance benchmarks.
+The documentation [gallery](../docs/examples-gallery.md) provides a task-oriented index. The examples serve as executable tutorials rather than performance benchmarks.

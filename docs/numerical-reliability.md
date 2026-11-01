@@ -18,7 +18,7 @@ The exact quotient data are reused during these retries.
 
 The normal numerical backend uses python-flint complex-ball arithmetic:
 
-- `acb_mat.eig()` for action matrices;
+- `acb_mat.eig()` for action matrices, using exact rational isolation for algebraic matrix entries;
 - `acb_poly.roots()` for shape-position eliminants.
 
 The action backend relies on FLINT's isolated simple eigensystem rather than on a manually chosen floating-point eigenvalue-distance threshold.
@@ -47,3 +47,7 @@ Arbitrary precision does not make an ill-conditioned problem well-conditioned. I
 - [Precision and Conditioning](precision-and-conditioning.md) gives a worked comparison of separated and nearly colliding roots.
 - [Completeness versus Verification](completeness-versus-verification.md) explains why residuals cannot prove that no roots were missed.
 - [Multiplicity and Singular Roots](multiplicity-and-singular-roots.md) covers the important non-simple-root caveat.
+
+## Exact coefficients in Arb/ACB
+
+`sympy_to_acb` isolates the real and imaginary parts of an exact algebraic input within rational intervals using SymPy's exact algebraic isolation algorithms. These intervals are converted to Arb midpoint/radius balls with outward rounding. Merely comparing numerical evaluations would not certify enclosure. Nonalgebraic or inexact coefficients are rejected. If exact isolation is unavailable for a particular expression, the conversion fails; it does not return a speculative enclosure. Root coordinates obtained from ACB eigenvectors remain numerical until separately certified by an exact certificate.

@@ -1,69 +1,49 @@
 # Limitations
 
-`algroots` deliberately focuses on finite algebraic solution sets. The items below are current boundaries of the implementation rather than silent approximations.
+This page distinguishes the guarantees of the all-roots solvers from the specialized algebraic interfaces. A numerical approximation, a certified exact result, and an incomplete search carry different evidence.
 
-## Positive-dimensional systems
+## Polynomial and algebraic root solving
 
-`algroots` is an all-roots solver for finite solution sets. Curves, surfaces, and other positive-dimensional varieties require a different representation and are rejected rather than converted to an incomplete finite list.
+`polysolve` and `algsolve` require a globally zero-dimensional system to enumerate all complex roots. Positive-dimensional zero sets cannot be represented as a finite root list. The solvers accept exact rational or supported exact algebraic-number coefficients, not noisy floating-point data or symbolic coefficient families. General transcendental equations, inequalities, and quantified real formulas are outside their contract. Curve normalization and function fields are available through other modules and do not remove these solver restrictions.
 
-## Multiple and non-radical roots
+The dense action-matrix backend requires a usable isolated simple separator eigensystem. Nonreduced quotient algebras are handled through exact alternatives such as RUR where applicable; precision alone cannot resolve a multiple root as distinct simple roots. Exact root certificates can establish local multiplicity, but the package does not provide general local dual-basis computations. See [Multiplicity and Singular Roots](multiplicity-and-singular-roots.md).
 
-The dense action backend expects an isolated simple separator eigensystem. Nonreduced systems can use RUR in automatic dispatch. Global multiplicity/radical metadata and exact individual multiplicities through root certificates are available. Full local dual bases and primary decomposition remain unsupported.
+## Exact coefficient domains and specializations
 
-See [Multiplicity and Singular Roots](multiplicity-and-singular-roots.md).
+`QuotientAlgebra` supports finite quotient algebras over rational and exact algebraic-number coefficient fields, explicit rational-function coefficient fields, and validated finite fields. Parameters in a rational-function coefficient field are separate from quotient variables. A specialization rebuilds the quotient from its defining equations; denominator guards do not imply that fiber dimension or multiplicities remain constant. Specializations producing positive-dimensional quotients are not accepted by the finite quotient API.
 
-## Gröbner-basis complexity
+The numerical root solvers do not acquire symbolic-parameter support when the quotient API is given a rational-function domain. Finite-field algebra is available through [Finite Algebras](finite-algebras.md), while ordinary complex numerical root extraction does not operate over finite fields. In positive characteristic, finite-algebra nilradicals and primary decomposition require a **finite perfect coefficient field**, not an arbitrary imperfect field such as `GF(2)(t)`.
 
-The exact Gröbner basis remains the structural front end. Some systems experience severe coefficient or monomial growth before numerical root extraction begins.
+## Functional decomposition and function fields
 
-See [Performance Model](performance-model.md).
+[Rational and algebraic functional decomposition](functional-decomposition.md) supports exact candidate construction and verification. Automatic searches are subject to explicit degree, factor, and candidate budgets. A completed exhaustive search can support a negative conclusion; an interrupted or unresolved search cannot. Recursive chain APIs construct a verified decomposition tree from supported inputs, potentially with open leaves. They do **not** enumerate every inequivalent recursive chain.
 
-## Large quotient dimensions
+Multivariate rational decomposition supports a univariate outer function and multivariate rational inner function; general coordinatewise or vector-valued inner decompositions are outside scope. Constructive Lüroth generators cover supported rational subfields of transcendence degree at most one; higher-degree results may certify only a lower bound, without constructing a transcendence basis. General function-field computation over arbitrary positive characteristic is not provided.
 
-The action matrix is dense and $D\times D$. `max_action_dimension` prevents unexpectedly large dense eigensystems, but the package is not currently designed as a large-scale sparse homotopy solver.
+## Curves
 
-## Algebraic branch semantics
+[Plane-curve geometry](curves.md) provides projective normalization and geometric genus for supported geometrically integral plane curves in characteristic zero, together with rational parametrizations and appropriate point obstructions. Genus zero does not by itself imply a rational parametrization over the original coefficient field. General rational-point decision over arbitrary number fields may require a supplied point or explicit constant-field extension.
 
-Principal rational powers are checked against the original input expression. Domain information already erased by SymPy simplification before `algroots` receives an expression cannot be reconstructed.
+## Finite-algebra decomposition
 
-See [Branch Semantics](branch-semantics.md).
+`nilradical_basis`, `reduced_algebra`, and `primary_decomposition` operate on **finite-dimensional quotient algebras** over supported characteristic-zero or finite coefficient fields. The primary components preserve nilpotent structure, including nonmonogenic cases. These functions do not perform arbitrary primary decomposition of positive-dimensional polynomial ideals, nor compute full local dual bases. See [Finite Algebras](finite-algebras.md).
 
-## Transcendental equations
+## Computational complexity and memory
 
-Generic `sin`, `cos`, `exp`, `log`, and similar transcendental functions are outside the quotient-algebra model.
+The Gröbner basis is the structural front end for many solvers and can experience rapid monomial or coefficient growth. Dense action matrices and exact trace pairings have quadratic storage costs in quotient dimension, and root isolation may require high Arb precision. `max_action_dimension`, cache limits, degree/term budgets, and solver precision ceilings bound work but can cause explicit refusal on difficult instances. A rejected computation is not evidence that a root or decomposition does not exist.
 
-## Continuation and monodromy
+Presolve applies exact substitution only when guarded degree, term, and growth estimates permit it. A refused substitution leaves the original constraint for the solver; the guard does not change its mathematical meaning. Adaptive rational-box root certificates can be refused when candidate precision or isolation work is insufficient. Automatic boxes require rational coefficients and globally finite ideals, although exact-point certificates also cover supported algebraic coefficients.
 
-The continuation/monodromy subsystem is experimental. High-level orbit discovery accepts the same supported algebraic expression subset as `algsolve`, but tracks algebraic systems through an augmented polynomial cover and still assumes nonsingular paths and supplied seed roots. Cauchy endgames with exact endpoint certificates, targeted deflation and automatic projective chart switching are available as separate expert APIs. They remain separate from monodromy. Bounded opt-in high-level homotopy recovery now orchestrates endgames, charts and certified deflation for rational finite systems. Automatic seed generation and a `method="monodromy"` route through `polysolve` remain unsupported.
+Calibration and cost estimates guide backend selection, not mathematical claims or universal runtime bounds. See [Performance Model](performance-model.md) and [Precision and Conditioning](precision-and-conditioning.md).
 
-Trace and capture-recapture stopping are numerical/statistical evidence. They are not exact completeness certificates. See [Continuation and Monodromy](continuation-and-monodromy.md) and [Completeness versus Verification](completeness-versus-verification.md).
+## Numerical continuation and homotopy
+
+Ordinary `polysolve(..., method="homotopy")` targets regular square systems whose total-degree paths reach finite nonsingular endpoints. It is not selected by automatic dispatch; multiplicities or paths to infinity can cause failure even when the finite affine roots exist. The continuation and monodromy interfaces provide numerical path/orbit evidence, not certified interval path tubes or projective completeness.
+
+Opt-in bounded homotopy recovery uses exact quotient counts and distinct certified endpoints for **finite-root accounting**, subject to rational-coefficient, quotient-dimension, path, retry, deflation, and chart budgets. Recovery retains proved endpoints and retries unresolved paths, but a certified endpoint is not a certificate for the entire numerical path or for solutions at infinity. Numerically near-infinity outcomes are diagnostic, not proofs of divergence or projective completeness.
+
+See [Homotopy Continuation](homotopy-continuation.md), [Recovery Workflow](recovery-workflow.md), and [Singular Certification and Charts](singular-certification-and-charts.md).
 
 ## Where to go next
 
-For practical examples, use the [Examples Gallery](examples-gallery.md) and [End-to-End Worked Example](end-to-end-example.md). For failures and configuration limits, see [Troubleshooting](troubleshooting.md).
-
-## Total-degree homotopy
-
-The explicit `method="homotopy"` backend currently targets regular square polynomial systems whose full total-degree path set reaches finite nonsingular endpoints. Without `homotopy_recovery=True`, it does not invoke certified endgame, deflation or projective chart APIs. Consequently, systems with multiplicities or paths to infinity can raise `HomotopySolveError` even when their finite affine roots are otherwise well defined. The backend is intentionally not selected by `method="auto"` yet.
-
-
-For the explicit total-degree backend, see [Total-Degree Homotopy Continuation](homotopy-continuation.md).
-
-Exact isolated-root and rational-box certificates, determinantal deflation and numerical automatic chart switching are now available. Certification requires a globally finite exact ideal; rational-box proofs currently require rational coefficients. Interval-certified numerical paths and projective completeness certificates are not provided. See [Singular Certification and Charts](singular-certification-and-charts.md).
-
-In 0.5.0, RUR and shape solving share Arb extraction; guarded constant-unit polynomial substitution and opt-in automatic per-root certificates are available. Trace calculations avoid retaining all basis actions. Exact Gröbner cost, quadratic trace-pairing storage, rational-only automatic boxes, and numerical-only path tracking remain limitations.
-
-Automatic box certification in 0.6.0 adapts proposed radii using neighbour
-distances and exact separator counts, with finite attempt and refinement budgets.
-It can still refuse proofs on ill-conditioned or insufficiently accurate candidates.
-Bounded homotopy recovery certifies finite root accounting through original-system
-quotient counts and distinct endpoint certificates; numerical paths and infinity
-remain uncertified. Algebraic-field box proofs, positive-dimensional components
-and unbounded all-path continuation remain outside scope.
-
-
-The 0.7.0 calibration corpus is broader but still small. Diagnostic retries remain
-sequential and bounded; they do not certify paths. Cancellation-aware presolve
-can still decline due to intermediate work/support bounds. Exact rational rank
-and bounded action reuse improve measured cases, but dense pairings remain
-quadratic and Gröbner coefficient growth remains a principal bottleneck.
+For examples of supported and unsupported operations, use the [Examples Gallery](examples-gallery.md), [End-to-End Worked Example](end-to-end-example.md), [Feature Matrix](feature-support-matrix.md), and [Troubleshooting](troubleshooting.md).

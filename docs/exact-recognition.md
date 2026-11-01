@@ -2,8 +2,7 @@
 
 The public polynomial, algebraic, and monodromy solvers attempt exact recognition by default with a conservative `recognition_max_degree=8`. Numerical roots always remain available in `result.roots`; certified reconstructions are attached as `result.recognized_roots`. A failed recognition attempt does not invalidate a verified numerical solve and is reported in `result.recognition_error`. Pass `recognize=False` to disable automatic recognition.
 
-Use `recognize_system_roots(...)` explicitly when you need custom `max_degree`, height, relation-score, or degree-cost settings.
-`algroots` can reconstruct exact algebraic coordinates from roots that have already been found numerically. Recognition remains a logically separate post-processing stage even though it runs by default: it can strengthen the statement about an **individual root**, but it does not create evidence that a numerical root set is complete.
+Use `recognize_system_roots(...)` explicitly when you need custom `max_degree`, height, relation-score, or degree-cost settings. `algroots` can reconstruct exact algebraic coordinates from roots that have already been found numerically. Recognition remains a logically separate post-processing stage even though it runs by default: it can strengthen the statement about an **individual root**, but it does not create evidence that a numerical root set is complete.
 
 ## Recognition pipeline
 

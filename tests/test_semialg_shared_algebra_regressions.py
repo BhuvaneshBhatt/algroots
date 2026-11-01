@@ -96,7 +96,7 @@ def test_rur_points_replay_against_original_polynomial_system() -> None:
         assert all(sp.simplify(poly.subs(assignment)) == 0 for poly in system)
 
 
-def test_equation_scaling_permutation_and_recombination_preserve_finite_variety() -> None:
+def test_equation_transform_invariance() -> None:
     x, y = sp.symbols("x y", real=True)
     f = x**2 - 2
     g = y - x

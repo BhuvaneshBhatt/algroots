@@ -9,22 +9,31 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cached_property
 from itertools import product
 from time import perf_counter
 
 import sympy as sp
 from sympy.polys.domains import Domain
+from sympy.polys.matrices import DomainMatrix
+from sympy.polys.matrices.exceptions import DMNonInvertibleMatrixError
 from sympy.polys.orderings import grevlex
 
 from ._validation import validate_integer
+from .domains import domain_matrix, field_element, groebner, polynomial
 from .errors import QuotientAlgebraError
+from .finite_fields import FiniteFieldExtension, is_finite_field
 
 
-def _require_exact_domain(domain: Domain) -> Domain:
-    """Return an exact rational/algebraic field accepted by the quotient core."""
+def _require_quotient_domain(domain: Domain) -> Domain:
+    """Validate exact number, finite, or rational-function coefficient fields."""
 
+    if not isinstance(domain, Domain):
+        raise QuotientAlgebraError("domain must be an exact SymPy coefficient domain")
+
+    if is_finite_field(domain):
+        return domain
     gaussian_domains = tuple(
         item for item in (getattr(sp, "ZZ_I", None), getattr(sp, "QQ_I", None)) if item is not None
     )
@@ -33,20 +42,55 @@ def _require_exact_domain(domain: Domain) -> Domain:
         # used for all other exact algebraic coefficients.  This keeps result
         # contracts uniform and lets callers rely on ``is_AlgebraicField``.
         return sp.QQ.algebraic_field(sp.I)
+    if getattr(domain, "is_FractionField", False):
+        if any(not isinstance(p, sp.Symbol) for p in domain.symbols):
+            raise QuotientAlgebraError("coefficient parameters must be Symbols")
+        ground = domain.domain
+        if (
+            ground in (sp.ZZ, sp.QQ)
+            or getattr(ground, "is_AlgebraicField", False)
+            or ground in gaussian_domains
+            or is_finite_field(ground)
+        ):
+            return _require_quotient_domain(ground).frac_field(*domain.symbols)
     if domain not in (sp.ZZ, sp.QQ) and not getattr(domain, "is_AlgebraicField", False):
         raise QuotientAlgebraError(
-            "quotient algebra requires rational or exact algebraic-number coefficients, "
+            "quotient algebra requires rational, exact algebraic-number, or explicit "
+            "rational-function coefficients, "
             f"not coefficient domain {domain}"
         )
     return domain if domain.is_Field else domain.get_field()
 
 
+def _require_exact_domain(domain: Domain) -> Domain:
+    """Validate constants for characteristic-zero function-field and numerical algorithms."""
+    domain = _require_quotient_domain(domain)
+    if domain.characteristic() != 0:
+        raise QuotientAlgebraError("this operation requires characteristic-zero coefficients")
+    return domain
+
+
 def _exact_polynomials(
-    expressions: Iterable[sp.Expr], variables: Sequence[sp.Symbol]
+    expressions: Iterable[sp.Expr], variables: Sequence[sp.Symbol], domain: Domain | None = None
 ) -> tuple[tuple[sp.Poly, ...], Domain]:
-    raw = tuple(sp.sympify(expr) for expr in expressions)
+    raw = tuple(
+        expr.as_expr() if isinstance(expr, sp.Poly) else sp.sympify(expr) for expr in expressions
+    )
+    if not raw:
+        return (), _require_quotient_domain(sp.QQ if domain is None else domain)
+    if any(expr.has(sp.Float) for expr in raw):
+        raise QuotientAlgebraError(
+            "quotient algebra requires exact coefficients, not floating-point inputs"
+        )
+    if domain is not None:
+        domain = _require_quotient_domain(domain)
+        _check_coefficient_symbols(domain, variables)
     try:
-        polys, options = sp.parallel_poly_from_expr(raw, *variables, extension=True)
+        if domain is None:
+            polys, options = sp.parallel_poly_from_expr(raw, *variables, extension=True)
+            domain = _require_quotient_domain(options["domain"])
+        else:
+            polys = [polynomial(p, variables, domain) for p in raw]
     except (
         sp.PolynomialError,
         sp.polys.polyerrors.CoercionFailed,
@@ -57,11 +101,10 @@ def _exact_polynomials(
         raise QuotientAlgebraError(
             "quotient algebra requires polynomial equations over an exact algebraic coefficient field"
         ) from exc
-    domain = _require_exact_domain(options["domain"])
     converted: list[sp.Poly] = []
     for poly in polys:
         try:
-            exact = sp.Poly(sp.expand(poly.as_expr()), *variables, domain=domain)
+            exact = polynomial(poly, variables, domain)
         except (
             sp.PolynomialError,
             sp.polys.polyerrors.CoercionFailed,
@@ -78,6 +121,26 @@ def _exact_polynomials(
     return tuple(converted), domain
 
 
+def _check_coefficient_symbols(domain: Domain, variables: Sequence[sp.Symbol]) -> None:
+    parameters = domain.symbols if getattr(domain, "is_FractionField", False) else ()
+    ground = domain.domain if domain.is_FractionField else domain
+    if isinstance(ground, FiniteFieldExtension):
+        parameters = (*parameters, ground.symbol)
+    if any(v == p or v.name == p.name for v in variables for p in parameters):
+        raise QuotientAlgebraError("coefficient parameters and quotient variables must be distinct")
+
+
+def _quotient_variables(variables: Sequence[sp.Symbol]) -> tuple[sp.Symbol, ...]:
+    variables = tuple(variables)
+    if not variables or any(not isinstance(v, sp.Symbol) for v in variables):
+        raise QuotientAlgebraError(
+            "at least one quotient variable is required; variables must be Symbols"
+        )
+    if len(set(variables)) != len(variables):
+        raise QuotientAlgebraError("quotient variables must be distinct")
+    return variables
+
+
 def _leading_exponent_grevlex(poly: sp.Poly) -> tuple[int, ...]:
     terms = poly.terms(order=grevlex)
     if not terms:
@@ -88,7 +151,7 @@ def _leading_exponent_grevlex(poly: sp.Poly) -> tuple[int, ...]:
 def _leading_exponent(poly: sp.Poly, order) -> tuple[int, ...]:
     try:
         monomial = poly.LM(order=order)
-    except (sp.PolynomialError, ValueError, TypeError) as exc:
+    except (sp.PolynomialError, sp.polys.polyerrors.CoercionFailed, ValueError, TypeError) as exc:
         raise QuotientAlgebraError("could not determine a Groebner leading monomial") from exc
     return tuple(int(value) for value in monomial.exponents)
 
@@ -196,8 +259,9 @@ def _normal_form_for_basis(
     groebner_basis: sp.polys.polytools.GroebnerBasis, expression: sp.Expr
 ) -> sp.Expr:
     try:
-        _, remainder = groebner_basis.reduce(sp.expand(expression))
-    except (sp.PolynomialError, ValueError, TypeError) as exc:
+        value = polynomial(expression, groebner_basis.gens, groebner_basis.domain)
+        _, remainder = groebner_basis.reduce(value)
+    except (sp.PolynomialError, sp.polys.polyerrors.CoercionFailed, ValueError, TypeError) as exc:
         raise QuotientAlgebraError(f"Groebner reduction failed: {exc}") from exc
     return sp.expand(remainder)
 
@@ -209,7 +273,7 @@ def _coefficient_vector(
     domain: Domain,
 ) -> sp.Matrix:
     try:
-        poly = sp.Poly(sp.expand(expression), *variables, domain=domain)
+        poly = polynomial(expression, variables, domain)
     except (
         sp.PolynomialError,
         sp.polys.polyerrors.CoercionFailed,
@@ -257,6 +321,7 @@ class QuotientAlgebra:
     domain: Domain
     standard_exponents: tuple[tuple[int, ...], ...]
     normal_form_cache_size: int = 128
+    defining_polynomials: tuple[sp.Expr, ...] | None = None
 
     @classmethod
     def from_polynomials(
@@ -264,6 +329,7 @@ class QuotientAlgebra:
         polynomials: Iterable[sp.Expr],
         variables: Sequence[sp.Symbol],
         *,
+        domain: Domain | None = None,
         order: str = "grevlex",
         max_dimension: int | None = None,
         normal_form_cache_size: int = 128,
@@ -271,24 +337,18 @@ class QuotientAlgebra:
         validate_integer(normal_form_cache_size, "normal_form_cache_size", minimum=0)
         if max_dimension is not None:
             validate_integer(max_dimension, "max_dimension")
-        variable_tuple = tuple(variables)
-        if not variable_tuple:
-            raise QuotientAlgebraError("at least one variable is required")
-        poly_objects, domain = _exact_polynomials(polynomials, variable_tuple)
+        variable_tuple = _quotient_variables(variables)
+        poly_objects, domain = _exact_polynomials(polynomials, variable_tuple, domain)
         if not poly_objects:
             raise QuotientAlgebraError("at least one polynomial generator is required")
-        basis = sp.groebner(
-            [poly.as_expr() for poly in poly_objects],
-            *variable_tuple,
-            order=order,
-            domain=domain,
-        )
-        return cls.from_groebner_basis(
+        basis = groebner(poly_objects, variable_tuple, domain, order)
+        quotient = cls.from_groebner_basis(
             basis,
             variable_tuple,
             max_dimension=max_dimension,
             normal_form_cache_size=normal_form_cache_size,
         )
+        return replace(quotient, defining_polynomials=tuple(p.as_expr() for p in poly_objects))
 
     @classmethod
     def from_groebner_basis(
@@ -302,14 +362,15 @@ class QuotientAlgebra:
         validate_integer(normal_form_cache_size, "normal_form_cache_size", minimum=0)
         if max_dimension is not None:
             validate_integer(max_dimension, "max_dimension")
-        variable_tuple = tuple(variables or groebner_basis.gens)
-        if not variable_tuple:
-            raise QuotientAlgebraError("at least one variable is required")
+        variable_tuple = _quotient_variables(
+            groebner_basis.gens if variables is None else variables
+        )
         if tuple(groebner_basis.gens) != variable_tuple:
             raise QuotientAlgebraError(
                 "Groebner basis generators must match the quotient variable order"
             )
-        domain = _require_exact_domain(groebner_basis.domain)
+        domain = _require_quotient_domain(groebner_basis.domain)
+        _check_coefficient_symbols(domain, variable_tuple)
         unit = sp.Poly(1, *variable_tuple, domain=domain)
         if len(groebner_basis.polys) == 1 and groebner_basis.polys[0].as_expr() == unit.as_expr():
             return cls(variable_tuple, groebner_basis, domain, tuple(), normal_form_cache_size)
@@ -348,6 +409,8 @@ class QuotientAlgebra:
         """Return the exact Gröbner normal form of ``expression`` modulo the ideal."""
 
         expression = sp.expand(expression)
+        if expression.has(sp.Float):
+            raise QuotientAlgebraError("quotient elements must have exact coefficients")
         cache, stats = self._normal_form_cache
         if expression in cache:
             stats["hits"] += 1
@@ -420,7 +483,7 @@ class QuotientAlgebra:
         reconstructed = sum(
             vector[index] * self.standard_monomials[index] for index in range(self.dimension)
         )
-        if sp.expand(remainder - reconstructed) != 0:
+        if not polynomial(remainder - reconstructed, self.variables, self.domain).is_zero:
             raise QuotientAlgebraError(
                 "Groebner remainder contains a monomial outside the quotient basis"
             )
@@ -546,8 +609,37 @@ class QuotientAlgebra:
                 )
                 yield action
 
-    def multiplication_matrix(self, element: sp.Expr) -> sp.Matrix:
-        """Multiplication by an element without caching all basis actions."""
+    @cached_property
+    def _variable_domain_matrices(self) -> tuple[DomainMatrix, ...]:
+        return tuple(domain_matrix(m, self.domain) for m in self.variable_multiplication_matrices)
+
+    def multiplication_matrix(self, element: sp.Expr, *, representation: str = "sympy"):
+        """Multiplication over the declared coefficient field.
+
+        ``representation='domain'`` returns a DomainMatrix. Fraction-field
+        products always use domain arithmetic, including the default Matrix view.
+        Elements are polynomial in the quotient variables; use ``inverse`` for units.
+        """
+        if representation not in ("sympy", "domain"):
+            raise ValueError("representation must be 'sympy' or 'domain'")
+        if (
+            representation == "domain"
+            or getattr(self.domain, "is_FractionField", False)
+            or self.domain.characteristic()
+        ):
+            result = DomainMatrix.zeros((self.dimension, self.dimension), self.domain)
+            for coefficient, exponent in zip(
+                self.coordinate_vector(element), self.standard_exponents, strict=True
+            ):
+                scalar = field_element(coefficient, self.domain)
+                if not scalar:
+                    continue
+                action = DomainMatrix.eye((self.dimension, self.dimension), self.domain)
+                for power, matrix in zip(exponent, self._variable_domain_matrices, strict=True):
+                    if power:
+                        action = action * matrix.pow(int(power))
+                result = result + action.scalarmul(scalar)
+            return result if representation == "domain" else result.to_Matrix()
         result = sp.zeros(self.dimension, self.dimension)
         for coefficient, exponent in zip(
             self.coordinate_vector(element), self.standard_exponents, strict=True
@@ -556,12 +648,166 @@ class QuotientAlgebra:
                 result += coefficient * self._monomial_matrix(exponent)
         return result
 
+    def _polynomial_parameter(self, parameter: sp.Symbol) -> None:
+        if not isinstance(parameter, sp.Symbol):
+            raise QuotientAlgebraError("polynomial parameter must be a Symbol")
+        if parameter in self.variables:
+            raise QuotientAlgebraError("parameter must be distinct from quotient variables")
+        _check_coefficient_symbols(self.domain, (parameter,))
+
+    def characteristic_polynomial(self, element: sp.Expr, parameter: sp.Symbol) -> sp.Poly:
+        """Characteristic polynomial of multiplication, preserving multiplicities."""
+        self._polynomial_parameter(parameter)
+        matrix = self.multiplication_matrix(element, representation="domain")
+        return sp.Poly.from_list(matrix.charpoly(), parameter, domain=self.domain)
+
+    def minimal_polynomial(self, element: sp.Expr, parameter: sp.Symbol) -> sp.Poly:
+        """Monic least-degree annihilator over ``self.domain``, including nilpotents.
+
+        The first exact dependence of 1, element, ... certifies minimality.
+        Unlike a characteristic-polynomial replacement, short closure is valid.
+        """
+        from .rational_univariate.linear_algebra import packed_krylov_coefficients
+
+        self._polynomial_parameter(parameter)
+        matrix = self.multiplication_matrix(element, representation="domain")
+        coefficients = packed_krylov_coefficients(
+            matrix.to_list(), self.domain, allow_short_closure=True
+        )
+        return sp.Poly.from_list(list(reversed(coefficients)), parameter, domain=self.domain)
+
+    def trace(self, element: sp.Expr) -> sp.Expr:
+        """Trace of multiplication over the declared coefficient field."""
+        rows = self.multiplication_matrix(element, representation="domain").to_list()
+        value = sum((rows[i][i] for i in range(self.dimension)), self.domain.zero)
+        return self.domain.to_sympy(value)
+
+    def norm(self, element: sp.Expr) -> sp.Expr:
+        """Determinant of multiplication over the declared coefficient field."""
+        value = self.multiplication_matrix(element, representation="domain").det()
+        return self.domain.to_sympy(value)
+
+    def inverse(self, element: sp.Expr) -> sp.Expr:
+        """Inverse of a unit; nonunits in reducible/nonreduced algebras raise."""
+        if not self.dimension:
+            raise QuotientAlgebraError("the zero algebra has no unit inverse")
+        matrix = self.multiplication_matrix(element, representation="domain")
+        try:
+            column = [row[0] for row in matrix.inv().to_list()]
+        except DMNonInvertibleMatrixError as exc:
+            raise QuotientAlgebraError("element is not a unit in the quotient algebra") from exc
+        expression = sum(
+            self.domain.to_sympy(c) * m
+            for c, m in zip(column, self.standard_monomials, strict=True)
+        )
+        return self.normal_form(expression)
+
+    @cached_property
+    def is_field(self) -> bool:
+        """Certify whether this nonzero finite algebra is a field."""
+        if not self.dimension or self.geometric_solution_count != self.dimension:
+            return False
+        if self.domain.characteristic():
+            from .finite_decomposition import frobenius_matrix
+
+            fixed = frobenius_matrix(self) - domain_matrix(sp.eye(self.dimension), self.domain)
+            return self.dimension - fixed.rank() == 1
+        separator = self.separating_element(sp.Dummy("field_generator"))
+        return bool(separator.defining_polynomial.is_irreducible)
+
+    def subfield(self, generators: Sequence[sp.Expr], *, over=None, generator_symbols=None):
+        """Generate a subfield over this quotient's existing coefficient field.
+
+        Returns a FiniteSubfield with constructive membership and embeddings.
+        Use the separate function-field layer to generate over the constants.
+        """
+        from .subfields import FiniteSubfield
+
+        _require_exact_domain(self.domain)
+
+        return FiniteSubfield.generate(
+            self, generators, over=over, generator_symbols=generator_symbols
+        )
+
+    def specialization_guard(self, *elements: sp.Expr) -> sp.Expr:
+        """Denominator guard for this generic basis and the supplied elements.
+
+        This excludes poles, not all dimension/discriminant changes. ``specialize``
+        rebuilds from the original equations instead of assuming a stable fiber.
+        """
+        expressions = [p.as_expr() for p in self.groebner_basis.polys]
+        expressions.extend(elements)
+        denominators = []
+        for expr in expressions:
+            poly = polynomial(expr, self.variables, self.domain)
+            for coefficient in poly.coeffs():
+                denominator = sp.fraction(sp.cancel(coefficient))[1]
+                if denominator != 1:
+                    denominators.append(sp.Ne(denominator, 0))
+        return sp.And(*denominators)
+
+    def specialize(
+        self, assignments: dict[sp.Symbol, sp.Expr], *, max_dimension: int | None = None
+    ):
+        """Rebuild the specialized algebra; never reuse generic rank or inverses.
+
+        Assignments must be constants in the existing ground field. A basis-only
+        construction cannot recover discarded exceptional fibers and rejects
+        nonempty specializations; construct from defining polynomials instead.
+        Positive-dimensional specialized fibers retain the ordinary constructor error.
+        """
+        parameters = (
+            tuple(self.domain.symbols) if getattr(self.domain, "is_FractionField", False) else ()
+        )
+        if not set(assignments) <= set(parameters):
+            raise QuotientAlgebraError("specialization keys must be coefficient parameters")
+        ground = self.domain.domain if parameters else self.domain
+        if any(sp.sympify(v).has(sp.Float) for v in assignments.values()):
+            raise QuotientAlgebraError("specialization values must be exact")
+        try:
+            substitutions = {p: ground.to_sympy(ground.convert(v)) for p, v in assignments.items()}
+        except (sp.polys.polyerrors.CoercionFailed, ValueError, TypeError) as exc:
+            raise QuotientAlgebraError(
+                "specialization values must belong to the constant field"
+            ) from exc
+        equations = self.defining_polynomials
+        if equations is None:
+            if substitutions:
+                raise QuotientAlgebraError(
+                    "specialization requires original defining polynomials; cannot recover "
+                    "exceptional fibers from a generic Groebner basis"
+                )
+            equations = tuple(p.as_expr() for p in self.groebner_basis.polys)
+        specialized = tuple(p.subs(substitutions, simultaneous=True) for p in equations)
+        if any(p.has(sp.zoo, sp.nan, sp.oo, -sp.oo) for p in specialized):
+            raise QuotientAlgebraError("defining coefficients have a pole at the specialization")
+        remaining = tuple(p for p in parameters if p not in substitutions)
+        domain = ground.frac_field(*remaining) if remaining else ground
+        # Zero generators impose no constraint; an entirely zero fiber is not finite.
+        specialized = tuple(p for p in specialized if p != 0)
+        if not specialized:
+            raise QuotientAlgebraError("specialized ideal is not zero-dimensional")
+        return type(self).from_polynomials(
+            specialized,
+            self.variables,
+            domain=domain,
+            order=self.groebner_basis.order,
+            max_dimension=max_dimension,
+            normal_form_cache_size=self.normal_form_cache_size,
+        )
+
     @cached_property
     def trace_vector(self) -> sp.Matrix:
         """Exact traces, streaming one basis action at a time (quadratic storage)."""
         started = perf_counter()
-        result = sp.Matrix([action.trace() for action in self._iter_basis_actions()])
+        result = (
+            sp.Matrix([self.trace(m) for m in self.standard_monomials])
+            if getattr(self.domain, "is_FractionField", False)
+            else sp.Matrix([action.trace() for action in self._iter_basis_actions()])
+        )
         self._operation_statistics["trace_vector_seconds"] = perf_counter() - started
+        if self.domain.characteristic():
+            result = domain_matrix(result, self.domain).to_Matrix()
         return result
 
     @cached_property
@@ -575,21 +821,27 @@ class QuotientAlgebra:
                 value = (action[:, right].T * traces)[0]
                 pairing[left, right] = pairing[right, left] = value
         self._operation_statistics["trace_pairing_seconds"] = perf_counter() - started
+        if self.domain.characteristic():
+            pairing = domain_matrix(pairing, self.domain).to_Matrix()
         return pairing
 
     @cached_property
     def geometric_solution_count(self) -> int:
-        """Number of geometric points for a characteristic-zero finite quotient."""
+        """Number of geometric points over characteristic-zero or finite coefficient fields."""
 
         if not self.dimension:
             return 0
+        if self.domain.characteristic():
+            from .finite_decomposition import nilradical_basis
+
+            return self.dimension - len(nilradical_basis(self))
         pairing = self.trace_pairing
         started = perf_counter()
         # Local profiling favors exact domain elimination for QQ. Algebraic
         # conversion was slower, so retain the existing path for that domain.
-        if self.domain == sp.QQ:
-            rank = pairing.to_DM(domain=sp.QQ).rank()
-            backend = "rational_domain"
+        if self.domain == sp.QQ or getattr(self.domain, "is_FractionField", False):
+            rank = domain_matrix(pairing, self.domain).rank()
+            backend = "rational_domain" if self.domain == sp.QQ else "fraction_domain"
         else:
             rank = pairing.rank()
             backend = "expression"
@@ -609,6 +861,8 @@ class QuotientAlgebra:
             coefficient_tuple, self.variable_multiplication_matrices, strict=True
         ):
             result += sp.sympify(coefficient) * matrix
+        if self.domain.characteristic():
+            return domain_matrix(result, self.domain).to_Matrix()
         return result
 
     def separator_matrix_columns(
@@ -643,8 +897,11 @@ class QuotientAlgebra:
     ) -> SeparatingElement:
         """Choose a separating linear form and return exact RUR trace data."""
 
-        if parameter in self.variables:
-            raise QuotientAlgebraError("parameter must be distinct from quotient variables")
+        self._polynomial_parameter(parameter)
+        if self.domain.characteristic():
+            raise NotImplementedError(
+                "finite-field products use Frobenius factors instead of linear separators"
+            )
         if self.dimension == 0:
             raise QuotientAlgebraError("the unit ideal has no separating element")
         if max_attempts < 1:
@@ -665,21 +922,21 @@ class QuotientAlgebra:
                 preferred_matrix_storage,
             )
 
-            if self.dimension >= 12 and preferred_matrix_storage(multiplication) == "sparse":
+            if (
+                self.dimension >= 12
+                and not getattr(self.domain, "is_FractionField", False)
+                and preferred_matrix_storage(multiplication) == "sparse"
+            ):
                 try:
-                    characteristic = sp.Poly(
-                        packed_krylov_minimal_polynomial(multiplication, parameter).as_expr(),
+                    characteristic = sp.Poly.from_list(
+                        packed_krylov_minimal_polynomial(multiplication, parameter).all_coeffs(),
                         parameter,
                         domain=self.domain,
                     )
                 except ValueError:
-                    characteristic = sp.Poly(
-                        multiplication.charpoly(parameter).as_expr(), parameter, domain=self.domain
-                    )
+                    characteristic = self.characteristic_polynomial(linear_form, parameter)
             else:
-                characteristic = sp.Poly(
-                    multiplication.charpoly(parameter).as_expr(), parameter, domain=self.domain
-                )
+                characteristic = self.characteristic_polynomial(linear_form, parameter)
             if characteristic.is_zero:
                 continue
             squarefree = characteristic.sqf_part().monic()

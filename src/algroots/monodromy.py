@@ -267,6 +267,11 @@ def closed_additive_loop(
     variables: Sequence[sp.Symbol],
     perturbation: Sequence[Any],
 ) -> MonodromyLoop:
+    """Construct a closed additive polynomial homotopy with matching perturbations.
+
+    The equation and perturbation vectors must have the same dimension as
+    the distinct variables. Path tracking under the loop is numerical.
+    """
     equations = tuple(sp.sympify(eq) for eq in equations)
     variables = tuple(variables)
     perturbation = tuple(sp.sympify(g) for g in perturbation)
@@ -300,6 +305,11 @@ def track_loop(
     parallel: bool = False,
     max_workers: int | None = None,
 ) -> tuple[PathResult, ...]:
+    """Track all supplied starting points around a monodromy loop.
+
+    Independent starts can run in spawned processes. Returned paths retain
+    numerical tracking outcomes and do not certify the complete root set.
+    """
     opts = options or PathTrackerOptions()
     if not parallel or len(starts) <= 1:
         homotopy = loop.homotopy()
@@ -323,6 +333,11 @@ def monodromy_permutation(
     parallel: bool = False,
     max_workers: int | None = None,
 ) -> MonodromyPermutation:
+    """Infer the permutation induced by a numerical loop on supplied roots.
+
+    Ambiguous endpoint matches and failed paths remain explicit in the
+    result; a matched permutation is not an exact completeness proof.
+    """
     _validate_tolerance(match_tolerance, name="match_tolerance")
     if any(len(root) != len(loop.variables) for root in roots):
         raise ValueError("every root must have one coordinate per variable")
@@ -347,6 +362,7 @@ def random_perturbation(
     radius: float = 1.0,
     rng: random.Random | None = None,
 ) -> tuple[complex, ...]:
+    """Generate a reproducible perturbation for numerical monodromy tracking."""
     if count <= 0:
         raise ValueError("count must be positive")
     if not math.isfinite(radius) or radius <= 0:

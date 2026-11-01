@@ -134,30 +134,10 @@ For backend selection, see [Choosing a Backend](choosing-a-backend.md).
 
 ## New front-end and storage heuristics
 
-Presolve uses exact constant-unit pivots, including polynomial relations such as x-y**2. Degree, term-count and relative-growth bounds are checked before expansion. It cannot divide by a variable-dependent coefficient.
-After substitution, automatic ordering sorts remaining variables by equation
-occurrence count, maximum degree, then supplied position. The public coordinate
-order is unchanged. This is a simple reproducible heuristic; adversarial systems
-can prefer the input order.
+Presolve uses exact constant-unit pivots, including polynomial relations such as x-y**2. Degree, term-count and relative-growth bounds are checked before expansion. It cannot divide by a variable-dependent coefficient. After substitution, automatic ordering sorts remaining variables by equation occurrence count, maximum degree, then supplied position. The public coordinate order is unchanged. This is a simple reproducible heuristic; adversarial systems can prefer the input order.
 
-Exact coordinate multiplication matrices retain sparse storage below 10% measured
-density. Separators of dimension at least 12 with sparse storage try incremental
-packed Krylov elimination. Only full cyclic closure may replace the characteristic
-polynomial; noncyclic closure falls back exactly, preserving nonreduced multiplicity.
-The dense numerical action eigensolver and potentially expensive trace-pairing
-rank calculation remain limits. No general speedup claim is made for the thresholds.
+Exact coordinate multiplication matrices retain sparse storage below 10% measured density. Separators of dimension at least 12 with sparse storage try incremental packed Krylov elimination. Only full cyclic closure may replace the characteristic polynomial; noncyclic closure falls back exactly, preserving nonreduced multiplicity. The dense numerical action eigensolver and potentially expensive trace-pairing rank calculation remain limits. No general speedup claim is made for the thresholds.
 
-`benchmarks/quotient_profile.py` separates quotient construction, coordinate
-actions, trace vectors, pairings and rank, and includes a cumulative-time profile.
-Repeated monomial matrix powers dominated the measured multivariate cases.
-A bounded eight-action predecessor cache now reuses exact products; standard
-basis coordinate vectors avoid unnecessary reductions. Rational domain rank
-outperformed expression rank in the measured rational cases, while algebraic
-conversion lost in the algebraic case, so only rational rank uses that route.
-Exact dense oracles, cache bounds and rank backend guards test correctness and
-resource behavior without asserting wall-clock speed.
+`benchmarks/quotient_profile.py` separates quotient construction, coordinate actions, trace vectors, pairings and rank, and includes a cumulative-time profile. Repeated monomial matrix powers dominated the measured multivariate cases. A bounded eight-action predecessor cache now reuses exact products; standard basis coordinate vectors avoid unnecessary reductions. Rational domain rank outperformed expression rank in the measured rational cases, while algebraic conversion lost in the algebraic case, so only rational rank uses that route. Exact dense oracles, cache bounds and rank backend guards test correctness and resource behavior without asserting wall-clock speed.
 
-Root-output preparation has its own `root_output` cost phase and is included in
-reported total time. Exact local multiplicity proofs may add work for nonreduced
-quotients. `multiplicity=False` skips that automatic work; strict multiplicity or
-ordering requests can require additional proof work or refuse at their budgets.
+Root-output preparation has its own `root_output` cost phase and is included in reported total time. Exact local multiplicity proofs may add work for nonreduced quotients. `multiplicity=False` skips that automatic work; strict multiplicity or ordering requests can require additional proof work or refuse at their budgets.

@@ -26,7 +26,7 @@ def _reference_multiplication_matrix(basis, variables, monomials, variable):
     return sp.Matrix.hstack(*(sp.Matrix(column) for column in columns))
 
 
-def test_separator_and_coordinate_normal_forms_match_reference_matrices_randomized():
+def test_separator_reference_matrices():
     rng = random.Random(20260821)
     for _ in range(6):
         a = rng.randint(1, 5)

@@ -227,7 +227,7 @@ def test_exact_root_selection_rejects_nearby_ambiguous_roots() -> None:
         )
 
 
-def test_exact_root_selection_resolves_nearby_roots_with_sufficient_precision() -> None:
+def test_nearby_root_selection() -> None:
     from algroots.recognition import _exact_root_from_result
 
     q = 10**20

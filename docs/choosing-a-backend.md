@@ -172,9 +172,4 @@ For the explicit total-degree backend, see [Total-Degree Homotopy Continuation](
 
 ## Bounded homotopy recovery
 
-For rational finite square systems, `polysolve(..., method="homotopy",
-homotopy_recovery=True)` adds bounded endgame, chart, proof and deflation
-orchestration. It computes a quotient for proof accounting, so it does not have
-the ordinary route's no-Gröbner property. Recovery certifies finite endpoints/counts,
-not numerical paths or infinity. It is sequential and remains outside auto.
-See [Recovery Workflow](recovery-workflow.md).
+For rational finite square systems, `polysolve(..., method="homotopy", homotopy_recovery=True)` adds bounded endgame, chart, proof and deflation orchestration. It computes a quotient for proof accounting, so it does not have the ordinary route's no-Gröbner property. Recovery certifies finite endpoints/counts, not numerical paths or infinity. It is sequential and remains outside auto. See [Recovery Workflow](recovery-workflow.md).

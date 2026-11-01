@@ -68,7 +68,4 @@ The solvers attempt this recognition automatically by default using a degree-8 s
 
 ## Next steps
 
-Use [Reading Results](reading-results.md) to distinguish counts, numerical
-verification, recognition and proofs. For automatic boxes and exact points, see
-[Certification Workflow](certification-workflow.md). The [examples catalog](../examples/README.md)
-contains standalone scripts; the snippets above are sequential steps in one tutorial.
+Use [Reading Results](reading-results.md) to distinguish counts, numerical verification, recognition and proofs. For automatic boxes and exact points, see [Certification Workflow](certification-workflow.md). The [examples catalog](../examples/README.md) contains standalone scripts; the snippets above are sequential steps in one tutorial.

@@ -19,7 +19,7 @@ def test_multivariate_repeated_factor_avoids_failed_action(monkeypatch):
     assert result.method == "rational_univariate"
     assert result.total_multiplicity == 4 and len(result.roots) == 2
     assert dict(result.cost_diagnostics.structural_estimates)["repeated_input_factor"]
-    assert result.cost_diagnostics.policy == "calibrated-v2"
+    assert result.cost_diagnostics.policy == "calibrated"
 
 
 def test_repeated_factor_is_cost_hint_not_radicality_proof():

@@ -1,8 +1,6 @@
 # Feature and support matrix
 
-Support means there is an intentional public route; it does not promise that
-every instance is computationally tractable. All polynomial inputs require exact
-coefficients and a globally finite complex solution set unless explicitly noted.
+A supported route specifies the input class and result contract, not a guarantee of feasible runtime for every instance. The all-roots solvers require exact coefficients and finitely many complex solutions; quotient-algebra, decomposition, finite-field, and plane-curve interfaces have their own contracts.
 
 | Feature | Status | Route | Boundary |
 |---|---|---|---|
@@ -15,13 +13,29 @@ coefficients and a globally finite complex solution set unless explicitly noted.
 | Numerical RUR | Supported | `method="rur"` | Exact representation retained; rational/algebraic fields |
 | Exact RUR and algebraic points | Supported | `compute_rational_univariate_representation`, `solve_rur_representation` | Globally finite ideals |
 | Quotient tools and bounded cache | Supported | `QuotientAlgebra` | Exact normal forms, actions, traces and counts |
+| Finite algebras over `K(z)` | Supported, explicit domain | `QuotientAlgebra.from_polynomials(..., domain=K.frac_field(z))` | Exact element minimal/characteristic polynomials, trace, norm, unit inverse and rebuilt specialization; normalized curve genus lives in the separate curve layer |
+| Fixed-base generated subfields | Supported | `QuotientAlgebra.subfield` | Certified ambient field; exact membership, primitive element and replayable embeddings |
+| Fields generated over constants | Supported, declared exact constants | `coefficient_field` | One-variable algebraic ambient presentations; rational ambient fields of transcendence degree at most one have constructive Lüroth maps |
+| Multivariate Lüroth generators | Supported over rational/algebraic-number constants | `function_fields.luroth_generator` | GRS02 Algorithm 3.1, exact maps/membership and replayable decisions; higher-degree outcomes certify a lower bound of two |
+| Normalized plane-curve genus | Supported, exact characteristic zero | `PlaneCurve.normalization()` | Projective/infinite/infinitely-near singularities; geometrically integral curves |
+| Genus-zero birational parametrization | Supported over `QQ`; witness/extension over number fields | `PlaneCurve.rational_parametrization()` and coefficient-field methods | Conic obstructions and explicit splitting fields; general number-field point decisions require a witness |
+| Rational functional decomposition | Supported, bounded automatic search | `functional_decomposition.rational_decompose` | Two-factor search completeness is explicit; one verified recursive chain can also be constructed |
+| Multivariate rational functional decomposition | Supported, bounded automatic search | `functional_decomposition.multivariate_rational_decompose` or tuple/list dispatch | GRS02 Algorithm 2.1; univariate outer, inner total degree >1, exact two-factor classes over declared constants; no coordinatewise or vector-valued decomposition |
+| Algebraic coefficient extensions and factors | Supported, bounded automatic discovery | `functional_decomposition.discover_algebraic_factors` | Exact monic factor orbits over the declared constants and input coefficients; binomial factor-algebra dimensions |
+| Implicit algebraic functional decomposition | Automatic search or supplied candidates | `functional_decomposition.algebraic_decompose` | Minimal coefficient-field pairs; first-answer/exhaustive modes, exact resultant powers, explicit incomplete cases and verified recursive chains |
+| Finite prime and extension fields | Supported | `finite_fields.finite_field`, `field_elements`, `field_order`, `factor_univariate` | Prime characteristic and exact irreducible extension modulus; univariate factorization |
+| Nilradical and reduced finite algebra | Supported | `finite_decomposition.nilradical_basis`, `reduced_algebra` | Finite quotient; characteristic zero or validated finite coefficient field |
+| Finite-algebra primary decomposition | Supported, exact | `finite_decomposition.primary_decomposition` | Finite quotient over characteristic-zero or validated finite field; not general positive-dimensional ideal decomposition |
+| Finite-field Frobenius | Supported | `finite_decomposition.frobenius_matrix` | Validated finite coefficient field; q-power map on the quotient |
+| Rational recursive decomposition chains | Supported, bounded | `functional_decomposition.rational_decomposition_chain` | Constructs and verifies one chain; not enumeration of all equivalent chains |
+| Implicit algebraic decomposition chains | Supported, bounded | `functional_decomposition.algebraic_decomposition_chain` | Supplied initial splits are supported; open leaves and exhausted budgets are reported |
 | Border bases | Supported | `compute_border_basis`, `compute_border_basis_linear` | Exact rational coefficients; no noisy AVI/SVD |
 | Arb extraction and numerical validation | Supported | Core numerical layer | Residuals alone do not prove completeness |
 | Best-effort recognition | Supported, default | Solvers / `recognize_system_roots` | Recognition does not find missing roots or certify paths |
 | Global multiplicity/radical metadata | Supported | Polynomial result fields | Not generally transferred through nontrivial algebraic projections |
 | Individual multiplicity and singular-root proof | Supported | Isolated-root certificates | Exact finite ideal; exact target point |
 | Automatic adaptive boxes | Supported, opt-in | `certify="auto"` / `"required"` | Rational coefficients; explicit dimension/refinement/attempt limits |
-| Exact local deflation | Supported, bounded | `deflate_isolated_root` | Local regularization; no full primary decomposition |
+| Exact local deflation | Supported, bounded | `deflate_isolated_root` | Local regularization; not a computation of all local dual bases |
 | Ordinary total-degree homotopy | Explicit numerical route | `method="homotopy"` | Square systems, finite regular required endpoints; not selected by auto |
 | Bounded certified endpoint recovery | Opt-in | `homotopy_recovery=True` | Rational finite square systems, sequential; proof is finite-root accounting |
 | Numerical Cauchy endgame | Experimental numerical route | `cauchy_endgame` | Cycle/level budgets; optional rational endpoint proof |
@@ -29,9 +43,8 @@ coefficients and a globally finite complex solution set unless explicitly noted.
 | Seeded monodromy | Experimental | `discover_monodromy_orbit` | Supplied seeds; no `polysolve(method="monodromy")` |
 | Trace / capture-recapture stopping | Numerical / statistical | Monodromy controls | Not exact completeness evidence |
 | Certified numerical paths / projective completeness | Unsupported | — | Endpoint proofs do not supply these |
-| Positive/mixed-dimensional varieties | Unsupported | — | No finite all-roots representation |
+| Positive-dimensional all-roots enumeration | Unsupported | `polysolve`, `algsolve` | Curve genus and parametrization are separate operations; no finite all-roots representation |
 | Noisy coefficients, inequalities, generic transcendental equations | Unsupported | — | Outside the exact equality problem contract |
-| Full local dual bases / primary decomposition | Unsupported | — | Global and individual multiplicities do not provide full local structure |
+| Full local dual bases and arbitrary positive-dimensional primary decomposition | Unsupported | — | Finite-algebra primary decomposition is a separate supported operation |
 
-See [Reading Results](reading-results.md), [Certification Workflow](certification-workflow.md),
-[Recovery Workflow](recovery-workflow.md) and [Limitations](limitations.md).
+See [Finite Algebras](finite-algebras.md), [Reading Results](reading-results.md), [Certification Workflow](certification-workflow.md), [Recovery Workflow](recovery-workflow.md) and [Limitations](limitations.md).

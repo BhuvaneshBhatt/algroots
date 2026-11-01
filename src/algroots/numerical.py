@@ -9,13 +9,14 @@ from typing import Any
 
 import mpmath as mp
 import sympy as sp
+from sympy.polys.numberfields import isolate
 
 from ._validation import validate_integer
 
 try:  # pragma: no cover - exercised when python-flint is installed
-    from flint import acb, acb_mat, acb_poly, ctx, fmpq
+    from flint import acb, acb_mat, acb_poly, arb, ctx, fmpq
 except ImportError:  # pragma: no cover - local development fallback
-    acb = acb_mat = acb_poly = ctx = fmpq = None
+    acb = acb_mat = acb_poly = arb = ctx = fmpq = None
 
 
 def flint_available() -> bool:
@@ -45,33 +46,50 @@ def _decimal_parts(value: Any, digits: int) -> tuple[str, str]:
     return str(real), str(imag)
 
 
-def sympy_to_acb(value: Any, digits: int):
-    """Convert an exact SymPy algebraic number to an ACB enclosure.
+class AlgebraicIsolationError(ValueError):
+    """An exact algebraic input could not be enclosed rigorously."""
 
-    Rational values are transferred exactly. General algebraic values are
-    enclosed by comparing two independent evalf precisions and adding a small
-    decimal guard radius before constructing the Arb balls.
+
+def _algebraic_part_ball(part: sp.Expr, digits: int):
+    """Enclose a real algebraic component using exact rational isolation."""
+    part = sp.sympify(part)
+    if part.is_Rational:
+        rational = fmpq(int(part.p), int(part.q))
+        return arb(rational)
+    if part.is_real is not True or part.is_algebraic is not True:
+        raise AlgebraicIsolationError("ACB conversion requires an exact real algebraic component")
+    # isolate() uses exact real-root isolation; the requested width is a
+    # rational number, not a tolerance inferred from numerical agreement.
+    try:
+        lower, upper = isolate(part, eps=sp.Rational(1, 10 ** max(digits, 1)))
+    except (ValueError, NotImplementedError, TypeError, NameError) as exc:
+        raise AlgebraicIsolationError("could not isolate the exact algebraic component") from exc
+    if not (lower.is_Rational and upper.is_Rational and lower <= upper):
+        raise AlgebraicIsolationError("algebraic isolation did not return rational endpoints")
+    midpoint = (lower + upper) / 2
+    radius = (upper - lower) / 2
+    return arb(fmpq(int(midpoint.p), int(midpoint.q)), fmpq(int(radius.p), int(radius.q)))
+
+
+def sympy_to_acb(value: Any, digits: int):
+    """Return a rigorous Arb/ACB enclosure of an exact algebraic number.
+
+    Real and imaginary parts are isolated using exact rational bounds. The Arb
+    midpoint/radius constructor includes its own rounding errors, so the final
+    balls enclose the exact components. No numerical evalf comparison is used.
     """
     if acb is None:
         raise RuntimeError("python-flint is required for the ACB backend")
+    validate_integer(digits, "digits")
     value = sp.sympify(value)
+    if value.has(sp.Float) or value.is_number is not True or value.is_algebraic is not True:
+        raise AlgebraicIsolationError("ACB conversion requires an exact algebraic number")
     if value.is_Rational:
-        q = fmpq(int(value.p), int(value.q))
-        return acb(q)
-
-    hi_digits = max(digits + 20, 2 * digits)
-    low_r, low_i = _decimal_parts(value, digits + 8)
-    high_r, high_i = _decimal_parts(value, hi_digits)
-    low_r_sp = sp.Float(low_r, digits + 8)
-    low_i_sp = sp.Float(low_i, digits + 8)
-    high_r_sp = sp.Float(high_r, hi_digits)
-    high_i_sp = sp.Float(high_i, hi_digits)
-    guard = sp.Float(10, hi_digits) ** (-(digits + 2))
-    rad_r = abs(high_r_sp - low_r_sp) + guard
-    rad_i = abs(high_i_sp - low_i_sp) + guard
-    real_ball = f"{high_r} +/- {sp.N(rad_r, digits + 8)}"
-    imag_ball = f"{high_i} +/- {sp.N(rad_i, digits + 8)}"
-    return acb(real_ball, imag_ball)
+        return acb(fmpq(int(value.p), int(value.q)))
+    return acb(
+        _algebraic_part_ball(sp.re(value), digits),
+        _algebraic_part_ball(sp.im(value), digits),
+    )
 
 
 def acb_mid_to_sympy(value: Any, digits: int):
@@ -98,6 +116,11 @@ def mpc_to_sympy(value: Any, digits: int):
 
 
 def acb_mid_to_mpc(value: Any, digits: int) -> mp.mpc:
+    """Extract the midpoint of an Arb complex ball at the requested precision.
+
+    The midpoint is numerical data; the original ball radius and any proof
+    obligation must be retained by callers when certification is required.
+    """
     midpoint = value.mid()
     real = mp.mpf(midpoint.real.str(digits + 5, radius=False))
     imag = mp.mpf(midpoint.imag.str(digits + 5, radius=False))
@@ -113,6 +136,7 @@ class CompiledPolynomial:
 
     @classmethod
     def from_expr(cls, expression: Any, variables: tuple[Any, ...]) -> CompiledPolynomial:
+        """Compile an exact polynomial into sparse coefficient and exponent data."""
         poly = sp.Poly(expression, *variables, extension=True)
         return cls(
             terms=tuple((coeff, tuple(int(p) for p in powers)) for powers, coeff in poly.terms()),
@@ -120,6 +144,11 @@ class CompiledPolynomial:
         )
 
     def evaluate_mp(self, values: tuple[Any, ...], digits: int) -> tuple[mp.mpc, mp.mpf]:
+        """Evaluate the polynomial and a cancellation-aware magnitude bound.
+
+        Powers are cached per coordinate so repeated monomials share work. The
+        returned scale is used in relative residual checks, not exact proofs.
+        """
         with mp.workdps(digits + 8):
             total = mp.mpc(0)
             scale = mp.mpf(0)
@@ -160,6 +189,7 @@ def number_to_mpc(value: Any, digits: int) -> mp.mpc:
 def compile_polynomials(
     expressions: Iterable[Any], variables: tuple[Any, ...]
 ) -> tuple[CompiledPolynomial, ...]:
+    """Compile a sequence of polynomials for repeated high-precision evaluation."""
     return tuple(CompiledPolynomial.from_expr(expr, variables) for expr in expressions)
 
 
@@ -168,6 +198,11 @@ def compiled_residual(
     values: tuple[Any, ...],
     digits: int,
 ) -> mp.mpf:
+    """Return the maximum coefficient-scaled residual across the system.
+
+    Each residual is divided by a scale at least one computed from absolute
+    term magnitudes; this is a numerical diagnostic, not a certificate.
+    """
     residual = mp.mpf(0)
     for polynomial in polynomials:
         value, scale = polynomial.evaluate_mp(values, digits)
@@ -178,6 +213,7 @@ def compiled_residual(
 def compiled_jacobian(
     expressions: tuple[Any, ...], variables: tuple[Any, ...]
 ) -> tuple[tuple[CompiledPolynomial, ...], ...]:
+    """Compile the symbolic Jacobian entries for numerical evaluation."""
     return tuple(
         tuple(CompiledPolynomial.from_expr(sp.diff(expr, var), variables) for var in variables)
         for expr in expressions

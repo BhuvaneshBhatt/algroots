@@ -1,6 +1,6 @@
 # Total-Degree Homotopy Continuation
 
-`polysolve(..., method="homotopy")` is an explicit numerical backend for **regular square zero-dimensional polynomial systems**. It is deliberately not part of `method="auto"` yet.
+`polysolve(..., method="homotopy")` is an explicit numerical backend for **regular square zero-dimensional polynomial systems**. It is not part of `method="auto"` yet.
 
 ## Start system and path count
 
@@ -92,7 +92,7 @@ Each worker compiles the symbolic homotopy once and then tracks multiple start p
 
 ## Current scope and failure semantics
 
-The current backend is intentionally conservative. It is intended for regular square systems whose required paths terminate at distinct finite nonsingular roots. It raises `HomotopySolveError` rather than returning a potentially incomplete root set when:
+The current backend is conservative. It is intended for regular square systems whose required paths terminate at distinct finite nonsingular roots. It raises `HomotopySolveError` rather than returning a potentially incomplete root set when:
 
 - a required path cannot be tracked successfully;
 - the affine path appears to diverge;
@@ -113,12 +113,4 @@ For the generic path-tracking engine and monodromy loops, see [Continuation and 
 
 ## Opt-in bounded recovery
 
-The regular-endpoint contract above describes ordinary homotopy. Set
-`homotopy_recovery=True` to request bounded Cauchy endgames, automatic projective
-charts, exact rational endpoint certificates and targeted deflation. This route
-builds an original finite quotient and certifies completeness of finite endpoints
-only when their exact distinct count matches the quotient geometric count.
-It accepts rational finite square systems, is sequential and retains explicit
-retry/precision/resource limits. It does not certify paths or infinity.
-See [Recovery Workflow](recovery-workflow.md) and the
-[runnable example](../examples/12_bounded_homotopy_recovery.py).
+The regular-endpoint contract above describes ordinary homotopy. Set `homotopy_recovery=True` to request bounded Cauchy endgames, automatic projective charts, exact rational endpoint certificates and targeted deflation. This route builds an original finite quotient and certifies completeness of finite endpoints only when their exact distinct count matches the quotient geometric count. It accepts rational finite square systems, is sequential and retains explicit retry/precision/resource limits. It does not certify paths or infinity. See [Recovery Workflow](recovery-workflow.md) and the [runnable example](../examples/12_bounded_homotopy_recovery.py).

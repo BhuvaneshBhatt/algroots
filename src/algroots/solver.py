@@ -30,6 +30,7 @@ from .errors import (
     TriangularSolveError,
 )
 from .numerical import (
+    AlgebraicIsolationError,
     acb_mid_to_sympy,
     compile_polynomials,
     compiled_jacobian,
@@ -84,7 +85,7 @@ class SolveCostDiagnostics:
     phase_seconds: tuple = ()
     structural_estimates: tuple = ()
     normal_form_statistics: tuple = ()
-    policy: str = "calibrated-v2"
+    policy: str = "calibrated"
     quotient_operation_statistics: tuple = ()
 
 
@@ -776,6 +777,10 @@ def _solve_action_matrix(
                     # The default ACB eigensolver certifies that all eigenvalues
                     # are simple and isolated. Failure triggers a precision retry.
                     eigenvalues, eigenvectors = separator.eig(right=True)
+                except AlgebraicIsolationError as exc:
+                    raise ActionMatrixError(
+                        "exact algebraic matrix coefficients could not be enclosed"
+                    ) from exc
                 except (ValueError, ZeroDivisionError):
                     eigenvalues = eigenvectors = None
                 if eigenvalues is None or eigenvectors is None or len(eigenvalues) != dimension:
@@ -800,6 +805,10 @@ def _solve_action_matrix(
                         expected_count=dimension,
                         error_type=ActionMatrixError,
                     )
+                except AlgebraicIsolationError as exc:
+                    raise ActionMatrixError(
+                        "exact algebraic coordinate coefficients could not be enclosed"
+                    ) from exc
                 except ActionMatrixError as exc:
                     # A rigorously separated eigensystem can still be too coarse
                     # for coordinate recovery/residual validation. Retry at higher

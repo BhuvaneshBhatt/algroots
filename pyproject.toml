@@ -1,11 +1,11 @@
 [build-system]
-requires = ["hatchling>=1.27"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "algroots"
-version = "0.2.0"
-description = "Exact and approximate methods for solving zero-dimensional polynomial and algebraic systems."
+version = "0.3.0"
+description = "Exact and numerical algebraic computation: polynomial systems, finite algebras, function fields, functional decomposition, and plane curves."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-3.0-only"
@@ -34,7 +34,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies = [
-    "sympy>=1.13,<2",
+    "sympy>=1.14,<2",
     "mpmath>=1.3,<2",
     "python-flint>=0.9,<1",
     "algrecognize>=0.1.1",
@@ -68,8 +68,12 @@ mutation = [
     "mutmut>=3",
 ]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/algroots"]
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["algroots*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

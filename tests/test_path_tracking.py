@@ -118,7 +118,7 @@ def test_option_validation():
         PathTrackerOptions(initial_digits=50, max_digits=40)
 
 
-def test_tracks_known_multivariate_nonlinear_curve_through_intermediate_steps():
+def test_nonlinear_path_tracking():
     # Exact branch: x(t)=1+t, y(t)=(1+t)^2.
     homotopy = SympyHomotopy(
         [x - (1 + t), y - x**2],

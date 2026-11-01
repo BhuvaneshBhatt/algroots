@@ -211,14 +211,19 @@ def test_scaled_recombined_equations_preserve_certificate_and_deflation(scale):
     assert deflate_isolated_root(equations, (x, y), (0, 0)).regular
 
 
-def test_deflation_uses_one_original_groebner_basis(monkeypatch):
-    original = sp.groebner
+def test_deflation_reuses_quotient_basis(monkeypatch):
+    import algroots.quotient as quotient_module
+
+    original = quotient_module.groebner
     calls = []
 
-    def record(*args, **kwargs):
-        calls.append(1)
+    def counted(*args, **kwargs):
+        calls.append(args)
         return original(*args, **kwargs)
 
-    monkeypatch.setattr(sp, "groebner", record)
-    assert deflate_isolated_root((x**4,), (x,), (0,)).regular
+    monkeypatch.setattr(quotient_module, "groebner", counted)
+    result = deflate_isolated_root((x**4,), (x,), (0,))
     assert len(calls) == 1
+    assert result.regular
+    assert result.certificate.multiplicity == 4
+    assert result.verify()

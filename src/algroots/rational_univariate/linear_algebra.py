@@ -90,7 +90,7 @@ def packed_krylov_minimal_polynomial(matrix: sp.Matrix, parameter: sp.Symbol) ->
     raise ValueError("Krylov sequence did not close within matrix dimension")
 
 
-def packed_krylov_coefficients(rows, domain):
+def packed_krylov_coefficients(rows, domain, *, allow_short_closure=False):
     """Return a cyclic characteristic polynomial from exact domain rows.
 
     ``rows`` is a square row-major matrix whose entries are coercible into
@@ -98,7 +98,8 @@ def packed_krylov_coefficients(rows, domain):
     Incremental elimination retains pivot and combination rows, while matrix-
     vector products stay in the coefficient domain.  A short Krylov closure is
     reported because it cannot replace the characteristic polynomial in RUR
-    construction.
+    construction. ``allow_short_closure=True`` instead returns the annihilator
+    of the cyclic subspace, as needed for quotient-element minimal polynomials.
     """
     dimension = len(rows)
     if any(len(row) != dimension for row in rows):
@@ -130,7 +131,7 @@ def packed_krylov_coefficients(rows, domain):
             ]
         pivot = next((index for index, value in enumerate(row) if value), None)
         if pivot is None:
-            if degree != dimension:
+            if degree != dimension and not allow_short_closure:
                 raise ValueError(
                     "Krylov sequence closed before full dimension; the class of one is not cyclic"
                 )

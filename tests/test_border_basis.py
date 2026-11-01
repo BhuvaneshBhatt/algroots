@@ -103,7 +103,7 @@ def test_linear_border_basis_strict_false_reports_non_stabilization():
     assert "did not stabilize" in result.diagnostics.messages[0]
 
 
-def test_border_basis_coordinate_conversion_does_not_swallow_programming_errors(monkeypatch):
+def test_border_basis_error_propagation(monkeypatch):
     x, y = sp.symbols("x y")
     result = compute_border_basis([x**2 - 1, y - x], [x, y])
     original = sp.Poly

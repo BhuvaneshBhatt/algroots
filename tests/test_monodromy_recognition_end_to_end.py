@@ -54,7 +54,7 @@ def test_core_seed_monodromy_and_real_recognition_agree_for_quadratic() -> None:
 
 
 @pytest.mark.slow
-def test_multivariate_core_roots_round_trip_through_monodromy_result_and_recognition() -> None:
+def test_multivariate_monodromy_recognition() -> None:
     pytest.importorskip("flint")
     pytest.importorskip("algrecognize")
 

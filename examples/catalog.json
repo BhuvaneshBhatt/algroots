@@ -94,5 +94,53 @@
     "title": "Select repeated-root views and certified canonical order",
     "category": "certification",
     "guarantee": "Exact local multiplicities and ordering; distinct metadata storage"
+  },
+  {
+    "file": "17_generated_subfields.py",
+    "title": "Generated subfields and coefficient fields",
+    "category": "exact algebra",
+    "guarantee": "Exact membership and embeddings; generic rational maps"
+  },
+  {
+    "file": "18_normalized_curve_rationality.py",
+    "title": "Normalized genus and ground-field rationality",
+    "category": "exact",
+    "guarantee": "Exact genus, birational maps and QQ conic obstructions"
+  },
+  {
+    "file": "19_functional_decomposition.py",
+    "title": "Certified rational and supplied algebraic functional decomposition",
+    "category": "exact",
+    "guarantee": "Exact compositions and explicit rational-search completeness over QQ"
+  },
+  {
+    "file": "20_automatic_algebraic_discovery.py",
+    "title": "Automatic algebraic extension and factor discovery",
+    "category": "exact",
+    "guarantee": "Exact factor-orbit coverage and explicit decomposition-search completeness"
+  },
+  {
+    "file": "21_multivariate_luroth.py",
+    "title": "Construct multivariate Luroth generators and field maps",
+    "category": "exact",
+    "guarantee": "Exact generator maps, membership and transcendence-degree-one decisions"
+  },
+  {
+    "file": "22_multivariate_decomposition.py",
+    "title": "Search multivariate rational functional decompositions",
+    "category": "exact",
+    "guarantee": "Exact two-factor classes and replayable search completeness"
+  },
+  {
+    "file": "23_decomposition_chains.py",
+    "title": "Build recursive rational and implicit decomposition chains",
+    "category": "exact",
+    "guarantee": "Exact composed identities and explicit open-leaf status"
+  },
+  {
+    "file": "24_finite_algebras.py",
+    "title": "Inspect finite fields and primary factors of finite algebras",
+    "category": "exact",
+    "guarantee": "Exact nilradicals, reduced quotients and primary factors"
   }
 ]

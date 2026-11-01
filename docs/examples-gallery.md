@@ -1,8 +1,6 @@
 # Examples gallery
 
-The [examples catalog](../examples/README.md) contains 16 standalone public-API
-scripts. Each supplies its own imports/input, prints results and asserts its
-mathematical or evidence contract. Timings are not fixed outputs; example 16 checks certified canonical order.
+The [examples catalog](../examples/README.md) contains 24 standalone public-API scripts. Each supplies its own imports/input, prints results and asserts its mathematical or evidence contract. Timings are not fixed outputs; example 16 checks certified canonical order.
 
 | Goal | Runnable examples |
 |---|---|
@@ -18,5 +16,20 @@ python examples/run_all.py --list
 python examples/run_all.py 01_polynomial_system.py 07_multiplicity_and_boxes.py
 ```
 
-Read [Reading Results](reading-results.md) for evidence semantics, and the
-[End-to-End Worked Example](end-to-end-example.md) for a longer algebraic tutorial.
+Read [Reading Results](reading-results.md) for evidence semantics, and the [End-to-End Worked Example](end-to-end-example.md) for a longer algebraic tutorial.
+
+For constructive generated subfields and rational function-field maps, run [example 17](../examples/17_generated_subfields.py) and see [Generated subfields and function fields](function-fields.md).
+
+[Example 18](../examples/18_normalized_curve_rationality.py) covers singular normalization, positive genus and ground-field point obstructions.
+
+[Example 19](../examples/19_functional_decomposition.py) searches rational compositions and reconstructs a supplied algebraic factor with exact certificates.
+
+[Example 20](../examples/20_automatic_algebraic_discovery.py) discovers algebraic coefficient extensions and factors automatically, with exact orbit coverage and complete versus partial decomposition search results.
+
+[Example 21](../examples/21_multivariate_luroth.py) constructs multivariate Lüroth generators, verifies both coordinate maps, and distinguishes proper subfields from fields of higher transcendence degree.
+
+[Example 22](../examples/22_multivariate_decomposition.py) searches uni-multivariate rational decompositions, including GRS02 Example 2.1, and checks bounded and exhaustive search results.
+
+[Example 23](../examples/23_decomposition_chains.py) constructs recursive rational and implicit chains, replays their composed certificates, and reports open leaves.
+
+[Example 24](../examples/24_finite_algebras.py) demonstrates finite-field construction, nilradicals, reduced quotients and primary decomposition of nonmonogenic finite algebras.

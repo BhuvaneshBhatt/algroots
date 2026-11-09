@@ -20,7 +20,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: BhuvaneshBhatt/alggeom
-          ref: b2557d533d4c1b5d7d7fa40a963ccda8b0d39ae4
           path: .ci-backends/alggeom
       - uses: actions/setup-python@v6
         with:

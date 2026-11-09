@@ -7,10 +7,31 @@ import os
 import platform
 import subprocess
 import tarfile
+import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
 SOURCES = Path(__file__).with_name("native_sources.json")
+
+
+def download_archive(url: str, destination: Path, *, timeout: int = 120, attempts: int = 3) -> None:
+    """Download an archive with retries for transient network failures."""
+    if attempts < 1:
+        raise ValueError("attempts must be positive")
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as response:
+                destination.write_bytes(response.read())
+            return
+        except (urllib.error.URLError, TimeoutError):
+            if attempt >= attempts:
+                raise
+            wait = float(2**attempt)
+            print(
+                f"Retrying download for {url} in {wait:.1f}s (attempt {attempt + 1} of {attempts})"
+            )
+            time.sleep(wait)
 
 
 def main():
@@ -51,8 +72,7 @@ def main():
         spec = sources[name]
         archive = cache / spec["url"].rsplit("/", 1)[1]
         if not archive.exists():
-            with urllib.request.urlopen(spec["url"], timeout=120) as response:
-                archive.write_bytes(response.read())
+            download_archive(spec["url"], archive)
         if hashlib.sha256(archive.read_bytes()).hexdigest() != spec["sha256"]:
             raise ValueError("native source checksum mismatch: " + str(archive))
         build = prefix.parent / ("native-build-" + name)

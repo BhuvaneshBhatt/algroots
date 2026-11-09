@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "algroots"
-version = "0.3.0"
-description = "Exact and numerical algebraic computation: polynomial systems, finite algebras, function fields, functional decomposition, and plane curves."
+version = "0.4.0"
+description = "Exact and numerical algebraic computation: polynomial systems, Gröbner basis, finite algebras, function fields, functional decomposition, and plane curves."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-3.0-only"
@@ -43,15 +43,17 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/BhuvaneshBhatt/algroots"
 Documentation = "https://github.com/BhuvaneshBhatt/algroots/tree/main/docs"
+Changelog = "https://github.com/BhuvaneshBhatt/algroots/blob/main/CHANGELOG.md"
 Repository = "https://github.com/BhuvaneshBhatt/algroots.git"
 Issues = "https://github.com/BhuvaneshBhatt/algroots/issues"
-Changelog = "https://github.com/BhuvaneshBhatt/algroots/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
+proof = ["alggeom>=0.1.0"]
 test = [
     "pytest>=8",
     "hypothesis>=6",
     "pytest-cov>=6",
+    "alggeom>=0.1.0",
 ]
 dev = [
     "ruff>=0.12",
@@ -75,6 +77,12 @@ package-dir = {"" = "src"}
 where = ["src"]
 include = ["algroots*"]
 
+[tool.setuptools.data-files]
+"share/algroots" = ["README.md"]
+"share/algroots/licenses" = ["licenses/*"]
+"share/algroots/docs" = ["docs/*.md"]
+"share/algroots/examples" = ["examples/*.py", "examples/*.json", "examples/*.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
@@ -85,10 +93,11 @@ markers = [
 ]
 
 [tool.ruff]
+extend-exclude = ["*.md", "*.ipynb"]
 src            = ["src"]
 target-version = "py311"
 line-length = 100
-exclude        = [".git", ".venv", ".pytest_cache", ".ruff_cache", "build", "docs", "dist", "notebooks", "README.md"]
+exclude        = [".git", ".venv", ".pytest_cache", ".ruff_cache", "build", "docs", "dist", "notebooks", "README.md", ".ci-backends"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -107,3 +116,23 @@ fail_under = 80
 source_paths = ["src/algroots/"]
 pytest_add_cli_args_test_selection = ["tests/"]
 mutate_only_covered_lines = true
+
+[tool.cibuildwheel]
+build = "cp311-* cp312-* cp313-* cp314-*"
+skip = "*-musllinux_* *-win32 *-win_arm64"
+archs = ["native"]
+test-command = "python {project}/tools/wheel_smoke.py --native --extension-fields --tutorials"
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+before-all = "/opt/python/cp311-cp311/bin/python {project}/tools/build_native_dependencies.py --prefix /tmp/algroots-libs"
+environment = { ALGROOTS_BUILD_NATIVE_F4="1", ALGROOTS_BUILD_FF_SPARSE="1", ALGROOTS_BUILD_NATIVE_EXTENSION="1", ALGROOTS_FLINT_PREFIX="/tmp/algroots-libs" }
+
+[tool.cibuildwheel.macos]
+before-all = "python3 {project}/tools/build_native_dependencies.py --prefix /tmp/algroots-libs"
+environment = { ALGROOTS_BUILD_NATIVE_F4="1", ALGROOTS_BUILD_FF_SPARSE="1", ALGROOTS_BUILD_NATIVE_EXTENSION="1", ALGROOTS_FLINT_PREFIX="/tmp/algroots-libs", MACOSX_DEPLOYMENT_TARGET="14.0" }
+
+[tool.cibuildwheel.windows]
+# The workflow sets the pinned vcpkg prefix and DLL repair command.
+before-build = "python -m pip install delvewheel"

@@ -10,9 +10,7 @@ The polynomial ideal does not have a finite zero-dimensional solution set in the
 
 Typical example:
 
-$$
-x+y=0
-$$
+$$ x+y=0 $$
 
 in two variables describes a curve, not finitely many points.
 
@@ -120,7 +118,7 @@ max_action_dimension = 256
 
 ### What to do
 
-Increase the limit deliberately after estimating the expected quotient/root count and memory cost.
+Increase the limit after estimating the expected quotient/root count and memory cost.
 
 A dense action matrix scales as $D\times D$, and dense eigensolving is roughly cubic in $D$.
 
@@ -179,7 +177,7 @@ Numerical controls are validated. Examples include:
 - `max_precision_digits < digits`;
 - invalid method names.
 
-These are configuration errors rather than solver failures.
+These are configuration errors instead of solver failures.
 
 ## A useful diagnostic sequence
 

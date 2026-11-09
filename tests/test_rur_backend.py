@@ -92,24 +92,16 @@ def test_numerical_rur_backend_does_not_require_exact_root_enumeration(monkeypat
     assert max(abs(complex(sp.N(root[0] ** 5 - sp.sqrt(2), 25))) for root in result.roots) < 1e-20
 
 
-def test_rur_normalized_coordinate_polynomials_are_cached(monkeypatch):
+def test_rur_coordinates_cached():
     from algroots.rational_univariate import compute_rational_univariate_representation
 
     x, y = sp.symbols("x y")
     representation = compute_rational_univariate_representation((x**2 - 2, y - x), (x, y))
-    calls = 0
-    original = sp.invert
-
-    def counting_invert(*args, **kwargs):
-        nonlocal calls
-        calls += 1
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(sp, "invert", counting_invert)
     first = representation.normalized_coordinate_polynomials()
     second = representation.normalized_coordinate_polynomials()
-    assert first == second
-    assert calls == 1
+    assert first is second
+    parameter = representation.parameter
+    assert first == (sp.Poly(parameter / 2, parameter), sp.Poly(parameter / 2, parameter))
 
 
 @pytest.mark.parametrize(

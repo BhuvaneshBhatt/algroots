@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.4.0
+
+### Gröbner bases and solver integration
+
+Add `groebner_basis`, returning a reduced monic SymPy `GroebnerBasis` over an explicit exact coefficient field. Solvers, quotient algebras and rational-univariate construction accept verified native backend selection through `groebner_backend` and `groebner_limits`. Their defaults remain SymPy.
+
+## 0.4.0
+
+### Gröbner bases and solver integration
+
+Add `groebner_basis`, which implements the F4 Gröbner-basis algorithm, returning a reduced monic SymPy `GroebnerBasis` over an exact coefficient field. Native FLINT-based computation is the default throughout Gröbner construction, solvers, quotient algebras, rational-univariate representations, certificate constructors and supporting algebraic operations, but SymPy available through explicit selection as the portable fallback. Use `backend="native"` for direct basis construction and `groebner_backend="native"` for solver and quotient interfaces.
+
+### Native arithmetic over exact coefficient fields
+
+Add native computation over prime fields, FLINT arithmetic over finite extension fields, and modular reconstruction over rational coefficients. Native construction also supports number fields and rational-function fields over rational or algebraic-number constants.
+
+CRT reconstruction and parameter interpolation recover coefficients in the original field. Accelerated results do independent exact verification by default, with identity certificates available as an alternative.
+
+### Algebraic function fields and towers
+
+Add `AlgebraicFunctionField` for algebraic coefficents whose defining equations depend on parameters. Support extensions, primitive-element compression, exact arithmetic and univariate factorisation.
+
+Original generator symbols remain usable through verified embedding maps. Specialisation accepts explicit algebraic root choices or enumerates compatible branches, keeping formal algebraic coefficients separate from selected numerical values.
+
+Fix bound-symbol handling in algebraic constants during conversion, serialization, tower compression and factorization, including `CRootOf` definitions whose symbol overlap field coordinates or coefficient parameters.
+
+### Sparse quotient algebra and RUR construction
+
+Expand sparse exact linear algebra for quotient multiplication operators, trace pairings, Frobenius maps and rational-univariate construction.
+
+Characteristic and minimal polynomials, norms and inverses preserve the coefficient domain and account for noncyclic and nonreduced algebras. Sparse recurrences reduce unnecessary dense matrix construction while supporting computations whose intermediate matrices become dense.
+
+### Verification certificates
+
+Add `certify_groebner_basis` and `certify_rational_univariate_representation`. Certificates verify ideal-membership identities, S-pair representations and coordinate maps required by RUR.
+
+Support serialization and replay without recomputing a reference Gröbner basis. `prepare()` creates a checked, detached snapshot for repeated use, validating the ordered generators, variables, coefficient field and monomial order.
+
+### Guarded parameter specialization
+
+Add generic basis and RUR construction over supported parameter fields, with specialisation guards for coefficient poles, denominator failures and point collisions. Regular fibers reuse verified representations, while exceptional fibers are reconstructed from the original equations. Algebraic-tower specialisation checks the selected embedding and supports recovery from removable poles introduced by a primitive presentation through exact local regularity witnesses. These guards do not establish real sign invariance or a comprehensive decomposition of parameter space.
+
+### Solver settings and supervised execution
+
+Add reusable `PrecisionOptions`, `SolverLimits` and `SolverOptions` objects for precision, resource, recovery and execution settings.
+
+Add `ExecutionLimits` and `run_supervised` for worker calculation deadlines covering computation, verification and result transfer, with optional memory limits on Linux. Improve validation and error reporting for unsupported domains, unavailable kernels, malformed inputs and exhausted budgets.
+
+### Numerical precision and homotopy
+
+Coordinate algroots' mpmath and FLINT precision scopes across threads, restore the preceding precision after nested calls and exceptions.
+
+Fix ACB midpoint conversion losing requested digits when the caller's default mpmath precision is lower. Reject nonfinite midpoints with a clear error.
+
+Prevent internal homotopy parameters from colliding with user coordinates. Reuse symbolic compilation independently of numerical precision to reduce repeated homotopy setup costs.
+
+### Correctness and internal design
+
+Improve coefficient-field normalisation in functional decomposition and constructive Lüroth calculations, and exact conversion of numerical endgame coordinates to rational values.
+
+### Documentation, examples and testing
+
+Update README, generated API references, capability matrix and limitations. Expand guides for Gröbner operations, coefficient fields, algebraic towers, sparse quotient arithmetic, reusable certificates, precision management and supervised execution.
+
+Organize executable examples by task, update their catalog and documentation links.
+
+Expand exact mathematical checks, adversarial tests, serialization tests and native/portable backend coverage.
+
 ## 0.3.0
 
 ### Certified rational functional decomposition

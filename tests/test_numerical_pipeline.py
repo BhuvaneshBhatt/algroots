@@ -54,27 +54,17 @@ def test_compiled_rational_power_uses_principal_branch() -> None:
 def test_max_precision_option_is_validated() -> None:
     x = sp.symbols("x")
     with pytest.raises(ValueError, match="max_precision_digits"):
-        polysolve((x**2 - 2,), (x,), digits=50, max_precision_digits=40)
+        polysolve((x**2 - 2,), (x,), digits=50, max_precision_digits=40, recognize=False)
 
 
 def test_flint_action_and_shape_backends() -> None:
     pytest.importorskip("flint")
     x, y = sp.symbols("x y")
 
-    action = polysolve(
-        (x**2 - 2, y**2 - 3),
-        (x, y),
-        digits=45,
-        method="action",
-    )
+    action = polysolve((x**2 - 2, y**2 - 3), (x, y), digits=45, method="action", recognize=False)
     assert action.method == "action_matrix"
     assert len(action.roots) == 4
 
-    shape = polysolve(
-        (x - y**2, y**3 - 2),
-        (x, y),
-        digits=45,
-        method="shape",
-    )
+    shape = polysolve((x - y**2, y**3 - 2), (x, y), digits=45, method="shape", recognize=False)
     assert shape.method == "shape_position"
     assert len(shape.roots) == 3

@@ -164,7 +164,7 @@ def test_shared_extractor_invalid_budget(options):
 
 def test_unit_ideal_streaming_traces():
     quotient = QuotientAlgebra.from_polynomials((1,), (x,))
-    assert quotient.trace_vector.shape == (0, 0)
+    assert quotient.trace_vector.shape == (0, 1)
     assert quotient.trace_pairing.shape == (0, 0)
     assert quotient.multiplication_matrix(x).shape == (0, 0)
 

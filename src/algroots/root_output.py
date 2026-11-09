@@ -75,6 +75,7 @@ class RootViews:
 def validate_output_options(
     root_mode, multiplicity, root_order, max_returned_roots, ordering_max_refinements
 ):
+    """Validate root multiplicity, ordering, and output-count controls."""
     if root_mode not in ("distinct", "with_multiplicity"):
         raise PolynomialSystemInputError("root_mode must be distinct or with_multiplicity")
     if not (
@@ -106,6 +107,7 @@ ALIGNED_FIELDS = (
 
 
 def permute_root_records(result, permutation):
+    """Reorder roots and all point-aligned diagnostics with the same permutation."""
     count = len(result.roots)
     if sorted(permutation) != list(range(count)):
         raise ValueError("root permutation must contain each distinct index exactly once")
@@ -127,6 +129,7 @@ def permute_root_records(result, permutation):
 
 @lru_cache(maxsize=256)
 def _exact_sign(expression, max_refinements):
+    """Determine an algebraic sign using exact real-root isolating intervals."""
     expression = sp.simplify(expression)
     if expression == 0:
         return 0
@@ -149,17 +152,19 @@ def _exact_sign(expression, max_refinements):
         return 1 if root > 0 else -1 if root < 0 else 0
     if polynomial.degree() > 64:
         raise RootOrderingError("exact ordering exceeds algebraic degree budget 64")
-    for root in polynomial.all_roots(radicals=False):
-        if root.is_real and polynomial.same_root(expression, root):
-            if root.is_Rational:
-                return 1 if root > 0 else -1 if root < 0 else 0
-            interval = root._get_interval()
+    # SymPy may express an isolated root as a rational multiple of CRootOf.
+    # Work with the polynomial's public isolating intervals, not attributes
+    # of the returned expression. A minimal polynomial is squarefree, so
+    # its sorted real roots correspond one to one with these intervals.
+    roots = polynomial.real_roots(radicals=False)
+    for ((lower, upper), _), root in zip(polynomial.intervals(), roots, strict=True):
+        if polynomial.same_root(expression, root):
             for _ in range(max_refinements):
-                if interval.a >= 0:
+                if lower >= 0:
                     return 1
-                if interval.b <= 0:
+                if upper <= 0:
                     return -1
-                interval = interval.refine()
+                lower, upper = polynomial.refine_root(lower, upper, steps=1)
             break
     raise RootOrderingError("exact coordinate order unresolved within refinement budget")
 
@@ -204,7 +209,10 @@ def finish_root_output(
     certification_max_refinements=128,
     certification_max_box_attempts=16,
     polynomial=True,
+    groebner_backend="native",
+    groebner_limits=None,
 ):
+    """Apply multiplicity and canonical-order policies to a verified solver result."""
     output_started = perf_counter()
     validate_output_options(
         root_mode, multiplicity, root_order, max_returned_roots, ordering_max_refinements
@@ -237,6 +245,8 @@ def finish_root_output(
             max_quotient_dimension=certification_max_dimension,
             max_refinements=certification_max_refinements,
             max_box_attempts=certification_max_box_attempts,
+            groebner_backend=groebner_backend,
+            groebner_limits=groebner_limits,
         )
     multiplicities, evidence = [], []
     for i in range(count):

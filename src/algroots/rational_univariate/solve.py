@@ -15,11 +15,21 @@ from .representation import (
 )
 
 
+def _require_constant_coefficients(representation):
+    if representation.defining_polynomial.domain.is_FractionField or getattr(
+        representation.defining_polynomial.domain, "is_AlgebraicFunctionField", False
+    ):
+        raise RationalUnivariateError(
+            "specialize coefficient parameters and rebuild the RUR before extracting roots"
+        )
+
+
 def _all_parameter_roots(
     representation: RationalUnivariateRepresentation,
     *,
     real: bool,
 ) -> tuple[sp.Expr, ...]:
+    _require_constant_coefficients(representation)
     defining = representation.defining_polynomial
     if defining.degree() <= 0:
         return tuple()
@@ -51,6 +61,7 @@ def numerical_rur_roots(
     validate_integer(maxsteps, "maxsteps")
     if max_precision_digits is not None:
         validate_integer(max_precision_digits, "max_precision_digits", minimum=digits)
+    _require_constant_coefficients(representation)
     defining = representation.defining_polynomial
     if defining.degree() <= 0:
         return tuple()
@@ -83,6 +94,7 @@ def solve_rur_representation(
 ) -> tuple[tuple[sp.Expr, ...], ...]:
     """Return distinct exact solutions from an existing RUR."""
 
+    _require_constant_coefficients(representation)
     if representation.defining_polynomial.degree() <= 0:
         return tuple()
 
@@ -113,11 +125,20 @@ def solve_zero_dimensional_system_with_rur(
     real: bool = True,
     parameter: sp.Symbol | None = None,
     max_separating_attempts: int = 64,
+    domain=None,
+    groebner_backend="native",
+    groebner_limits=None,
 ) -> tuple[tuple[sp.Expr, ...], ...]:
-    """Return distinct exact solutions obtained from a RUR representation."""
+    """Return exact RUR solutions using native F4 or explicit portable SymPy construction."""
 
     representation = compute_rational_univariate_representation(
-        polynomials, variables, parameter, max_separating_attempts=max_separating_attempts
+        polynomials,
+        variables,
+        parameter,
+        max_separating_attempts=max_separating_attempts,
+        domain=domain,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
     )
     return solve_rur_representation(representation, real=real)
 
@@ -129,6 +150,7 @@ def solve_rur_points(
 ) -> tuple[RationalUnivariatePoint, ...]:
     """Return distinct solutions as RUR parameter-root points."""
 
+    _require_constant_coefficients(representation)
     if representation.defining_polynomial.degree() <= 0:
         return tuple()
     roots = _all_parameter_roots(representation, real=real)

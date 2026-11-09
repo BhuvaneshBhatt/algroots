@@ -1,0 +1,71 @@
+name: Publish release
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Upload the validated artifacts to PyPI
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  release-ref:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Require a matching release tag for publication
+        env:
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          python - <<'PY'
+          import os, tomllib
+          from pathlib import Path
+          version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
+          if os.environ['PUBLISH'] == 'true' and os.environ['GITHUB_REF'] != 'refs/tags/v' + version:
+              raise RuntimeError('Publish from the tag matching project.version')
+          PY
+  stack:
+    needs: release-ref
+    uses: ./.github/workflows/stack.yml
+  wheels:
+    needs: release-ref
+    uses: ./.github/workflows/wheels.yml
+  publish:
+    if: inputs.publish
+    needs: [stack, wheels]
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: native-wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@v6
+        with:
+          name: fallback-wheel-and-source
+          path: dist
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install twine
+      - run: python -m twine check dist/*
+      - uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Verify indexed installation
+        run: |
+          python -m venv verify-index
+          verify-index/bin/python -m pip install algroots==0.4.0
+          verify-index/bin/python -m pip check
+          verify-index/bin/python -c "import importlib.metadata as m; assert m.version('algroots') == '0.4.0'"
+          verify-index/bin/python - <<'PY'
+          import sympy as sp
+          from algroots import QuotientAlgebra
+          x = sp.Symbol('x')
+          q = QuotientAlgebra.from_polynomials([x*x-2], (x,))
+          assert q.dimension == 2 and q.normal_form(x*x-2) == 0
+          PY

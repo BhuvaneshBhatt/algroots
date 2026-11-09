@@ -29,6 +29,7 @@ def test_action_retries_after_nonseparating_linear_form(monkeypatch):
         method="action",
         digits=40,
         max_precision_digits=180,
+        recognize=False,
     )
     assert len(result.roots) == 4
     assert result.quotient_dimension == 4
@@ -36,12 +37,7 @@ def test_action_retries_after_nonseparating_linear_form(monkeypatch):
 
 
 def test_action_result_preserves_each_completeness_stage():
-    result = polysolve(
-        [x**2 - 2, y**2 - 3],
-        (x, y),
-        method="action",
-        digits=35,
-    )
+    result = polysolve([x**2 - 2, y**2 - 3], (x, y), method="action", digits=35, recognize=False)
     assert result.quotient_dimension == 4
     assert result.standard_monomials is not None
     assert len(result.standard_monomials) == result.quotient_dimension
@@ -56,5 +52,5 @@ def test_completeness_is_not_inferred_from_small_residual_subset():
     polynomial = x**4 - 5 * x**2 + 4
     three_exact_roots = (-2, -1, 1)
     assert all(sp.expand(polynomial.subs(x, value)) == 0 for value in three_exact_roots)
-    full = polysolve([polynomial], (x,), digits=35)
+    full = polysolve([polynomial], (x,), digits=35, recognize=False)
     assert len(full.roots) == 4

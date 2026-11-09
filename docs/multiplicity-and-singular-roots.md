@@ -6,30 +6,21 @@ Multiplicity is one of the most important distinctions in polynomial root solvin
 
 Consider:
 
-$$
-f(x)=x^2.
-$$
+$$ f(x)=x^2. $$
 
 It has one geometric root,
 
-$$
-x=0,
-$$
+$$ x=0, $$
 
 with algebraic multiplicity two.
 
 Now compare:
 
-$$
-g_\varepsilon(x)=(x-\varepsilon)(x+\varepsilon)
-=x^2-\varepsilon^2.
-$$
+$$ g_\varepsilon(x)=(x-\varepsilon)(x+\varepsilon) =x^2-\varepsilon^2. $$
 
 For every nonzero exact $\varepsilon$, this has two distinct simple roots:
 
-$$
-x=-\varepsilon,\qquad x=\varepsilon.
-$$
+$$ x=-\varepsilon,\qquad x=\varepsilon. $$
 
 As $\varepsilon\to0$, the two roots become arbitrarily close, but the algebraic situations remain different. High precision can resolve sufficiently separated simple roots; it cannot turn a genuinely multiple root into a simple one.
 
@@ -37,25 +28,19 @@ As $\varepsilon\to0$, the two roots become arbitrarily close, but the algebraic 
 
 For a zero-dimensional ideal $I$, the quotient dimension
 
-$$
-D=\dim_K K[x_1,\ldots,x_n]/I
-$$
+$$ D=\dim_K K[x_1,\ldots,x_n]/I $$
 
 counts roots with algebraic multiplicity.
 
 For
 
-$$
-I=(x^2),
-$$
+$$ I=(x^2), $$
 
 the quotient has basis $\{1,x\}$, so $D=2$, although there is only one distinct geometric point.
 
 For
 
-$$
-I=(x^2-\varepsilon^2),
-$$
+$$ I=(x^2-\varepsilon^2), $$
 
 with $\varepsilon\ne0$, the quotient dimension is also two, but now there are two distinct points.
 
@@ -73,15 +58,11 @@ The automatic solver can use RUR for nonreduced quotients, then triangular solvi
 
 For a square system
 
-$$
-F(x)=0,
-$$
+$$ F(x)=0, $$
 
 a root $z$ is singular when the Jacobian
 
-$$
-J_F(z)
-$$
+$$ J_F(z) $$
 
 does not have full rank.
 

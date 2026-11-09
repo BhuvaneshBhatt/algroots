@@ -13,6 +13,8 @@ from .numerical import number_to_mpc
 
 @dataclass(frozen=True)
 class ChartSwitch:
+    """A numerical projective chart change along a tracked path."""
+
     parameter: float
     previous_patch: tuple
     next_patch: tuple
@@ -21,6 +23,8 @@ class ChartSwitch:
 
 @dataclass(frozen=True)
 class ProjectivePathResult:
+    """A numerical projective endpoint with chart history and classification limits."""
+
     endpoint: tuple
     final_t: float
     success: bool

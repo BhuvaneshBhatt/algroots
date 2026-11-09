@@ -70,7 +70,7 @@ After normalizing the constant basis component to one, each coordinate is recove
 
 ### Terminology and historical references
 
-This backend belongs to the classical **multiplication-matrix / action-matrix / endomorphism-matrix eigenmethod** family. Multiplication by a polynomial in the finite-dimensional quotient algebra defines a linear endomorphism, and the matrix representing that map is variously called a multiplication matrix, action matrix, endomorphism matrix, or (in related literature) a Stetter matrix. `algroots` uses the modern term *action matrix* in its public API, while constructing the endomorphism associated with a separating linear form rather than a separate coordinate matrix for every variable.
+This backend belongs to the classical **multiplication-matrix / action-matrix / endomorphism-matrix eigenmethod** family. Multiplication by a polynomial in the finite-dimensional quotient algebra defines a linear endomorphism, and the matrix representing that map is variously called a multiplication matrix, action matrix, endomorphism matrix, or (in related literature) a Stetter matrix. `algroots` uses the modern term *action matrix* in its public API, while constructing the endomorphism associated with a separating linear form instead of a separate coordinate matrix for every variable.
 
 Useful references:
 
@@ -131,19 +131,15 @@ For rational- or exact algebraic-coefficient zero-dimensional polynomial systems
 
 For a square polynomial system $F=(f_1,\ldots,f_n)$ with total degrees $d_i$, the explicit homotopy backend uses the start system
 
-$$
-G_i(x)=x_i^{d_i}-1,
-$$
+$$ G_i(x)=x_i^{d_i}-1, $$
 
 whose $\prod_i d_i$ solutions are known products of roots of unity. It tracks the gamma homotopy
 
-$$
-H_i(x,t)=(1-t)\,\gamma\,G_i(x)+t f_i(x),
-$$
+$$ H_i(x,t)=(1-t)\,\gamma\,G_i(x)+t f_i(x), $$
 
-using the same adaptive mixed-precision predictor/corrector engine used by monodromy. Gamma values are exact deterministic complex rationals generated from `homotopy_seed`; several candidates can be retried because the gamma trick guarantees regularity only generically. Start points are generated lazily, and process-parallel tracking compiles the symbolic homotopy once per worker rather than once per path.
+using the same adaptive mixed-precision predictor/corrector engine used by monodromy. Gamma values are exact deterministic complex rationals generated from `homotopy_seed`; several candidates can be retried because the gamma trick guarantees regularity only generically. Start points are generated lazily, and process-parallel tracking compiles the symbolic homotopy once per worker instead of once per path.
 
-The ordinary homotopy backend does not compute a Gröbner basis before path tracking. Opt-in bounded recovery computes one for exact finite-root proof accounting. Every endpoint is re-refined and residual-verified against the original target equations, and a scale-normalized Jacobian check rejects singular or insufficiently resolved endpoints. All required Bézout paths must succeed; otherwise `HomotopySolveError` is raised. This is intentionally stricter than mature projective/endgame solvers but prevents incomplete results from being mislabeled as an all-roots solve.
+The ordinary homotopy backend does not compute a Gröbner basis before path tracking. Opt-in bounded recovery computes one for exact finite-root proof accounting. Every endpoint is re-refined and residual-verified against the original target equations, and a scale-normalized Jacobian check rejects singular or insufficiently resolved endpoints. All required Bézout paths must succeed; otherwise `HomotopySolveError` is raised. This is stricter than mature projective/endgame solvers but prevents incomplete results from being mislabeled as an all-roots solve.
 
 `method="auto"` remains `shape → action → triangular`; total-degree homotopy must be requested explicitly. See [Total-Degree Homotopy Continuation](homotopy-continuation.md) for path counts, gamma retries, regularity diagnostics, and current limitations.
 

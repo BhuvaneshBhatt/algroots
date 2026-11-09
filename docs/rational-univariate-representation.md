@@ -6,9 +6,7 @@ A rational univariate representation (RUR) is an **exact representation of a fin
 
 For a zero-dimensional system over an exact rational or algebraic number field, the RUR chooses a separating parameter $t$ and constructs an exact defining polynomial
 
-$$
-q(t)=0
-$$
+$$ q(t)=0 $$
 
 together with rational coordinate maps. After normalizing the common denominator modulo $q$, each coordinate can be represented by an exact polynomial in $t$ modulo the defining polynomial.
 
@@ -36,7 +34,7 @@ The constructor operates natively over `QQ` for rational coefficients and over o
 
 ## Numerical `method="rur"`
 
-`polysolve(..., method="rur")` deliberately does **not** call exact RUR root enumeration and then convert the resulting `RootOf` objects back to floating-point numbers. Instead it:
+`polysolve(..., method="rur")` does **not** call exact RUR root enumeration and then convert the resulting `RootOf` objects back to floating-point numbers. Instead it:
 
 1. constructs the exact RUR;
 2. solves the exact defining univariate polynomial numerically at the requested working precision;
@@ -70,10 +68,18 @@ Thus these are three distinct operations:
 | `solve_rur_representation` | exact algebraic coordinate tuples | exact root extraction from an existing RUR |
 | `polysolve(..., method="rur")` | verified arbitrary-precision numerical roots plus retained exact RUR | efficient numerical all-roots backend |
 
-The numerical backend retains the exact representation in `result.rational_univariate_representation` rather than discarding it.
+The numerical backend retains the exact representation in `result.rational_univariate_representation` instead of discarding it.
 
 ## Multiplicity and geometric roots
 
 The quotient-algebra dimension counts multiplicity, while the squarefree RUR defining polynomial represents distinct geometric parameter roots. `algroots` keeps these notions separate. `total_multiplicity` and `geometric_solution_count` report global counts. Individual multiplicities are available through exact isolated-root certificates; the numerical root list contains distinct points.
 
 For the quotient-algebra relationship to action matrices and border bases, see [Algorithms](algorithms.md) and [Exact Border Bases](exact-border-bases.md).
+
+## Symbolic coefficient parameters
+
+Pass `domain=QQ.frac_field(a)` or `domain=QQ.algebraic_field(sqrt(2)).frac_field(a)` to compute a generic RUR over an exact characteristic-zero field. The auxiliary RUR variable is separate from the coefficient parameters. `groebner_backend` and `groebner_limits` choose verified basis construction in the original domain. Exact coordinate normalization uses the same bounded-unit fraction representation as quotient arithmetic, including over number fields extended by parameters.
+
+The representation's quotient dimension records algebra length, while `solution_count` records distinct geometric points over the coefficient field's algebraic closure. Repeated roots can change both counts after specialization. Neither number gives the number of real points on every parameter fiber. Root extraction requires constant exact coefficients: specialize the original equations and rebuild the RUR. See [Coefficient fields and specialization](coefficient-fields.md#construct-a-generic-rur) for a complete example and exceptional-fiber conditions.
+
+See [Sparse quotients and reusable certificates](sparse-quotients-and-certificates.md) for sparse exact arithmetic, proof replay, and RUR specialization guards, and [Algebraic function fields](algebraic-function-fields.md) for parameter-dependent coefficient towers.

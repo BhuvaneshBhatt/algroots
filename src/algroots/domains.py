@@ -9,7 +9,7 @@ from sympy.polys.groebnertools import groebner as native_groebner
 from sympy.polys.matrices import DomainMatrix
 from sympy.polys.polyerrors import CoercionFailed
 from sympy.polys.polyoptions import build_options
-from sympy.polys.rings import PolyRing
+from sympy.polys.rings import PolyElement, PolyRing
 
 from .finite_fields import is_finite_field
 
@@ -137,6 +137,41 @@ def field_element(value, domain):
     return domain.field.new(*(domain.field.ring.from_dict(p.rep.to_dict()) for p in parts))
 
 
+def coefficient_domain(value):
+    """Normalize a SymPy domain or an adapter field with an exact as_domain method."""
+    from sympy.polys.domains import Domain
+
+    if not isinstance(value, Domain) and hasattr(value, "as_domain"):
+        value = value.as_domain()
+    result = sp.polys.polyoptions.Domain.preprocess(value)
+    if getattr(result, "is_FractionField", False) and getattr(
+        result.domain, "is_AlgebraicFunctionField", False
+    ):
+        result = result.domain.with_parameters(*result.symbols)
+    if not isinstance(result, Domain):
+        raise TypeError("as_domain must return an exact SymPy coefficient domain")
+    return result
+
+
+def infer_coefficient_field(expressions, variables):
+    """Infer a field while shielding bound root symbols and clearing rational parts."""
+    expressions = tuple(map(sp.sympify, expressions))
+    variables = tuple(variables)
+    constants = set().union(*(p.atoms(sp.CRootOf, sp.AlgebraicNumber) for p in expressions))
+    if any(constant.has(*variables) for constant in constants):
+        coordinates = tuple(sp.Dummy(v.name) for v in variables)
+        substitutions = dict(zip(variables, coordinates, strict=True))
+        expressions = tuple(p.subs(substitutions, simultaneous=True) for p in expressions)
+        variables = coordinates
+    if not expressions:
+        return sp.QQ
+    parts = tuple(
+        part for expression in expressions for part in sp.together(expression).as_numer_denom()
+    )
+    _, options = sp.parallel_poly_from_expr(parts, *variables, extension=True)
+    return options.domain.get_field()
+
+
 def polynomial(expression, variables, domain):
     """Construct a polynomial over the declared field using native coefficient elements."""
     variables = tuple(variables)
@@ -146,11 +181,39 @@ def polynomial(expression, variables, domain):
         and expression.domain == domain
     ):
         return expression
-    expression = expression.as_expr() if isinstance(expression, sp.Poly) else sp.sympify(expression)
+    expression = (
+        expression.as_expr()
+        if isinstance(expression, (sp.Poly, PolyElement))
+        else sp.sympify(expression)
+    )
     if expression.has(sp.Float):
         raise ValueError("exact polynomial coefficients are required")
     ground = domain.domain if domain.is_FractionField else domain
-    if not ground.is_AlgebraicField and not is_finite_field(ground):
+    if ground.is_AlgebraicField or getattr(domain, "is_AlgebraicFunctionField", False):
+        # CRootOf's defining polynomial binds its own symbols. Hide that
+        # bound syntax while identifying the free coordinate monomials.
+        roots = tuple(
+            root
+            for root in expression.atoms(sp.CRootOf)
+            if root.args[0].free_symbols.intersection(variables)
+        )
+        if roots:
+            replacements = {root: sp.Dummy("algebraic_constant") for root in roots}
+            inverse = {dummy: root for root, dummy in replacements.items()}
+            parsed = sp.Poly(expression.xreplace(replacements), *variables, domain=sp.EX)
+            return sp.Poly.from_dict(
+                {
+                    monomial: field_element(coefficient.xreplace(inverse), domain)
+                    for monomial, coefficient in parsed.terms()
+                },
+                *variables,
+                domain=domain,
+            )
+    if (
+        not ground.is_AlgebraicField
+        and not is_finite_field(ground)
+        and not getattr(domain, "is_AlgebraicFunctionField", False)
+    ):
         return sp.Poly(expression, *variables, domain=domain)
     parsed = sp.Poly(expression, *variables, domain=sp.EX)
     return sp.Poly.from_dict(
@@ -158,8 +221,14 @@ def polynomial(expression, variables, domain):
     )
 
 
-def groebner(expressions, variables, domain, order="lex"):
+def groebner(expressions, variables, domain, order="lex", *, backend="native", limits=None):
     """Compute a SymPy GroebnerBasis while preserving native coefficient embeddings."""
+    if backend != "sympy" or limits is not None:
+        from .basis import groebner_basis
+
+        return groebner_basis(
+            expressions, variables, domain=domain, order=str(order), backend=backend, limits=limits
+        )
     variables = tuple(variables)
     options = build_options(variables, {"domain": domain, "order": order, "polys": False})
     ring = PolyRing(variables, polynomial_domain(domain), order)

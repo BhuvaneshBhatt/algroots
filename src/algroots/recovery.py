@@ -15,6 +15,8 @@ from .total_degree_homotopy import build_total_degree_homotopy, gamma_candidates
 
 @dataclass(frozen=True)
 class HomotopyRecoveryOptions:
+    """Resource budgets for bounded endpoint recovery and exact finite-root accounting."""
+
     max_paths: int = 64
     gamma_attempts: int = 2
     max_quotient_dimension: int = 128
@@ -42,6 +44,8 @@ class HomotopyRecoveryOptions:
 
 @dataclass(frozen=True)
 class PathRecoveryRecord:
+    """Record one path recovery attempt, its evidence, timings, and disposition."""
+
     gamma_attempt: int
     path_index: int
     stages: tuple
@@ -75,6 +79,7 @@ def solve_recovered_homotopy(
     certification_max_box_attempts=16,
     gamma_attempts=4,
 ):
+    """Track a bounded path portfolio and reconcile recovered endpoints with exact root counts."""
     from .certification import _certify_numerical_roots
     from .deflation import _deflate_certificate
     from .numerical import sympy_to_mpc

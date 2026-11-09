@@ -94,7 +94,7 @@ assert p.to_source(x+1) == t+1
 
 `AlgebraicCoefficientField.curve_model()` returns `CoefficientCurveModel`, using a primitive element over its nonconstant coefficient. `coordinate_expressions` embed plane coordinates in the original coefficient symbols; `generator_images` map every original coefficient to the plane field. Both embeddings replay. `genus` and `rationality(...)` operate on this model.
 
-`rational_parametrization(...)` returns `CoefficientFieldParametrization` only when rational over the existing constants. It exposes the rational generator in the original ambient field, its expression in the original coefficients, coefficient images, guards and constructive maps. Negative cases raise and refer to `rationality()` for the structured obstruction. Constant-generated number fields have no curve genus. A constants extension is inspected through `curve_model().curve`; it is not silently adjoined to the original ambient field.
+`rational_parametrization(...)` returns `CoefficientFieldParametrization` only when rational over the existing constants. It exposes the rational generator in the original ambient field, its expression in the original coefficients, coefficient images, guards and constructive maps. Negative cases raise and refer to `rationality()` for the structured obstruction. Constant-generated number fields have no curve genus. A constants extension is inspected through `curve_model().curve`; it is not adjoined to the original ambient field.
 
 ## Scope and references
 

@@ -28,14 +28,14 @@ def _match_sets(left, right, tol=1e-10):
     ],
 )
 def test_equivalent_equation_representations_preserve_roots(variant):
-    reference = polysolve(BASE, (x, y), digits=35)
+    reference = polysolve(BASE, (x, y), digits=35, recognize=False)
     equations, variables = variant()
-    other = polysolve(equations, variables, digits=35)
+    other = polysolve(equations, variables, digits=35, recognize=False)
     _match_sets(reference.roots, other.roots)
 
 
 def test_variable_permutation_preserves_geometric_root_set():
-    reference = polysolve(BASE, (x, y), digits=35)
-    permuted = polysolve(BASE, (y, x), digits=35)
+    reference = polysolve(BASE, (x, y), digits=35, recognize=False)
+    permuted = polysolve(BASE, (y, x), digits=35, recognize=False)
     swapped = tuple((root[1], root[0]) for root in permuted.roots)
     _match_sets(reference.roots, swapped)

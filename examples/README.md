@@ -37,8 +37,13 @@ Each script uses public APIs, supplies its own symbols and inputs, prints result
 | [22_multivariate_decomposition.py](22_multivariate_decomposition.py) | Search multivariate rational functional compositions | Exact classes, bounded prefixes and completeness replay |
 | [23_decomposition_chains.py](23_decomposition_chains.py) | Build recursive rational and implicit decomposition chains | Exact compositions and resolved versus open leaves |
 | [24_finite_algebras.py](24_finite_algebras.py) | Construct finite fields, reduced quotients and primary factors | Exact finite-algebra invariants |
+| [25_groebner_operations.py](25_groebner_operations.py) | Reduce, eliminate, and change order | Exact basis and membership |
+| [26_solver_settings.py](26_solver_settings.py) | Group settings and supervise a calculation | Verified result or deadline failure |
+
+| [27_coefficient_fields.py](27_coefficient_fields.py) | Use coefficient fields and keep exceptional fibers | Verified bases and specialization guards |
+
 Start with 01 and 02. Read [result semantics](../docs/reading-results.md) before using certificate or multiplicity fields. Examples 12–14 distinguish finite endpoint proofs from numerical path/orbit evidence. Example 15 catches an unsupported problem and demonstrates a proof-budget refusal.
 
 For continuation controls, see the [recovery budgets](../docs/recovery-workflow.md#recovery-budgets). For result-wide claims, see [completeness evidence](../docs/reading-results.md#completeness-evidence).
 
-The documentation [gallery](../docs/examples-gallery.md) provides a task-oriented index. The examples serve as executable tutorials rather than performance benchmarks.
+The documentation [gallery](../docs/examples-gallery.md) provides a task-oriented index. The examples serve as executable tutorials instead of performance benchmarks.

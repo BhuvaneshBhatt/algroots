@@ -192,7 +192,7 @@ def _validated_outputs(
         residual = homotopy.evaluate(values, t)
         jacobian = homotopy.jacobian(values, t)
         derivative = homotopy.parameter_derivative(values, t)
-    except Exception as exc:  # custom implementations can fail arbitrarily
+    except (ArithmeticError, ValueError, TypeError) as exc:
         raise PathStepError("homotopy evaluation failed") from exc
     if not isinstance(residual, mp.matrix) or residual.rows != n or residual.cols != 1:
         raise PathStepError(f"homotopy evaluate() must return a {n}-vector")
@@ -222,7 +222,7 @@ def _residual_scales(
     if callable(scale_method):
         try:
             scales = scale_method(values, t)
-        except Exception as exc:
+        except (ArithmeticError, ValueError, TypeError) as exc:
             raise PathStepError("homotopy residual_scales() failed") from exc
         if not isinstance(scales, mp.matrix) or scales.rows != residual.rows or scales.cols != 1:
             raise PathStepError("homotopy residual_scales() must return one scale per equation")

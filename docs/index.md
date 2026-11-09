@@ -1,55 +1,59 @@
 # algroots documentation
 
-`algroots` combines exact polynomial and algebraic-system root solving with structural algebraic computation: quotient algebras, functional decomposition, generated subfields, finite fields, and plane-curve geometry. The root solvers enumerate only finite complex solution sets; separate algebraic interfaces handle selected curve and function-field questions. Start with a task below to choose the appropriate guarantee level.
+Start with [Quick start](quick-start.md), [Supported problems](supported-problems.md), and the [capability matrix](feature-support-matrix.md). The [Gröbner guide](groebner-bases.md) covers exact bases, verified backend selection, finite quotients, solver integration, and performance costs. Read [limitations](limitations.md) before choosing a guarantee level.
 
-## Start here
+## Choose a task
 
-1. [Quick Start](quick-start.md)
-2. [Supported Problems](supported-problems.md)
-3. [Feature and Support Matrix](feature-support-matrix.md)
-4. [Guarantees and Result Semantics](guarantees-and-result-semantics.md)
-5. [Choosing a Backend](choosing-a-backend.md)
-6. [Algorithms](algorithms.md)
-7. [Numerical Reliability](numerical-reliability.md)
-8. [API Reference](api.md)
+| I want to… | Start here |
+| --- | --- |
+| Solve polynomial or algebraic equations | [Quick start](quick-start.md), [solver settings](solver-settings.md) |
+| Reduce a polynomial or test ideal membership | [Normal forms and membership](groebner-bases.md#test-ideal-membership) |
+| Eliminate variables or change monomial order | [Elimination](groebner-bases.md#eliminate-a-variable), [FGLM](groebner-bases.md#change-order-for-a-finite-ideal) |
+| Construct and inspect a finite quotient | [Quotient tools](quotient-tools.md) |
+| Choose an installed engine | [Backend selection](groebner-bases.md#choose-a-backend), [availability](groebner-bases.md#check-engine-availability) |
+| Bound a complete calculation | [Supervised execution](supervised-execution.md) |
 
-## Structural algebra and geometry
+## Guides and mathematical references
 
-- **[Finite Algebras](finite-algebras.md)** — construct finite coefficient fields, detect nilpotents, form reduced quotients, and split finite algebras into primary factors.
-- **[Quotient Tools](quotient-tools.md)** — finite-dimensional exact coordinate rings, traces, norms, normal forms, and specialization.
-- **[Functional Decomposition](functional-decomposition.md)** — rational and implicit algebraic composition, bounded discovery, and verified recursive chains.
-- **[Generated Subfields and Function Fields](function-fields.md)** — generators, exact membership, embeddings, and Lüroth maps.
-- **[Plane-Curve Geometry](curves.md)** — normalized geometric genus, birational maps, and rationality over a specified coefficient field.
+- [algorithms](algorithms.md)
+- [api](api.md)
+- [branch semantics](branch-semantics.md)
+- [certification workflow](certification-workflow.md)
+- [choosing a backend](choosing-a-backend.md)
+- [completeness versus verification](completeness-versus-verification.md)
+- [continuation and monodromy](continuation-and-monodromy.md)
+- [curves](curves.md)
+- [end to end example](end-to-end-example.md)
+- [exact border bases](exact-border-bases.md)
+- [exact recognition](exact-recognition.md)
+- [examples gallery](examples-gallery.md)
+- [feature support matrix](feature-support-matrix.md)
+- [finite algebras](finite-algebras.md)
+- [function fields](function-fields.md)
+- [functional decomposition](functional-decomposition.md)
+- [groebner backend](groebner-backend.md)
+- [groebner bases](groebner-bases.md)
+- [guarantees and result semantics](guarantees-and-result-semantics.md)
+- [homotopy continuation](homotopy-continuation.md)
+- [limitations](limitations.md)
+- [multiplicity and singular roots](multiplicity-and-singular-roots.md)
+- [numerical reliability](numerical-reliability.md)
+- [performance model](performance-model.md)
+- [precision and conditioning](precision-and-conditioning.md)
+- [quick start](quick-start.md)
+- [quotient tools](quotient-tools.md)
+- [rational univariate representation](rational-univariate-representation.md)
+- [reading results](reading-results.md)
+- [recovery workflow](recovery-workflow.md)
+- [singular certification and charts](singular-certification-and-charts.md)
+- [supported problems](supported-problems.md)
+- [testing and validation](testing-and-validation.md)
+- [troubleshooting](troubleshooting.md)
 
-## Correctness and numerical behavior
+- [solver settings](solver-settings.md)
+- [supervised execution](supervised-execution.md)
 
-- [Multiplicity and Singular Roots](multiplicity-and-singular-roots.md)
-- [Singular Certification, Deflation and Chart Switching](singular-certification-and-charts.md)
-- [Precision and Conditioning](precision-and-conditioning.md)
-- [Branch Semantics](branch-semantics.md)
-- [Completeness versus Verification](completeness-versus-verification.md)
-- [Performance Model](performance-model.md)
-- [Total-Degree Homotopy Continuation](homotopy-continuation.md)
-- [Continuation and Monodromy](continuation-and-monodromy.md)
-- [Rational Univariate Representation](rational-univariate-representation.md)
-- [Exact Border Bases](exact-border-bases.md)
-- [Exact Recognition](exact-recognition.md) — reconstruct and exactly certify algebraic coordinates with `algrecognize`.
-- [Troubleshooting](troubleshooting.md)
+- [coefficient fields and specialization](coefficient-fields.md)
 
-## Tutorials and examples
-
-- [Examples Gallery](examples-gallery.md)
-- [End-to-End Worked Example](end-to-end-example.md)
-- [Limitations](limitations.md)
-
-The core design principle is:
-
-> Exact algebra determines the finite solution structure; arbitrary-precision numerical algebra extracts roots efficiently; default best-effort exact recognition reconstructs and certifies algebraic coordinates afterward.
-
-## Practical workflows and validation
-
-- [Reading Results](reading-results.md)
-- [Certification Workflow](certification-workflow.md)
-- [Recovery Workflow](recovery-workflow.md)
-- [Testing and Validation](testing-and-validation.md)
-- [Standalone runnable examples](../examples/README.md)
+- [Sparse quotients and reusable certificates](sparse-quotients-and-certificates.md)
+- [Algebraic function fields and towers](algebraic-function-fields.md)

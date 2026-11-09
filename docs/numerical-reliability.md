@@ -21,7 +21,7 @@ The normal numerical backend uses python-flint complex-ball arithmetic:
 - `acb_mat.eig()` for action matrices, using exact rational isolation for algebraic matrix entries;
 - `acb_poly.roots()` for shape-position eliminants.
 
-The action backend relies on FLINT's isolated simple eigensystem rather than on a manually chosen floating-point eigenvalue-distance threshold.
+The action backend relies on FLINT's isolated simple eigensystem instead of on a manually chosen floating-point eigenvalue-distance threshold.
 
 ## Residual evaluation
 
@@ -29,9 +29,7 @@ Polynomial equations are compiled once into sparse coefficient/exponent tuples. 
 
 A scaled relative residual is used:
 
-$$
-\rho(f,z)=\frac{|f(z)|}{\max(1,\sum_\alpha |c_\alpha z^\alpha|)}.
-$$
+$$ \rho(f,z)=\frac{|f(z)|}{\max(1,\sum_\alpha |c_\alpha z^\alpha|)}. $$
 
 ## Newton refinement
 

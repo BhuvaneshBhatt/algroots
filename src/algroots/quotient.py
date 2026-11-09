@@ -29,9 +29,20 @@ from .finite_fields import FiniteFieldExtension, is_finite_field
 def _require_quotient_domain(domain: Domain) -> Domain:
     """Validate exact number, finite, or rational-function coefficient fields."""
 
+    if (not isinstance(domain, Domain) and hasattr(domain, "as_domain")) or (
+        getattr(domain, "is_FractionField", False)
+        and getattr(domain.domain, "is_AlgebraicFunctionField", False)
+    ):
+        from .domains import coefficient_domain
+
+        domain = coefficient_domain(domain)
     if not isinstance(domain, Domain):
         raise QuotientAlgebraError("domain must be an exact SymPy coefficient domain")
 
+    from .algebraic_function_fields import AlgebraicFunctionField
+
+    if isinstance(domain, AlgebraicFunctionField):
+        return domain
     if is_finite_field(domain):
         return domain
     gaussian_domains = tuple(
@@ -123,7 +134,14 @@ def _exact_polynomials(
 
 def _check_coefficient_symbols(domain: Domain, variables: Sequence[sp.Symbol]) -> None:
     parameters = domain.symbols if getattr(domain, "is_FractionField", False) else ()
+    parameters = (
+        *parameters,
+        *getattr(domain, "parameters", ()),
+        *getattr(domain, "tower_symbols", ()),
+    )
     ground = domain.domain if domain.is_FractionField else domain
+    if getattr(domain, "is_AlgebraicFunctionField", False):
+        parameters = (*parameters, domain.symbol)
     if isinstance(ground, FiniteFieldExtension):
         parameters = (*parameters, ground.symbol)
     if any(v == p or v.name == p.name for v in variables for p in parameters):
@@ -249,6 +267,7 @@ def standard_exponents(
 
 
 def monomial_from_exponent(variables: Sequence[sp.Symbol], exponent: Sequence[int]) -> sp.Expr:
+    """Construct the monomial with the supplied coordinate exponents."""
     monomial = sp.Integer(1)
     for variable, power in zip(variables, exponent, strict=True):
         monomial *= variable ** int(power)
@@ -333,7 +352,10 @@ class QuotientAlgebra:
         order: str = "grevlex",
         max_dimension: int | None = None,
         normal_form_cache_size: int = 128,
+        groebner_backend="native",
+        groebner_limits=None,
     ) -> QuotientAlgebra:
+        """Construct a finite algebra using an explicitly selected, verified basis."""
         validate_integer(normal_form_cache_size, "normal_form_cache_size", minimum=0)
         if max_dimension is not None:
             validate_integer(max_dimension, "max_dimension")
@@ -341,7 +363,14 @@ class QuotientAlgebra:
         poly_objects, domain = _exact_polynomials(polynomials, variable_tuple, domain)
         if not poly_objects:
             raise QuotientAlgebraError("at least one polynomial generator is required")
-        basis = groebner(poly_objects, variable_tuple, domain, order)
+        basis = groebner(
+            poly_objects,
+            variable_tuple,
+            domain,
+            order,
+            backend=groebner_backend,
+            limits=groebner_limits,
+        )
         quotient = cls.from_groebner_basis(
             basis,
             variable_tuple,
@@ -349,6 +378,17 @@ class QuotientAlgebra:
             normal_form_cache_size=normal_form_cache_size,
         )
         return replace(quotient, defining_polynomials=tuple(p.as_expr() for p in poly_objects))
+
+    @classmethod
+    def from_certificate(cls, certificate, **options):
+        """Construct a quotient by replaying reusable exact basis identities."""
+        from .basis_certificates import GroebnerCertificate
+        from .verified_families import VerifiedGroebnerFamily
+
+        if not isinstance(certificate, (GroebnerCertificate, VerifiedGroebnerFamily)):
+            raise TypeError("certificate must be a GroebnerCertificate")
+        quotient = cls.from_groebner_basis(certificate.verified_basis(), **options)
+        return replace(quotient, defining_polynomials=certificate.source)
 
     @classmethod
     def from_groebner_basis(
@@ -359,6 +399,7 @@ class QuotientAlgebra:
         max_dimension: int | None = None,
         normal_form_cache_size: int = 128,
     ) -> QuotientAlgebra:
+        """Construct a finite algebra from an existing exact Gröbner basis."""
         validate_integer(normal_form_cache_size, "normal_form_cache_size", minimum=0)
         if max_dimension is not None:
             validate_integer(max_dimension, "max_dimension")
@@ -497,16 +538,24 @@ class QuotientAlgebra:
             return tuple(sp.zeros(0, 0) for _ in self.variables)
         started = perf_counter()
         matrices: list[sp.Matrix] = []
-        for variable in self.variables:
-            columns = [
-                self.coordinate_vector(variable * monomial) for monomial in self.standard_monomials
-            ]
-            entries = {
-                (r, c): value
-                for c, column in enumerate(columns)
-                for r, value in enumerate(column)
-                if value != 0
-            }
+        for variable_index, variable in enumerate(self.variables):
+            entries = {}
+            for column, (monomial, exponent) in enumerate(
+                zip(self.standard_monomials, self.standard_exponents, strict=True)
+            ):
+                product = tuple(e + (i == variable_index) for i, e in enumerate(exponent))
+                if product in self._basis_index:
+                    entries[self._basis_index[product], column] = sp.S.One
+                    continue
+                remainder = polynomial(
+                    self.normal_form(variable * monomial), self.variables, self.domain
+                )
+                for exponent, value in remainder.rep.to_dict().items():
+                    if exponent not in self._basis_index:
+                        raise QuotientAlgebraError(
+                            "remainder contains a monomial outside the quotient basis"
+                        )
+                    entries[self._basis_index[exponent], column] = self.domain.to_sympy(value)
             from .rational_univariate.linear_algebra import preferred_matrix_storage
 
             matrix = sp.SparseMatrix(self.dimension, self.dimension, entries)
@@ -537,7 +586,7 @@ class QuotientAlgebra:
 
         if self.dimension == 0:
             return tuple()
-        identity = sp.eye(self.dimension)
+        identity = sp.SparseMatrix.eye(self.dimension)
         power_cache: list[dict[int, sp.Matrix]] = [
             {0: identity, 1: matrix} for matrix in self.variable_multiplication_matrices
         ]
@@ -556,7 +605,7 @@ class QuotientAlgebra:
 
     def _monomial_matrix(self, exponent):
         """Stream one basis action; retain only the variable actions."""
-        matrix = sp.eye(self.dimension)
+        matrix = sp.SparseMatrix.eye(self.dimension)
         for power, action in zip(exponent, self.variable_multiplication_matrices, strict=True):
             if power:
                 matrix = matrix * action ** int(power)
@@ -568,7 +617,7 @@ class QuotientAlgebra:
         if len(self.variables) == 1:
             # A univariate staircase is consecutive: reuse the previous action
             # without retaining the entire sequence of powers.
-            action = sp.eye(self.dimension)
+            action = sp.SparseMatrix.eye(self.dimension)
             variable_action = self.variable_multiplication_matrices[0]
             power = 0
             for exponent in self.standard_exponents:
@@ -582,7 +631,7 @@ class QuotientAlgebra:
             # Missing predecessors use the exact original power computation.
             cache = OrderedDict()
             zero = (0,) * len(self.variables)
-            cache[zero] = sp.eye(self.dimension)
+            cache[zero] = sp.SparseMatrix.eye(self.dimension)
             for exponent in self.standard_exponents:
                 if exponent in cache:
                     action = cache[exponent]
@@ -613,6 +662,74 @@ class QuotientAlgebra:
     def _variable_domain_matrices(self) -> tuple[DomainMatrix, ...]:
         return tuple(domain_matrix(m, self.domain) for m in self.variable_multiplication_matrices)
 
+    def _iter_basis_domain_actions(self):
+        """Stream canonical coefficient-domain actions through a bounded cache."""
+        active = {
+            i for exponent in self.standard_exponents for i, power in enumerate(exponent) if power
+        }
+        if len(active) <= 1:
+            index = next(iter(active), 0)
+            action = DomainMatrix.eye((self.dimension, self.dimension), self.domain)
+            power = 0
+            for exponent in self.standard_exponents:
+                while power < exponent[index]:
+                    action = action * self._variable_domain_matrices[index]
+                    power += 1
+                self._operation_statistics["basis_stream_peak_entries"] = max(
+                    self._operation_statistics["basis_stream_peak_entries"], 1
+                )
+                yield action
+            return
+        cache = OrderedDict()
+        zero = (0,) * len(self.variables)
+        cache[zero] = DomainMatrix.eye((self.dimension, self.dimension), self.domain)
+        for exponent in self.standard_exponents:
+            if exponent in cache:
+                action = cache[exponent]
+            else:
+                action = None
+                for i, power in enumerate(exponent):
+                    if power:
+                        predecessor = exponent[:i] + (power - 1,) + exponent[i + 1 :]
+                        if predecessor in cache:
+                            action = cache[predecessor] * self._variable_domain_matrices[i]
+                            self._operation_statistics["basis_stream_cache_hits"] += 1
+                            break
+                if action is None:
+                    action = DomainMatrix.eye((self.dimension, self.dimension), self.domain)
+                    for power, matrix in zip(exponent, self._variable_domain_matrices, strict=True):
+                        if power:
+                            action = action * matrix.pow(int(power))
+                cache[exponent] = action
+            cache.move_to_end(exponent)
+            if len(cache) > 8:
+                cache.popitem(last=False)
+            self._operation_statistics["basis_stream_peak_entries"] = max(
+                self._operation_statistics["basis_stream_peak_entries"], len(cache)
+            )
+            yield action
+
+    def _linear_combination_domain_matrix(self, coefficients):
+        result = DomainMatrix.zeros((self.dimension, self.dimension), self.domain)
+        for coefficient, matrix in zip(coefficients, self._variable_domain_matrices, strict=True):
+            scalar = field_element(coefficient, self.domain)
+            if scalar:
+                result = result + matrix.scalarmul(scalar)
+        return result
+
+    def _matrix_expression(self, matrix):
+        entries = matrix.to_dod()
+        if sum(map(len, entries.values())) * 5 <= matrix.shape[0] * matrix.shape[1]:
+            return sp.SparseMatrix(
+                *matrix.shape,
+                {
+                    (i, j): self.domain.to_sympy(c)
+                    for i, row in entries.items()
+                    for j, c in row.items()
+                },
+            )
+        return matrix.to_Matrix()
+
     def multiplication_matrix(self, element: sp.Expr, *, representation: str = "sympy"):
         """Multiplication over the declared coefficient field.
 
@@ -620,11 +737,12 @@ class QuotientAlgebra:
         products always use domain arithmetic, including the default Matrix view.
         Elements are polynomial in the quotient variables; use ``inverse`` for units.
         """
-        if representation not in ("sympy", "domain"):
-            raise ValueError("representation must be 'sympy' or 'domain'")
+        if representation not in ("sympy", "sparse", "domain"):
+            raise ValueError("representation must be sympy, sparse or domain")
         if (
-            representation == "domain"
+            representation in ("domain", "sparse")
             or getattr(self.domain, "is_FractionField", False)
+            or getattr(self.domain, "is_FiniteExtension", False)
             or self.domain.characteristic()
         ):
             result = DomainMatrix.zeros((self.dimension, self.dimension), self.domain)
@@ -639,8 +757,24 @@ class QuotientAlgebra:
                     if power:
                         action = action * matrix.pow(int(power))
                 result = result + action.scalarmul(scalar)
-            return result if representation == "domain" else result.to_Matrix()
-        result = sp.zeros(self.dimension, self.dimension)
+            if representation == "domain":
+                return result
+            entries = result.to_dod()
+            if (
+                representation == "sparse"
+                or sum(map(len, entries.values())) * 10 < self.dimension**2
+            ):
+                return sp.SparseMatrix(
+                    self.dimension,
+                    self.dimension,
+                    {
+                        (i, j): self.domain.to_sympy(c)
+                        for i, row in entries.items()
+                        for j, c in row.items()
+                    },
+                )
+            return result.to_Matrix()
+        result = sp.SparseMatrix(self.dimension, self.dimension, {})
         for coefficient, exponent in zip(
             self.coordinate_vector(element), self.standard_exponents, strict=True
         ):
@@ -659,7 +793,14 @@ class QuotientAlgebra:
         """Characteristic polynomial of multiplication, preserving multiplicities."""
         self._polynomial_parameter(parameter)
         matrix = self.multiplication_matrix(element, representation="domain")
-        return sp.Poly.from_list(matrix.charpoly(), parameter, domain=self.domain)
+        from .rational_univariate.linear_algebra import sparse_characteristic_coefficients
+
+        coefficients = (
+            sparse_characteristic_coefficients(matrix)
+            if self.dimension >= 12 and matrix.nnz() * 5 <= self.dimension**2
+            else matrix.charpoly()
+        )
+        return sp.Poly.from_list(coefficients, parameter, domain=self.domain)
 
     def minimal_polynomial(self, element: sp.Expr, parameter: sp.Symbol) -> sp.Poly:
         """Monic least-degree annihilator over ``self.domain``, including nilpotents.
@@ -671,20 +812,28 @@ class QuotientAlgebra:
 
         self._polynomial_parameter(parameter)
         matrix = self.multiplication_matrix(element, representation="domain")
-        coefficients = packed_krylov_coefficients(
-            matrix.to_list(), self.domain, allow_short_closure=True
-        )
+        coefficients = packed_krylov_coefficients(matrix, self.domain, allow_short_closure=True)
         return sp.Poly.from_list(list(reversed(coefficients)), parameter, domain=self.domain)
 
     def trace(self, element: sp.Expr) -> sp.Expr:
         """Trace of multiplication over the declared coefficient field."""
-        rows = self.multiplication_matrix(element, representation="domain").to_list()
-        value = sum((rows[i][i] for i in range(self.dimension)), self.domain.zero)
+        rows = self.multiplication_matrix(element, representation="domain").to_dod()
+        value = sum(
+            (rows.get(i, {}).get(i, self.domain.zero) for i in range(self.dimension)),
+            self.domain.zero,
+        )
         return self.domain.to_sympy(value)
 
     def norm(self, element: sp.Expr) -> sp.Expr:
         """Determinant of multiplication over the declared coefficient field."""
-        value = self.multiplication_matrix(element, representation="domain").det()
+        matrix = self.multiplication_matrix(element, representation="domain")
+        if self.dimension >= 12 and matrix.nnz() * 5 <= self.dimension**2:
+            from .rational_univariate.linear_algebra import sparse_characteristic_coefficients
+
+            constant = sparse_characteristic_coefficients(matrix)[-1]
+            value = -constant if self.dimension % 2 else constant
+        else:
+            value = matrix.det()
         return self.domain.to_sympy(value)
 
     def inverse(self, element: sp.Expr) -> sp.Expr:
@@ -693,7 +842,10 @@ class QuotientAlgebra:
             raise QuotientAlgebraError("the zero algebra has no unit inverse")
         matrix = self.multiplication_matrix(element, representation="domain")
         try:
-            column = [row[0] for row in matrix.inv().to_list()]
+            from .rational_univariate.linear_algebra import sparse_solve
+
+            unit = DomainMatrix({0: {0: self.domain.one}}, (self.dimension, 1), self.domain)
+            column = [row[0] for row in sparse_solve(matrix, unit).to_list()]
         except DMNonInvertibleMatrixError as exc:
             raise QuotientAlgebraError("element is not a unit in the quotient algebra") from exc
         expression = sum(
@@ -710,9 +862,14 @@ class QuotientAlgebra:
         if self.domain.characteristic():
             from .finite_decomposition import frobenius_matrix
 
-            fixed = frobenius_matrix(self) - domain_matrix(sp.eye(self.dimension), self.domain)
+            fixed = frobenius_matrix(self) - DomainMatrix.eye(
+                (self.dimension, self.dimension), self.domain
+            )
             return self.dimension - fixed.rank() == 1
         separator = self.separating_element(sp.Dummy("field_generator"))
+        if getattr(self.domain, "is_AlgebraicFunctionField", False):
+            factors = self.domain.factor_univariate(separator.defining_polynomial)[1]
+            return len(factors) == 1 and factors[0][1] == 1
         return bool(separator.defining_polynomial.is_irreducible)
 
     def subfield(self, generators: Sequence[sp.Expr], *, over=None, generator_symbols=None):
@@ -747,7 +904,12 @@ class QuotientAlgebra:
         return sp.And(*denominators)
 
     def specialize(
-        self, assignments: dict[sp.Symbol, sp.Expr], *, max_dimension: int | None = None
+        self,
+        assignments: dict[sp.Symbol, sp.Expr],
+        *,
+        max_dimension: int | None = None,
+        groebner_backend="native",
+        groebner_limits=None,
     ):
         """Rebuild the specialized algebra; never reuse generic rank or inverses.
 
@@ -791,39 +953,53 @@ class QuotientAlgebra:
             specialized,
             self.variables,
             domain=domain,
-            order=self.groebner_basis.order,
+            order=str(self.groebner_basis.order),
+            groebner_backend=groebner_backend,
+            groebner_limits=groebner_limits,
             max_dimension=max_dimension,
             normal_form_cache_size=self.normal_form_cache_size,
         )
 
     @cached_property
+    def _trace_domain_vector(self):
+        entries = {}
+        for i, action in enumerate(self._iter_basis_domain_actions()):
+            value = sum(
+                (row.get(j, self.domain.zero) for j, row in action.to_dod().items()),
+                self.domain.zero,
+            )
+            if value:
+                entries[i] = {0: value}
+        return DomainMatrix(entries, (self.dimension, 1), self.domain)
+
+    @cached_property
     def trace_vector(self) -> sp.Matrix:
-        """Exact traces, streaming one basis action at a time (quadratic storage)."""
+        """Exact sparse trace functional in the standard-monomial basis."""
         started = perf_counter()
-        result = (
-            sp.Matrix([self.trace(m) for m in self.standard_monomials])
-            if getattr(self.domain, "is_FractionField", False)
-            else sp.Matrix([action.trace() for action in self._iter_basis_actions()])
-        )
+        result = self._matrix_expression(self._trace_domain_vector)
         self._operation_statistics["trace_vector_seconds"] = perf_counter() - started
-        if self.domain.characteristic():
-            result = domain_matrix(result, self.domain).to_Matrix()
         return result
 
     @cached_property
+    def _trace_domain_pairing(self):
+        entries = {}
+        traces = self._trace_domain_vector
+        for left, action in enumerate(self._iter_basis_domain_actions()):
+            for right, row in (action.transpose() * traces).to_dod().items():
+                value = row.get(0, self.domain.zero)
+                if right >= left and value:
+                    entries.setdefault(left, {})[right] = value
+                    entries.setdefault(right, {})[left] = value
+        matrix = DomainMatrix(entries, (self.dimension, self.dimension), self.domain)
+        return matrix.to_dense() if matrix.nnz() * 5 > self.dimension**2 else matrix
+
+    @cached_property
     def trace_pairing(self) -> sp.Matrix:
-        """Exact symmetric trace pairing, without retaining cubic basis actions."""
+        """Exact trace pairing, preserving sparse support through field arithmetic."""
         started = perf_counter()
-        pairing = sp.zeros(self.dimension, self.dimension)
-        traces = self.trace_vector
-        for left, action in enumerate(self._iter_basis_actions()):
-            for right in range(left, self.dimension):
-                value = (action[:, right].T * traces)[0]
-                pairing[left, right] = pairing[right, left] = value
+        result = self._matrix_expression(self._trace_domain_pairing)
         self._operation_statistics["trace_pairing_seconds"] = perf_counter() - started
-        if self.domain.characteristic():
-            pairing = domain_matrix(pairing, self.domain).to_Matrix()
-        return pairing
+        return result
 
     @cached_property
     def geometric_solution_count(self) -> int:
@@ -835,16 +1011,9 @@ class QuotientAlgebra:
             from .finite_decomposition import nilradical_basis
 
             return self.dimension - len(nilradical_basis(self))
-        pairing = self.trace_pairing
         started = perf_counter()
-        # Local profiling favors exact domain elimination for QQ. Algebraic
-        # conversion was slower, so retain the existing path for that domain.
-        if self.domain == sp.QQ or getattr(self.domain, "is_FractionField", False):
-            rank = domain_matrix(pairing, self.domain).rank()
-            backend = "rational_domain" if self.domain == sp.QQ else "fraction_domain"
-        else:
-            rank = pairing.rank()
-            backend = "expression"
+        rank = self._trace_domain_pairing.rank()
+        backend = "coefficient_domain"
         self._operation_statistics.update(
             geometric_rank_seconds=perf_counter() - started, rank_backend=backend
         )
@@ -918,18 +1087,20 @@ class QuotientAlgebra:
             # polynomials. Short closure must retain the characteristic fallback:
             # dropping multiplicities would corrupt the trace RUR numerators.
             from .rational_univariate.linear_algebra import (
-                packed_krylov_minimal_polynomial,
+                packed_krylov_coefficients,
                 preferred_matrix_storage,
             )
 
-            if (
-                self.dimension >= 12
-                and not getattr(self.domain, "is_FractionField", False)
-                and preferred_matrix_storage(multiplication) == "sparse"
-            ):
+            if self.dimension >= 12 and preferred_matrix_storage(multiplication) == "sparse":
                 try:
                     characteristic = sp.Poly.from_list(
-                        packed_krylov_minimal_polynomial(multiplication, parameter).all_coeffs(),
+                        list(
+                            reversed(
+                                packed_krylov_coefficients(
+                                    domain_matrix(multiplication, self.domain), self.domain
+                                )
+                            )
+                        ),
                         parameter,
                         domain=self.domain,
                     )
@@ -945,9 +1116,12 @@ class QuotientAlgebra:
             derivative = characteristic.diff()
             gcd = sp.gcd(characteristic, derivative)
             denominator = derivative.quo(gcd)
-            powers = [sp.eye(self.dimension).col(0)]
+            native_action = self._linear_combination_domain_matrix(coefficients)
+            vector = DomainMatrix({0: {0: self.domain.one}}, (self.dimension, 1), self.domain)
+            powers = [self._matrix_expression(vector)]
             for _ in range(1, squarefree.degree()):
-                powers.append(multiplication * powers[-1])
+                vector = native_action * vector
+                powers.append(self._matrix_expression(vector))
             return SeparatingElement(
                 expression=linear_form,
                 coefficients=coefficients,

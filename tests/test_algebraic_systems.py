@@ -19,7 +19,7 @@ def test_algebraize_square_root_introduces_auxiliary():
 
 def test_square_root_branch_filters_spurious_squared_root():
     x = sp.symbols("x")
-    result = algsolve((sp.sqrt(x) - (x - 2),), (x,), digits=50)
+    result = algsolve((sp.sqrt(x) - (x - 2),), (x,), digits=50, recognize=False)
     assert isinstance(result, AlgebraicSystemRoots)
     assert len(result.roots) == 1
     assert _near(result.roots[0][0], 4)
@@ -28,7 +28,7 @@ def test_square_root_branch_filters_spurious_squared_root():
 
 def test_rational_equation():
     x = sp.symbols("x")
-    result = algsolve(((x + 1) / (x - 2) - 3,), (x,), digits=45)
+    result = algsolve(((x + 1) / (x - 2) - 3,), (x,), digits=45, recognize=False)
     assert len(result.roots) == 1
     assert _near(result.roots[0][0], sp.Rational(7, 2))
     assert result.nonzero_constraints
@@ -42,14 +42,14 @@ def test_polynomialized_pole_is_rejected():
         evaluate=False,
     )
     equation = sp.Add(quotient, -2, evaluate=False)
-    result = algsolve((equation,), (x,), digits=45)
+    result = algsolve((equation,), (x,), digits=45, recognize=False)
     assert result.roots == ()
 
 
 def test_rational_power_uses_principal_branch():
     x = sp.symbols("x")
     expression = sp.Pow(x, sp.Rational(2, 3), evaluate=False) - 4
-    result = algsolve((expression,), (x,), digits=50)
+    result = algsolve((expression,), (x,), digits=50, recognize=False)
     assert len(result.roots) == 1
     assert _near(result.roots[0][0], 8)
 
@@ -57,7 +57,7 @@ def test_rational_power_uses_principal_branch():
 def test_nested_radical():
     x = sp.symbols("x")
     expression = sp.sqrt(x + sp.sqrt(x)) - 2
-    result = algsolve((expression,), (x,), digits=55)
+    result = algsolve((expression,), (x,), digits=55, recognize=False)
     expected_t = (-1 + sp.sqrt(17)) / 2
     expected_x = sp.expand(expected_t**2)
     assert len(result.roots) == 1
@@ -66,11 +66,7 @@ def test_nested_radical():
 
 def test_multivariate_radical_system():
     x, y = sp.symbols("x y")
-    result = algsolve(
-        (sp.sqrt(x) - y, y**2 - 2),
-        (x, y),
-        digits=50,
-    )
+    result = algsolve((sp.sqrt(x) - y, y**2 - 2), (x, y), digits=50, recognize=False)
     assert len(result.roots) == 1
     root = result.roots[0]
     # Principal sqrt(2) is the positive real square root, so the negative branch is rejected.
@@ -82,7 +78,7 @@ def test_exact_algebraic_coefficients_remain_coefficients():
     x = sp.symbols("x")
     system = algebraize_system((sp.sqrt(2) * x - 1,), (x,))
     assert system.auxiliary_variables == ()
-    result = algsolve((sp.sqrt(2) * x - 1,), (x,), digits=45)
+    result = algsolve((sp.sqrt(2) * x - 1,), (x,), digits=45, recognize=False)
     assert len(result.roots) == 1
     assert _near(result.roots[0][0], 1 / sp.sqrt(2))
 
@@ -90,7 +86,7 @@ def test_exact_algebraic_coefficients_remain_coefficients():
 def test_negative_rational_power_forces_nonzero_base():
     x = sp.symbols("x")
     expression = sp.Pow(x, sp.Rational(-1, 2), evaluate=False) - 1
-    result = algsolve((expression,), (x,), digits=45)
+    result = algsolve((expression,), (x,), digits=45, recognize=False)
     assert len(result.roots) == 1
     assert _near(result.roots[0][0], 1)
 
@@ -98,7 +94,7 @@ def test_negative_rational_power_forces_nonzero_base():
 def test_transcendental_function_rejected():
     x = sp.symbols("x")
     with pytest.raises(PolynomialSystemInputError):
-        algsolve((sp.sin(x),), (x,))
+        algsolve((sp.sin(x),), (x,), recognize=False)
 
 
 def test_undeclared_symbol_rejected():
@@ -129,7 +125,7 @@ def test_denominator_saturation_removes_pole_component():
         sp.Add(raw_div(x * z), -2, evaluate=False),
         raw_div(x * (x - 2)),
     )
-    result = algsolve(equations, (x, y, z), digits=45)
+    result = algsolve(equations, (x, y, z), digits=45, recognize=False)
 
     assert len(result.roots) == 1
     root = result.roots[0]

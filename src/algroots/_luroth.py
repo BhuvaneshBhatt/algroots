@@ -60,7 +60,7 @@ def separated_gcd(ambient, values, comparison):
     if gcd is None:
         return None
     leading = gcd.terms(order="grlex")[0][1]
-    monic = gcd.mul_ground(1 / leading)
+    monic = gcd.mul_ground(ambient.one / field_element(leading, ambient))
     # Re-embed expression coefficients to cancel algebraic-number units.
     # SymPy's FractionField may retain equivalent noncanonical units after gcd.
     return sp.Poly.from_dict(
@@ -168,9 +168,8 @@ class RationalCoordinateMap:
             raise QuotientAlgebraError("generic graph has a vanishing query denominator")
         if numerator.is_zero:
             return sp.S.Zero
-        ratio = base.to_sympy(
-            field_element(numerator.LC(), base) / field_element(denominator.LC(), base)
-        )
-        if not (numerator - denominator.mul_ground(ratio)).is_zero:
+        ratio_element = field_element(numerator.LC(), base) / field_element(denominator.LC(), base)
+        ratio = base.to_sympy(ratio_element)
+        if not (numerator - denominator.mul_ground(ratio_element)).is_zero:
             return None
         return ratio

@@ -1,6 +1,6 @@
 # Testing and validation
 
-Tests should check mathematical/evidence contracts, rather than reproduce implementation choices or rely on root ordering, backend timing or a printed representation. A proof-budget failure must never be accepted as certification.
+Tests should check mathematical/evidence contracts, instead of reproduce implementation choices or rely on root ordering, backend timing or a printed representation. A proof-budget failure must never be accepted as certification.
 
 ## Run the checks
 
@@ -8,6 +8,7 @@ From an installed development tree:
 
 ```bash
 python -m pytest
+python tools/generate_api_signatures.py --check
 python -m pytest tests/test_runnable_examples.py tests/test_documentation_examples.py tests/test_documentation_consistency.py
 python examples/run_all.py
 python -m ruff check .
@@ -55,3 +56,11 @@ The existing CI already configures Python 3.11–3.14, Linux/macOS/Windows and w
 ## Benchmarks
 
 The [performance model](performance-model.md) describes the calibration drivers. Run `benchmarks/expanded_calibration.py` and `benchmarks/quotient_profile.py` with their `--output` controls; the latter also takes `--profile`. They retain exact checks and explicit failures. Compare counterbalanced medians and original inputs; do not infer universal speed guarantees from a small local corpus.
+
+## Installed tutorials and dependency boundaries
+
+Wheels install the README, Markdown guides, and complete example catalog under `share/algroots` in the environment's data directory. `python tools/check_installed_examples.py --optional-backends` checks installed import origins, runs every catalog example and marked tutorial document in fresh processes outside the checkout, and exercises each available backend. Missing optional engines are reported with reasons. The wheel smoke runner accepts `--tutorials` to invoke the same checks.
+
+The dependency CI jobs pin the declared minimum versions in `ci/minimum-dependencies.txt` or resolve the latest versions within package requirements. Both build native and fallback distributions, run installed tutorials, retain dependency versions, and run the source suite. The existing platform matrix covers Python 3.11–3.14 on Linux, macOS, and Windows. Configuration is not evidence that a remote job has passed; consult the run artifacts.
+
+`test_groebner_generated.py` bounds generated finite ideals and tests invertible generator recombinations, scaling, coordinate renaming, variable order changes, exact reference equality, quotient dimension, and multiplication identities across QQ and small prime fields. End-to-end tests cover repeated roots, solver counts, adapter construction, cached RUR backend selection, and budget refusals. Worker tests verify domains and monomial orders through serialization, exact reference deadlines, error transfer, and platform-specific memory-cap refusal.

@@ -8,9 +8,7 @@ The numerical solvers return **distinct numerical root tuples**. If a system has
 
 For example,
 
-$$
-x^2=0
-$$
+$$ x^2=0 $$
 
 has one distinct root, $x=0$, but that root has multiplicity two.
 
@@ -26,21 +24,15 @@ counts returned **distinct points**, not algebraic multiplicity.
 
 For a zero-dimensional polynomial ideal
 
-$$
-I\subset K[x_1,\ldots,x_n],
-$$
+$$ I\subset K[x_1,\ldots,x_n], $$
 
 the quotient algebra
 
-$$
-A=K[x_1,\ldots,x_n]/I
-$$
+$$ A=K[x_1,\ldots,x_n]/I $$
 
 has finite dimension
 
-$$
-D=\dim_K A.
-$$
+$$ D=\dim_K A. $$
 
 When `algroots` constructs this quotient, the value is exposed as:
 
@@ -106,7 +98,7 @@ root.jointly_certified
 
 means the reconstructed exact coordinate tuple has been substituted into the original equations and every resulting exact residual has been certified as zero.
 
-This is deliberately stronger than independently recognizing each coordinate.
+This is stronger than independently recognizing each coordinate.
 
 For example, recognizing two nearby numerical values independently as algebraic numbers does not establish that they satisfy an exact relation such as $x-y=0$.
 
@@ -123,19 +115,13 @@ is the strongest convenience property on `RecognizedSystemRoot`. It requires bot
 
 Thus:
 
-$$
-\texttt{certified}
-=
-\texttt{scalar\_certified}
-\land
-\texttt{jointly\_certified}.
-$$
+$$ \texttt{certified} = \texttt{scalar\_certified} \land \texttt{jointly\_certified}. $$
 
 Passing `require_certified=True` to `recognize_system_roots` requires this stronger result and raises `ExactCertificationError` otherwise.
 
 ## Numerical verification versus exact certification
 
-These are intentionally separate layers:
+These are separate layers:
 
 | Property | Numerical solve | Exact recognition/certification |
 |---|---|---|

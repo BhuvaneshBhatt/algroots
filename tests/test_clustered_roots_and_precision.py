@@ -18,6 +18,7 @@ def test_exact_clustered_roots_remain_distinct(power):
         method="shape",
         digits=max(45, power + 15),
         max_precision_digits=max(120, 2 * power + 40),
+        recognize=False,
     )
     assert len(result.roots) == 2
     values = sorted(complex(sp.N(root[0], power + 10)).real for root in result.roots)
@@ -49,6 +50,7 @@ def test_action_precision_retry_after_one_controlled_isolation_failure(monkeypat
         method="action",
         digits=35,
         max_precision_digits=200,
+        recognize=False,
     )
     assert len(result.roots) == 4
     assert calls["count"] >= 2
@@ -57,7 +59,7 @@ def test_action_precision_retry_after_one_controlled_isolation_failure(monkeypat
 
 def test_invalid_precision_ceiling_is_rejected():
     with pytest.raises(ValueError):
-        polysolve([x**2 - 2], (x,), digits=50, max_precision_digits=40)
+        polysolve([x**2 - 2], (x,), digits=50, max_precision_digits=40, recognize=False)
 
 
 def test_internal_root_deduplication_uses_requested_precision():

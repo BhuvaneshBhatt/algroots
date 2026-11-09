@@ -6,6 +6,7 @@ from functools import cached_property
 
 import sympy as sp
 
+from ..domains import polynomial_domain
 from ..errors import PolynomialSystemError
 
 
@@ -20,8 +21,9 @@ class RationalUnivariateRepresentation:
     If ``parameter`` is named ``t``, each solution is represented by
     ``defining_polynomial(t) == 0`` and
     ``variable_i == coordinate_numerators[i](t) / coordinate_denominator(t)``.
-    The implementation targets exact rational- or algebraic-coefficient,
-    zero-dimensional polynomial systems and returns distinct algebraic solution branches.
+    Construction supports exact characteristic-zero coefficient fields, including
+    rational parameter fields. The latter describe generic fibers; specialize
+    original equations before using root enumeration or making real-fiber claims.
     """
 
     variables: tuple[sp.Symbol, ...]
@@ -67,18 +69,20 @@ class RationalUnivariateRepresentation:
                 sp.Poly(0, self.parameter, domain=self.defining_polynomial.domain)
                 for _ in self.variables
             )
+        domain = self.defining_polynomial.domain
+        arithmetic = polynomial_domain(domain)
+        defining = self.defining_polynomial.set_domain(arithmetic)
+        denominator = self.coordinate_denominator.set_domain(arithmetic)
         try:
-            inverse_denominator = sp.invert(self.coordinate_denominator, self.defining_polynomial)
+            inverse_denominator = denominator.invert(defining)
         except (sp.polys.polyerrors.NotInvertible, sp.PolynomialError, ValueError) as exc:
             raise RationalUnivariateError(
                 "coordinate denominator is not invertible modulo the RUR polynomial"
             ) from exc
         return tuple(
-            sp.Poly(
-                (inverse_denominator * numerator).rem(self.defining_polynomial).as_expr(),
-                self.parameter,
-                domain=self.defining_polynomial.domain,
-            )
+            (inverse_denominator * numerator.set_domain(arithmetic))
+            .rem(defining)
+            .set_domain(domain)
             for numerator in self.coordinate_numerators
         )
 

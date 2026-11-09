@@ -39,14 +39,14 @@ def _recognize_result(result, recognizer, *, require_certified):
 
 def test_solver_result_retains_original_equations() -> None:
     x, y = sp.symbols("x y")
-    result = polysolve((sp.Eq(x, y), y**2 - 2), (x, y))
+    result = polysolve((sp.Eq(x, y), y**2 - 2), (x, y), recognize=False)
 
     assert result.equations == (x - y, y**2 - 2)
 
 
 def test_exact_joint_certification_for_recognized_roots() -> None:
     x, y = sp.symbols("x y")
-    result = polysolve((x - y, y**2 - 2), (x, y), digits=60)
+    result = polysolve((x - y, y**2 - 2), (x, y), digits=60, recognize=False)
 
     recognized = _recognize_result(
         result,
@@ -131,7 +131,7 @@ def test_required_joint_certification_rejects_false_combination() -> None:
 
 def test_uncertified_scalar_prevents_full_certification() -> None:
     x = sp.symbols("x")
-    result = polysolve((x**2 - 2,), (x,), digits=50)
+    result = polysolve((x**2 - 2,), (x,), digits=50, recognize=False)
 
     recognized = _recognize_result(
         result,
@@ -146,11 +146,7 @@ def test_uncertified_scalar_prevents_full_certification() -> None:
 
 def test_joint_certification_with_algebraic_coefficients() -> None:
     x, y = sp.symbols("x y")
-    result = polysolve(
-        (x - sp.sqrt(2) * y, y**2 - 3),
-        (x, y),
-        digits=60,
-    )
+    result = polysolve((x - sp.sqrt(2) * y, y**2 - 3), (x, y), digits=60, recognize=False)
 
     def recognize(value):
         magnitude = abs(complex(sp.N(value, 17)))
@@ -171,7 +167,7 @@ def test_joint_certification_with_algebraic_coefficients() -> None:
 
 def test_exact_certification_supports_rootof_degree_five() -> None:
     x = sp.symbols("x")
-    result = polysolve((x**5 - x - 1,), (x,), digits=60)
+    result = polysolve((x**5 - x - 1,), (x,), digits=60, recognize=False)
 
     recognized = _recognize_result(
         result,
@@ -188,7 +184,7 @@ def test_joint_certification_uses_original_radical_equation() -> None:
     from algroots import algsolve
 
     x = sp.symbols("x")
-    result = algsolve((sp.sqrt(x) - (x - 2),), (x,), digits=50)
+    result = algsolve((sp.sqrt(x) - (x - 2),), (x,), digits=50, recognize=False)
 
     recognized = _recognize_result(
         result,

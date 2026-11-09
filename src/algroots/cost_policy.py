@@ -32,6 +32,7 @@ def _candidate_order(equations, variables, *, policy):
 
 
 def graph_cost(equations, order):
+    """Return elimination width and fill-edge count for a coordinate order."""
     graph = {v: set() for v in order}
     for row in equations:
         present = row.free_symbols.intersection(order)
@@ -52,6 +53,7 @@ def graph_cost(equations, order):
 
 
 def ordered_variables(equations, variables, *, policy="auto"):
+    """Choose a deterministic coordinate order from polynomial incidence and degree."""
     if policy not in {"auto", "fill", "frequency"}:
         raise ValueError("unknown ordering policy")
     if policy != "auto":
@@ -69,6 +71,7 @@ def ordered_variables(equations, variables, *, policy="auto"):
 
 def prefer_action(quotient, max_dimension, equations=()):
     # A repeated univariate relation is a cost hint, never a radicality proof.
+    """Select action-matrix extraction from quotient size and repeated-factor hints."""
     repeated = False
     for poly in quotient.groebner_basis.polys:
         expression = poly.as_expr()

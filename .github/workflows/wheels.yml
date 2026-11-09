@@ -1,0 +1,72 @@
+name: Wheels
+on:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel, windows-2022]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned Windows native dependencies
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $root = "$env:RUNNER_TEMP/algroots-vcpkg"
+          git clone --filter=blob:none https://github.com/microsoft/vcpkg.git $root
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git -C $root checkout ec48c11eae9448c8c6e7739d93e06fa2433aa95f
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & "$root/bootstrap-vcpkg.bat" -disableMetrics
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & "$root/vcpkg.exe" install flint:x64-windows
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $prefix = "$root/installed/x64-windows"
+          Add-Content $env:GITHUB_ENV "CIBW_ENVIRONMENT_WINDOWS=ALGROOTS_BUILD_NATIVE_F4=1 ALGROOTS_BUILD_FF_SPARSE=1 ALGROOTS_BUILD_NATIVE_EXTENSION=1 ALGROOTS_FLINT_PREFIX='$prefix'"
+          Add-Content $env:GITHUB_ENV "CIBW_REPAIR_WHEEL_COMMAND_WINDOWS=delvewheel repair --add-path $prefix/bin -w {dest_dir} {wheel}"
+      - run: python -m pip install cibuildwheel==4.3.5
+      - run: python -m cibuildwheel --output-dir wheelhouse
+      - uses: actions/upload-artifact@v6
+        with:
+          name: native-wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+  fallback:
+    runs-on: ubuntu-latest
+    env:
+      ALGROOTS_BUILD_NATIVE_F4: '0'
+      ALGROOTS_BUILD_FF_SPARSE: '0'
+      ALGROOTS_BUILD_NATIVE_EXTENSION: '0'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python -m pip install --find-links dist algroots
+      - name: Check fallback wheel
+        run: |
+          cd "$RUNNER_TEMP"
+          python "$GITHUB_WORKSPACE/tools/wheel_smoke.py" --tutorials
+      - name: Rebuild fallback from source distribution
+        shell: bash
+        run: |
+          mkdir rebuilt
+          python -m pip wheel --no-deps dist/*.tar.gz --wheel-dir rebuilt
+          python -m pip install --force-reinstall --no-deps rebuilt/*.whl
+          cd "$RUNNER_TEMP"
+          python "$GITHUB_WORKSPACE/tools/wheel_smoke.py"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: fallback-wheel-and-source
+          path: dist/*

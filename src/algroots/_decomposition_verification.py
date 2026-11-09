@@ -13,6 +13,8 @@ from functools import cache
 
 import sympy as sp
 
+from .domains import polynomial as domain_polynomial
+
 
 def _degree(expression: sp.Expr, variable: sp.Symbol, constants: object) -> int:
     numerator, denominator = sp.fraction(sp.cancel(expression))
@@ -66,11 +68,11 @@ def _normalized_difference(expression, variable, comparison, constants):
     """Compute the monic near-separated polynomial of a rational function."""
     numerator, denominator = sp.fraction(sp.cancel(expression))
     ring = constants.frac_field(variable)
-    polynomial = sp.Poly(
+    polynomial = domain_polynomial(
         numerator.subs(variable, comparison) * denominator
         - denominator.subs(variable, comparison) * numerator,
-        comparison,
-        domain=ring,
+        (comparison,),
+        ring,
     )
     return polynomial.monic()
 
@@ -85,8 +87,8 @@ def _near_separated_candidate(product, right_degree, variable, comparison, const
     recovery heuristic.
     """
     ring = constants.frac_field(variable)
-    polynomial = sp.Poly(
-        sp.prod(factor.as_expr() for factor in product), comparison, domain=ring
+    polynomial = domain_polynomial(
+        sp.prod(factor.as_expr() for factor in product), (comparison,), ring
     ).monic()
     for coefficient in polynomial.all_coeffs()[1:]:
         if variable not in coefficient.free_symbols:
@@ -125,10 +127,10 @@ def verify_complete_rational_search(result) -> bool:
     ):
         return False
     difference = _normalized_difference(result.original_expression, variable, comparison, constants)
-    product = sp.Poly(
+    product = domain_polynomial(
         sp.prod(factor.as_expr() for factor in result.factors),
-        comparison,
-        domain=constants.frac_field(variable),
+        (comparison,),
+        constants.frac_field(variable),
     ).monic()
     if product != difference:
         return False

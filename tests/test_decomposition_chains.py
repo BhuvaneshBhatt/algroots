@@ -4,7 +4,6 @@ import os
 import subprocess
 import sys
 from dataclasses import replace
-from pathlib import Path
 
 import pytest
 import sympy as sp
@@ -248,7 +247,6 @@ def test_invalid_implicit_inputs(relation, variables):
     "first", ["algroots._decomposition_chains", "algroots.functional_decomposition"]
 )
 def test_import_orders_and_namespace_policy(first, tmp_path):
-    source = str(Path(__file__).resolve().parents[1] / "src")
     program = f"""import {first}
 import algroots
 import sympy as s
@@ -260,7 +258,7 @@ assert not hasattr(algroots,"rational_decomposition_chain")
     subprocess.run(
         [sys.executable, "-c", program],
         cwd=tmp_path,
-        env={**os.environ, "PYTHONPATH": source},
+        env={key: value for key, value in os.environ.items() if key != "PYTHONPATH"},
         check=True,
         capture_output=True,
         text=True,

@@ -142,5 +142,23 @@
     "title": "Inspect finite fields and primary factors of finite algebras",
     "category": "exact",
     "guarantee": "Exact nilradicals, reduced quotients and primary factors"
+  },
+  {
+    "file": "25_groebner_operations.py",
+    "title": "Reduce, eliminate, and change monomial order",
+    "category": "exact",
+    "guarantee": "Exact basis and ideal membership"
+  },
+  {
+    "file": "26_solver_settings.py",
+    "title": "Group solver settings and supervise exact construction",
+    "category": "core",
+    "guarantee": "Verified calculation or explicit deadline failure"
+  },
+  {
+    "file": "27_coefficient_fields.py",
+    "title": "Compute over coefficient fields and preserve exceptional fibers",
+    "category": "exact",
+    "guarantee": "Verified bases and exact specialization guards"
   }
 ]

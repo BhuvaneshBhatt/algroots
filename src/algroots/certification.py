@@ -70,7 +70,14 @@ class IsolatedRootCertificate:
     def is_singular(self):
         return self.jacobian_rank < len(self.variables)
 
-    def verify(self, *, max_quotient_dimension=256, max_refinements=64):
+    def verify(
+        self,
+        *,
+        max_quotient_dimension=256,
+        max_refinements=64,
+        groebner_backend="native",
+        groebner_limits=None,
+    ):
         """Replay from the original equations, detecting altered certificate fields."""
         try:
             if self.box is None:
@@ -79,6 +86,8 @@ class IsolatedRootCertificate:
                     self.variables,
                     self.point,
                     max_quotient_dimension=max_quotient_dimension,
+                    groebner_backend=groebner_backend,
+                    groebner_limits=groebner_limits,
                 )
             else:
                 replay = certify_root_box(
@@ -86,6 +95,8 @@ class IsolatedRootCertificate:
                     self.variables,
                     self.box,
                     max_quotient_dimension=max_quotient_dimension,
+                    groebner_backend=groebner_backend,
+                    groebner_limits=groebner_limits,
                     max_refinements=max_refinements,
                 )
             return self == replay
@@ -204,7 +215,15 @@ def _certificate(quotient, equations, point, *, separator=None, box=None, charac
     )
 
 
-def certify_isolated_root(equations, variables, point, *, max_quotient_dimension=256):
+def certify_isolated_root(
+    equations,
+    variables,
+    point,
+    *,
+    max_quotient_dimension=256,
+    groebner_backend="native",
+    groebner_limits=None,
+):
     """Prove exact membership, isolation, Jacobian rank and local multiplicity.
 
     Accepts exact rational/algebraic coefficients and coordinates. The whole
@@ -215,7 +234,11 @@ def certify_isolated_root(equations, variables, point, *, max_quotient_dimension
     variables = validate_variables(variables)
     equations = _normalize_equations(equations, variables)
     quotient = QuotientAlgebra.from_polynomials(
-        equations, variables, max_dimension=max_quotient_dimension
+        equations,
+        variables,
+        max_dimension=max_quotient_dimension,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
     )
     if quotient.dimension == 0:
         raise RootCertificationError("the unit ideal has no root to certify")
@@ -255,7 +278,16 @@ def _root_rectangle(root, refinement):
     return tuple(sp.Rational(v) for v in (interval.ax, interval.bx, interval.ay, interval.by))
 
 
-def certify_root_box(equations, variables, box, *, max_quotient_dimension=256, max_refinements=64):
+def certify_root_box(
+    equations,
+    variables,
+    box,
+    *,
+    max_quotient_dimension=256,
+    max_refinements=64,
+    groebner_backend="native",
+    groebner_limits=None,
+):
     """Prove exactly one geometric root lies in an open rational complex box.
 
     Currently restricted to rational coefficients. The separator image must
@@ -271,7 +303,11 @@ def certify_root_box(equations, variables, box, *, max_quotient_dimension=256, m
     if len(box.bounds) != len(variables):
         raise RootCertificationError("box dimension does not match")
     quotient = QuotientAlgebra.from_polynomials(
-        equations, variables, max_dimension=max_quotient_dimension
+        equations,
+        variables,
+        max_dimension=max_quotient_dimension,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
     )
     return _certify_box_from_quotient(quotient, equations, box, max_refinements=max_refinements)
 
@@ -365,7 +401,14 @@ class RootCertificationAttempt:
 
 
 def certify_numerical_roots(
-    result, *, max_quotient_dimension=128, max_refinements=128, required=False, max_box_attempts=16
+    result,
+    *,
+    max_quotient_dimension=128,
+    max_refinements=128,
+    required=False,
+    max_box_attempts=16,
+    groebner_backend="native",
+    groebner_limits=None,
 ):
     """Attempt exact proof certificates for every numerical root in a solver result.
 
@@ -380,6 +423,8 @@ def certify_numerical_roots(
         max_refinements=max_refinements,
         required=required,
         max_box_attempts=max_box_attempts,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
     )
 
 
@@ -393,6 +438,8 @@ def _certify_numerical_roots(
     quotient=None,
     context=None,
     neighbour_points=(),
+    groebner_backend="native",
+    groebner_limits=None,
 ):
     """Automatically construct rational boxes and batch exact endpoint proofs.
 
@@ -409,7 +456,11 @@ def _certify_numerical_roots(
     try:
         if quotient is None:
             quotient = QuotientAlgebra.from_polynomials(
-                result.equations, result.variables, max_dimension=max_quotient_dimension
+                result.equations,
+                result.variables,
+                max_dimension=max_quotient_dimension,
+                groebner_backend=groebner_backend,
+                groebner_limits=groebner_limits,
             )
         elif quotient.dimension > max_quotient_dimension:
             raise RootCertificationError("quotient exceeds certification dimension budget")

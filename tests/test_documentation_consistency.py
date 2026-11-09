@@ -1,6 +1,8 @@
 """Structural checks that keep Markdown navigation and the public API aligned."""
 
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import sympy as sp
@@ -9,6 +11,26 @@ import algroots
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
+
+
+def test_generated_signatures():
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "tools/generate_api_signatures.py"), "--check"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_readme_links():
+    targets = re.findall(r"(?<!!)\[[^\]]+\]\(([^)]+)\)", (ROOT / "README.md").read_text())
+    prefix = "https://github.com/BhuvaneshBhatt/algroots/blob/main/"
+    for target in targets:
+        if "/docs/" in target and ".md" in target:
+            assert target.startswith(prefix), target
+            assert (ROOT / target[len(prefix) :].split("#", 1)[0]).is_file(), target
 
 
 def test_every_public_export_is_documented_in_api_reference():
@@ -266,7 +288,8 @@ def test_finite_algebra_capabilities():
         "primary_decomposition",
         "frobenius_matrix",
     ):
-        assert name in guide and name in api
+        assert name in guide, f"{name} missing from docs/finite-algebras.md"
+        assert name in api, f"{name} missing from docs/api.md"
     assert "Finite-algebra primary decomposition | Supported" in matrix
     assert "finite perfect" in guide
     assert "positive-dimensional" in guide
@@ -276,4 +299,5 @@ def test_readme_links_are_absolute():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     links = re.findall(r"\]\(([^)]+)\)", readme)
     assert links
-    assert all(link.startswith(("https://", "#")) for link in links)
+    relative_links = [link for link in links if not link.startswith(("https://", "#"))]
+    assert relative_links == [], f"Non-absolute README links: {relative_links}"

@@ -1,0 +1,29 @@
+name: Native coefficient-field dependencies
+description: Build shared FLINT dependencies at the release deployment target.
+runs:
+  using: composite
+  steps:
+    - if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" = macOS ]; then
+          export MACOSX_DEPLOYMENT_TARGET=14.0
+          echo 'MACOSX_DEPLOYMENT_TARGET=14.0' >> "$GITHUB_ENV"
+        fi
+        python tools/build_native_dependencies.py --prefix "$RUNNER_TEMP/algroots-libs"
+        echo "ALGROOTS_FLINT_PREFIX=$RUNNER_TEMP/algroots-libs" >> "$GITHUB_ENV"
+    - if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $root = "$env:RUNNER_TEMP/algroots-vcpkg"
+        git clone --filter=blob:none https://github.com/microsoft/vcpkg.git $root
+        if ($LASTEXITCODE) { exit $LASTEXITCODE }
+        git -C $root checkout ec48c11eae9448c8c6e7739d93e06fa2433aa95f
+        if ($LASTEXITCODE) { exit $LASTEXITCODE }
+        & "$root/bootstrap-vcpkg.bat" -disableMetrics
+        if ($LASTEXITCODE) { exit $LASTEXITCODE }
+        & "$root/vcpkg.exe" install flint:x64-windows
+        if ($LASTEXITCODE) { exit $LASTEXITCODE }
+        $prefix = "$root/installed/x64-windows"
+        Add-Content $env:GITHUB_ENV "ALGROOTS_FLINT_PREFIX=$prefix"
+        Add-Content $env:GITHUB_PATH "$prefix/bin"

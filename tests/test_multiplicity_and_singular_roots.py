@@ -20,7 +20,7 @@ x, y = sp.symbols("x y")
 def test_nonradical_distinct_roots_differ_from_quotient_dimension(
     equations, variables, expected_distinct, expected_dimension
 ):
-    auto = polysolve(equations, variables, method="auto", digits=35)
+    auto = polysolve(equations, variables, method="auto", digits=35, recognize=False)
     assert len(auto.roots) == expected_distinct
 
     basis = sp.groebner(equations, *variables, order="lex")
@@ -34,11 +34,11 @@ def test_nonradical_distinct_roots_differ_from_quotient_dimension(
 
 def test_action_backend_rejects_defective_nonradical_ideal():
     with pytest.raises(ActionMatrixError):
-        polysolve([x**2, y], (x, y), method="action", digits=35)
+        polysolve([x**2, y], (x, y), method="action", digits=35, recognize=False)
 
 
 def test_repeated_root_is_not_returned_multiple_times():
-    result = polysolve([(x - 3) ** 5], (x,), digits=35)
+    result = polysolve([(x - 3) ** 5], (x,), digits=35, recognize=False)
     assert len(result.roots) == 1
     assert abs(complex(sp.N(result.roots[0][0] - 3, 20))) < 1e-15
 

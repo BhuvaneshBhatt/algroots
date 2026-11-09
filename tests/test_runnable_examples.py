@@ -17,7 +17,8 @@ CATALOG = json.loads((EXAMPLES / "catalog.json").read_text())
 
 
 def _run(path, tmp_path, *arguments):
-    environment = dict(os.environ, PYTHONPATH=str(ROOT / "src"), PYTHONHASHSEED="0")
+    environment = dict(os.environ, PYTHONHASHSEED="0")
+    environment.pop("PYTHONPATH", None)
     environment.pop("PYTHONOPTIMIZE", None)
     return subprocess.run(
         [sys.executable, str(path), *arguments],

@@ -1,6 +1,5 @@
 import pytest
 import sympy as sp
-from sympy.polys.matrices import DomainMatrix
 
 from algroots import polysolve
 from algroots.quotient import QuotientAlgebra
@@ -25,7 +24,7 @@ def test_profiled_trace_and_rank_match_dense_exact_oracle(equations, variables):
     assert q.geometric_solution_count == expected.rank()
     info = q.operation_diagnostics
     assert info["geometric_rank_seconds"] >= 0
-    assert info["rank_backend"] == ("rational_domain" if q.domain == sp.QQ else "expression")
+    assert info["rank_backend"] == "coefficient_domain"
     assert info["basis_stream_peak_entries"] <= 8
     assert "basis_multiplication_matrices" not in q.__dict__
     if len(variables) > 1:
@@ -39,12 +38,9 @@ def test_rational_rank_avoids_expression_elimination(monkeypatch):
     assert q.geometric_solution_count == 2
 
 
-def test_algebraic_rank_keeps_profiled_expression_path(monkeypatch):
+def test_algebraic_trace_pairing():
     q = QuotientAlgebra.from_polynomials((x**2 - sp.sqrt(2),), (x,))
-    _ = q.trace_pairing
-    monkeypatch.setattr(
-        DomainMatrix, "rank", lambda *a, **k: pytest.fail("costly algebraic domain rank")
-    )
+    assert q.trace_pairing == sp.diag(2, 2 * sp.sqrt(2))
     assert q.geometric_solution_count == 2
 
 
@@ -70,6 +66,6 @@ def test_stream_cache_is_bounded_beyond_eight_basis_actions():
 def test_solver_exposes_quotient_operation_observations():
     result = polysolve((x**3, y**2), (x, y), presolve=False, recognize=False)
     stats = dict(result.cost_diagnostics.quotient_operation_statistics)
-    assert stats["rank_backend"] == "rational_domain"
+    assert stats["rank_backend"] == "coefficient_domain"
     assert stats["geometric_rank_seconds"] >= 0
     assert result.geometric_solution_count == 1 and not result.is_radical

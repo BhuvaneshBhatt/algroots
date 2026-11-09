@@ -14,7 +14,7 @@ def test_action_matrix_independent_quadratics() -> None:
     x, y = sp.symbols("x y")
     equations = (x**2 - 2, y**2 - 3)
 
-    result = polysolve(equations, (x, y), digits=50, method="action")
+    result = polysolve(equations, (x, y), digits=50, method="action", recognize=False)
 
     assert result.method == "action_matrix"
     assert result.quotient_dimension == 4
@@ -27,7 +27,7 @@ def test_action_matrix_independent_quadratics() -> None:
 
 def test_auto_uses_action_matrix_when_shape_is_unavailable() -> None:
     x, y = sp.symbols("x y")
-    result = polysolve((x**2 - 1, y**2 - 1), (x, y), digits=40)
+    result = polysolve((x**2 - 1, y**2 - 1), (x, y), digits=40, recognize=False)
 
     assert result.method == "action_matrix"
     assert result.quotient_dimension == 4
@@ -39,7 +39,7 @@ def test_action_matrix_branch_dependent_radical_ideal() -> None:
     x, y = sp.symbols("x y")
     equations = (x * y, x**2 - x, y**2 - y)
 
-    result = polysolve(equations, (x, y), digits=40, method="action")
+    result = polysolve(equations, (x, y), digits=40, method="action", recognize=False)
 
     assert result.quotient_dimension == 3
     roots = {(round(float(sp.re(a))), round(float(sp.re(b)))) for a, b in result.roots}
@@ -50,7 +50,7 @@ def test_action_matrix_exact_algebraic_coefficients() -> None:
     x, y = sp.symbols("x y")
     equations = (x**2 - 2, y**2 - sp.sqrt(3))
 
-    result = polysolve(equations, (x, y), digits=45, method="action")
+    result = polysolve(equations, (x, y), digits=45, method="action", recognize=False)
 
     assert len(result.roots) == 4
     assert result.quotient_dimension == 4
@@ -62,7 +62,7 @@ def test_action_matrix_three_variables() -> None:
     x, y, z = sp.symbols("x y z")
     equations = (x**2 - 2, y**2 - 3, z - x * y)
 
-    result = polysolve(equations, (x, y, z), digits=45, method="action")
+    result = polysolve(equations, (x, y, z), digits=45, method="action", recognize=False)
 
     assert result.quotient_dimension == 4
     assert len(result.roots) == 4
@@ -74,13 +74,13 @@ def test_nonradical_action_backend_declines() -> None:
     x, y = sp.symbols("x y")
 
     with pytest.raises(ActionMatrixError):
-        polysolve((x**2, y), (x, y), digits=40, method="action")
+        polysolve((x**2, y), (x, y), digits=40, method="action", recognize=False)
 
 
 def test_auto_falls_back_for_nonradical_ideal() -> None:
     x, y = sp.symbols("x y")
 
-    result = polysolve((x**2, y), (x, y), digits=40)
+    result = polysolve((x**2, y), (x, y), digits=40, recognize=False)
 
     assert result.method == "shape_position"
     assert len(result.roots) == 1
@@ -91,10 +91,7 @@ def test_explicit_triangular_backend_remains_available() -> None:
     x, y = sp.symbols("x y")
 
     result = polysolve(
-        (x**2 - 1, y**2 - 1),
-        (x, y),
-        digits=40,
-        method="triangular",
+        (x**2 - 1, y**2 - 1), (x, y), digits=40, method="triangular", recognize=False
     )
 
     assert result.method == "triangular_groebner"
@@ -106,19 +103,9 @@ def test_action_dimension_budget_is_enforced() -> None:
     equations = (x**2 - 1, y**2 - 1)
 
     with pytest.raises(ActionMatrixError):
-        polysolve(
-            equations,
-            (x, y),
-            method="action",
-            max_action_dimension=3,
-        )
+        polysolve(equations, (x, y), method="action", max_action_dimension=3, recognize=False)
 
-    fallback = polysolve(
-        equations,
-        (x, y),
-        method="auto",
-        max_action_dimension=3,
-    )
+    fallback = polysolve(equations, (x, y), method="auto", max_action_dimension=3, recognize=False)
     assert fallback.method == "rational_univariate"
     assert len(fallback.roots) == 4
 
@@ -127,7 +114,7 @@ def test_action_matrix_complex_roots() -> None:
     x, y = sp.symbols("x y")
     equations = (x**2 + 1, y**2 + 2)
 
-    result = polysolve(equations, (x, y), digits=45, method="action")
+    result = polysolve(equations, (x, y), digits=45, method="action", recognize=False)
 
     assert len(result.roots) == 4
     assert result.quotient_dimension == 4

@@ -14,6 +14,9 @@ A supported route specifies the input class and result contract, not a guarantee
 | Exact RUR and algebraic points | Supported | `compute_rational_univariate_representation`, `solve_rur_representation` | Globally finite ideals |
 | Quotient tools and bounded cache | Supported | `QuotientAlgebra` | Exact normal forms, actions, traces and counts |
 | Finite algebras over `K(z)` | Supported, explicit domain | `QuotientAlgebra.from_polynomials(..., domain=K.frac_field(z))` | Exact element minimal/characteristic polynomials, trace, norm, unit inverse and rebuilt specialization; normalized curve genus lives in the separate curve layer |
+| Sparse quotient linear algebra | Supported | `QuotientAlgebra` | Sparse actions, characteristic/minimal polynomials, traces, Frobenius and RUR recurrences; fill can become dense |
+| Reusable basis and RUR certificates | Supported | `certify_groebner_basis`, `certify_rational_univariate_representation` | Exact replay or detached prepared snapshots; denominator/discriminant guards and exceptional recomputation |
+| Algebraic function fields and towers | Supported, explicit domain | `AlgebraicFunctionField` | Irreducible characteristic-zero extensions, checked primitive maps, native modular images, branch enumeration and local specialization |
 | Fixed-base generated subfields | Supported | `QuotientAlgebra.subfield` | Certified ambient field; exact membership, primitive element and replayable embeddings |
 | Fields generated over constants | Supported, declared exact constants | `coefficient_field` | One-variable algebraic ambient presentations; rational ambient fields of transcendence degree at most one have constructive Lüroth maps |
 | Multivariate Lüroth generators | Supported over rational/algebraic-number constants | `function_fields.luroth_generator` | GRS02 Algorithm 3.1, exact maps/membership and replayable decisions; higher-degree outcomes certify a lower bound of two |
@@ -48,3 +51,7 @@ A supported route specifies the input class and result contract, not a guarantee
 | Full local dual bases and arbitrary positive-dimensional primary decomposition | Unsupported | — | Finite-algebra primary decomposition is a separate supported operation |
 
 See [Finite Algebras](finite-algebras.md), [Reading Results](reading-results.md), [Certification Workflow](certification-workflow.md), [Recovery Workflow](recovery-workflow.md) and [Limitations](limitations.md).
+
+Gröbner construction defaults to native throughout the solver, quotient, RUR, border-basis and certificate APIs. Gröbner bases over QQ, prime and finite extension fields, algebraic number fields, and rational function fields over QQ or a number field, and certified algebraic function-field towers have explicit verified native backends. Algebraic components require the FLINT native extension. Verified specialization guards retain exceptional parameter fibers. See the [backend capability matrix](groebner-bases.md#choose-a-backend).
+
+Generic RUR construction also accepts an explicit characteristic-zero rational function field or algebraic function-field tower. It preserves algebra length and generic geometric point counts. Exact or numeric root extraction requires specialization of the original equations; no root-count or sign-invariance claim follows from a generic Gröbner basis. See [Coefficient fields and specialization](coefficient-fields.md).

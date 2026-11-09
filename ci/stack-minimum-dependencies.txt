@@ -1,0 +1,11 @@
+# Supported arithmetic floor for the complete Python 3.11 stack.
+sympy==1.14.0
+mpmath==1.3.0
+python-flint==0.9.0
+numpy==1.24.0
+scipy==1.15.3
+exprtest==0.1.0
+algrecognize==0.1.1
+multiple-integrate==2.2.0
+pandas==2.0.0
+tensoratlas==0.2.0

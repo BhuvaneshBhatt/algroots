@@ -30,7 +30,7 @@ For most applications, use `"auto"`.
 result = polysolve(system, variables, method="auto")
 ```
 
-This is the recommended default. Affine presolve and automatic variable ordering precede one grevlex basis. A cheap exposed shape is preferred. Action is attempted when quotient dimension is at most `min(64, max_action_dimension, max_solutions)`; unless bounded repeated-factor hints favor RUR; larger quotients favor RUR. RUR reuses the same quotient and is also the action fallback. Only shape/triangular requests and the final triangular fallback convert to lex with FGLM. These conservative cost thresholds are deterministic heuristics, not universal performance optima. Use `variable_order="input"` and/or `presolve=False` for controlled comparisons.
+This is the recommended default. Affine presolve and automatic variable ordering precede one grevlex basis. A cheap exposed shape is preferred. Action is attempted when quotient dimension is at most `min(64, max_action_dimension, max_solutions)`; unless bounded repeated-factor hints favor RUR; larger quotients favor RUR. RUR reuses the same quotient and is also the action fallback. Only shape/triangular requests and the final triangular fallback convert to lex with FGLM. These validated cost thresholds are deterministic heuristics, not universal performance optima. Use `variable_order="input"` and/or `presolve=False` for controlled comparisons.
 
 Use an explicit backend primarily for:
 
@@ -45,9 +45,7 @@ Do not assume that forcing a backend makes the result more accurate.
 
 The shape-position strategy looks for a representation conceptually like
 
-$$
-p(t)=0,
-$$
+$$ p(t)=0, $$
 
 with the other coordinates recoverable from $t$.
 
@@ -73,21 +71,15 @@ A system being zero-dimensional does **not** imply that the current variable ord
 
 For the quotient algebra
 
-$$
-A=K[x_1,\ldots,x_n]/I,
-$$
+$$ A=K[x_1,\ldots,x_n]/I, $$
 
 choose a linear form
 
-$$
-L=c_1x_1+\cdots+c_nx_n.
-$$
+$$ L=c_1x_1+\cdots+c_nx_n. $$
 
 The backend constructs only the multiplication matrix $M_L$, not one matrix for every coordinate. If the separator has an isolated simple eigensystem, its eigenvectors encode evaluation on the quotient basis. Coordinate values are recovered from the normal forms
 
-$$
-\operatorname{NF}(x_i).
-$$
+$$ \operatorname{NF}(x_i). $$
 
 ### Strengths
 
@@ -154,13 +146,13 @@ For numerical difficulties in the action backend, see [Precision and Conditionin
 
 Use `method="rur"` when the system has rational or exact algebraic polynomial coefficients and an exact rational-univariate representation is desirable. The backend constructs the RUR exactly, evaluates all complex branches numerically at the requested precision, and verifies them with the same residual/refinement machinery used by the other core backends. The exact representation is retained as `result.rational_univariate_representation`.
 
-RUR is currently an explicitly selected backend; `method="auto"` continues to use shape, action, and triangular routes. Exact algebraic coefficients are handled natively in a compositum number field; inexact or transcendental coefficients are outside the RUR backend's contract.
+`method="rur"` requests the representation directly. `method="auto"` can also use RUR according to its exact cost estimates and fallback policy. Exact algebraic coefficients are handled natively in a compositum number field; inexact coefficients are outside its contract. Exact generic RUR construction also supports declared parameter and algebraic function fields; specialize before numerical root extraction.
 
 ## Total-degree homotopy
 
 Use `method="homotopy"` to force classical total-degree homotopy continuation. For equation degrees $d_1,\ldots,d_n$, the backend tracks $\prod_i d_i$ start solutions of $x_i^{d_i}-1=0$ through a complex gamma homotopy to the target system. The path count is checked against `max_homotopy_paths` before tracking begins.
 
-The current backend is deliberately limited to **regular square systems for which every total-degree path reaches a finite nonsingular endpoint**. A failed/divergent path or a singular/coalescing endpoint raises `HomotopySolveError`; `algroots` does not currently use a singular endgame or projective continuation to classify those paths. This conservative policy avoids silently presenting an incomplete affine root set as complete.
+The current backend is limited to **regular square systems for which every total-degree path reaches a finite nonsingular endpoint**. A failed/divergent path or a singular/coalescing endpoint raises `HomotopySolveError`; `algroots` does not currently use a singular endgame or projective continuation to classify those paths. This validated policy avoids presenting an incomplete affine root set as complete.
 
 Independent paths can be tracked in separate processes with `homotopy_parallel=True`; each worker compiles the symbolic homotopy once and then reuses it for multiple starts. `homotopy_seed` starts a deterministic sequence of exact gamma candidates, and `homotopy_gamma_attempts` controls how many are tried before the backend gives up on an otherwise regular target.
 

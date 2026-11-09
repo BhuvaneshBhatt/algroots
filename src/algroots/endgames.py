@@ -177,8 +177,14 @@ def cauchy_endgame(
 
 
 def _mp_rational(value):
-    sign, mantissa, exponent, _ = mp.mpf(value)._mpf_
-    return sp.Integer(-1 if sign else 1) * mantissa * sp.Integer(2) ** exponent
+    value = mp.mpf(value)
+    if not mp.isfinite(value):
+        raise ValueError("endpoint coordinates must be finite")
+    sign, mantissa, exponent, _ = value._mpf_
+    # With mpmath's gmpy backend the mantissa is mpz. Multiplication of
+    # SymPy Integer by mpz can dispatch to inexact mpfr arithmetic. Convert
+    # the binary components explicitly before constructing the exact dyadic.
+    return sp.Integer(-int(mantissa) if sign else int(mantissa)) * sp.Integer(2) ** int(exponent)
 
 
 def _certify_endgame(result, system, target, box, deflate, max_dimension, options):
@@ -225,6 +231,8 @@ def _certify_endgame(result, system, target, box, deflate, max_dimension, option
 
 @dataclass(frozen=True)
 class ProjectiveHomotopy:
+    """A homogenized numerical homotopy with its affine coordinates and chosen chart."""
+
     system: SympyHomotopy
     affine_variables: tuple
     homogenizing_variable: object

@@ -1,0 +1,17 @@
+{
+  "flint": {
+    "version": "3.6.0",
+    "url": "https://flintlib.org/download/flint-3.6.0.tar.gz",
+    "sha256": "b95e2c7792f5eea4a1c8d2d42c4098434756832e57a094b295eb5dfdc9b4c36b"
+  },
+  "gmp": {
+    "version": "6.3.0",
+    "url": "https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz",
+    "sha256": "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898"
+  },
+  "mpfr": {
+    "version": "4.2.2",
+    "url": "https://www.mpfr.org/mpfr-current/mpfr-4.2.2.tar.xz",
+    "sha256": "b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01"
+  }
+}

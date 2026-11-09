@@ -30,7 +30,7 @@ Multivariate rational decomposition supports a univariate outer function and mul
 
 ## Computational complexity and memory
 
-The Gröbner basis is the structural front end for many solvers and can experience rapid monomial or coefficient growth. Dense action matrices and exact trace pairings have quadratic storage costs in quotient dimension, and root isolation may require high Arb precision. `max_action_dimension`, cache limits, degree/term budgets, and solver precision ceilings bound work but can cause explicit refusal on difficult instances. A rejected computation is not evidence that a root or decomposition does not exist.
+The Gröbner basis is the structural front end for many solvers and can experience rapid monomial or coefficient growth. Numerical action matrices have quadratic storage costs in quotient dimension; exact trace pairings retain sparse support but can fill to quadratic size, and root isolation may require high Arb precision. `max_action_dimension`, cache limits, degree/term budgets, and solver precision ceilings bound work but can cause explicit refusal on difficult instances. A rejected computation is not evidence that a root or decomposition does not exist.
 
 Presolve applies exact substitution only when guarded degree, term, and growth estimates permit it. A refused substitution leaves the original constraint for the solver; the guard does not change its mathematical meaning. Adaptive rational-box root certificates can be refused when candidate precision or isolation work is insufficient. Automatic boxes require rational coefficients and globally finite ideals, although exact-point certificates also cover supported algebraic coefficients.
 
@@ -47,3 +47,7 @@ See [Homotopy Continuation](homotopy-continuation.md), [Recovery Workflow](recov
 ## Where to go next
 
 For examples of supported and unsupported operations, use the [Examples Gallery](examples-gallery.md), [End-to-End Worked Example](end-to-end-example.md), [Feature Matrix](feature-support-matrix.md), and [Troubleshooting](troubleshooting.md).
+
+## Gröbner construction
+
+Gröbner-backed construction defaults to native throughout algroots. A compiled kernel is required when construction reaches that path; a pure Python installation needs explicit SymPy selection. Finite extension fields GF(p^k) use the FLINT extension kernel. Positive-characteristic parameter fields currently require explicit SymPy selection. Accelerated public backends use independent exact reference computation by default. This can dominate total time. `verification="certificate"` selects exact generator and S-pair identities instead, and reusable certificates avoid a new basis computation. Native limits do not bound reference verification time; certificate production has separate proof limits. Native modular adapters support QQ, prime fields, number fields, and rational function fields over QQ or number fields. Algebraic components require the FLINT native extension. Parameter-dependent algebraic function-field extensions and towers are supported through certified primitive models. Block orders are unsupported by the native adapter. See [Gröbner bases](groebner-bases.md) for the full capability matrix and supported limits.

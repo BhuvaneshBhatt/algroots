@@ -9,25 +9,21 @@ The monodromy layer discovers roots reachable from supplied seed roots and can s
 
 ## Total-degree homotopy backend
 
-`polysolve(..., method="homotopy")` constructs the start system $G_i=x_i^{d_i}-1$ from the total degree $d_i$ of each target equation and tracks all $\prod_i d_i$ roots of unity through $H=(1-t)\gamma G+tF$. Gamma candidates are generated deterministically from `homotopy_seed` using exact rational real and imaginary parts, so the homotopy itself does not embed binary64 constants. Because the gamma trick is generic rather than universal for one fixed value, the backend retries up to `homotopy_gamma_attempts` deterministic candidates before reporting failure.
+`polysolve(..., method="homotopy")` constructs the start system $G_i=x_i^{d_i}-1$ from the total degree $d_i$ of each target equation and tracks all $\prod_i d_i$ roots of unity through $H=(1-t)\gamma G+tF$. Gamma candidates are generated deterministically from `homotopy_seed` using exact rational real and imaginary parts, so the homotopy itself does not embed binary64 constants. Because the gamma trick is generic instead of universal for one fixed value, the backend retries up to `homotopy_gamma_attempts` deterministic candidates before reporting failure.
 
-The backend uses the same adaptive path tracker described below. Every path must succeed, every endpoint must verify against the target equations, and endpoint Jacobian regularity must be numerically resolvable after scale normalization. Very small singular values trigger higher-precision endpoint re-refinement; a small but stable nonzero singular value is retained, whereas a value that continues collapsing with precision is treated as unresolved/singular. `PolynomialSystemRoots` records the final smallest singular values and condition estimates. The current implementation intentionally raises `HomotopySolveError` when no gamma candidate yields a complete regular finite endpoint set. No singular endgame or projective continuation is implemented yet.
+The backend uses the same adaptive path tracker described below. Every path must succeed, every endpoint must verify against the target equations, and endpoint Jacobian regularity must be numerically resolvable after scale normalization. Very small singular values trigger higher-precision endpoint re-refinement; a small but stable nonzero singular value is retained, whereas a value that continues collapsing with precision is treated as unresolved/singular. `PolynomialSystemRoots` records the final smallest singular values and condition estimates. The current implementation raises `HomotopySolveError` when no gamma candidate yields a complete regular finite endpoint set. No singular endgame or projective continuation is implemented yet.
 
-The Bézout path count is bounded by `max_homotopy_paths`. Independent paths can be distributed across spawned worker processes with `homotopy_parallel=True`; the symbolic homotopy is compiled once per worker process rather than once per path. Start points are generated lazily. `method="auto"` is unchanged and does not select this backend.
+The Bézout path count is bounded by `max_homotopy_paths`. Independent paths can be distributed across spawned worker processes with `homotopy_parallel=True`; the symbolic homotopy is compiled once per worker process instead of once per path. Start points are generated lazily. `method="auto"` is unchanged and does not select this backend.
 
 ## Reusable mixed-precision path tracker
 
 A continuation problem supplies an analytic homotopy
 
-$$
-H(x,t)=0,
-$$
+$$ H(x,t)=0, $$
 
 with a solution point at the starting parameter value. Differentiating along a nonsingular path gives
 
-$$
-J_xH(x,t)\,x'(t)=-\frac{\partial H}{\partial t}(x,t).
-$$
+$$ J_xH(x,t)\,x'(t)=-\frac{\partial H}{\partial t}(x,t). $$
 
 `track_path` uses this tangent for prediction and then applies Newton correction at the new parameter value.
 
@@ -79,7 +75,7 @@ Working precision can increase for two reasons:
 
 The tracker reuses the same exact symbolic homotopy after increasing precision. `max_digits` bounds escalation.
 
-This is inspired by the mixed-precision predictor/corrector philosophy used in modern polynomial path tracking: precision is increased only where the local numerical problem requires it rather than being fixed at a high value for the entire path.
+This is inspired by the mixed-precision predictor/corrector philosophy used in modern polynomial path tracking: precision is increased only where the local numerical problem requires it instead of being fixed at a high value for the entire path.
 
 ### Diagnostics
 
@@ -95,21 +91,17 @@ This is inspired by the mixed-precision predictor/corrector philosophy used in m
 - an optional `PathStep` history whose residuals also retain arbitrary precision;
 - a coarse classification (`success`, `failed`, or `likely_divergent`) used to distinguish very large near-endpoint affine paths from ordinary correction failure.
 
-A path passing close to a singularity may shrink steps, increase precision, or terminate cleanly instead of silently jumping branches.
+A path passing close to a singularity may shrink steps, increase precision, or terminate cleanly instead of jumping branches.
 
 ## Closed additive coefficient loops
 
 The first monodromy construction is
 
-$$
-H(x,t)=F(x)+g\left(1-e^{2\pi i t}\right).
-$$
+$$ H(x,t)=F(x)+g\left(1-e^{2\pi i t}\right). $$
 
 At both endpoints,
 
-$$
-H(x,0)=H(x,1)=F(x),
-$$
+$$ H(x,0)=H(x,1)=F(x), $$
 
 so continuation around the closed parameter loop can map one root of the original system to another root.
 
@@ -144,9 +136,9 @@ Likewise, the analogous loop for `x**3 - 1` produces a three-cycle when the root
 
 ## Duplicate matching
 
-Monodromy endpoints are numerical. Internal matching uses a scale-aware infinity distance rather than raw absolute distance, so matching behaves reasonably for roots whose coordinates differ greatly in magnitude. The calculation remains in arbitrary precision; it does not convert coordinates through Python binary64 `complex` values.
+Monodromy endpoints are numerical. Internal matching uses a scale-aware infinity distance instead of raw absolute distance, so matching behaves reasonably for roots whose coordinates differ greatly in magnitude. The calculation remains in arbitrary precision; it does not convert coordinates through Python binary64 `complex` values.
 
-Near-duplicate endpoints are consolidated before they are added to an orbit. Unique endpoint labeling and deduplication are intentionally separate operations: an endpoint that is within tolerance of multiple labels is ambiguous for a permutation, but it is still not a new orbit point.
+Near-duplicate endpoints are consolidated before they are added to an orbit. Unique endpoint labeling and deduplication are separate operations: an endpoint that is within tolerance of multiple labels is ambiguous for a permutation, but it is still not a new orbit point.
 
 ## Orbit discovery
 
@@ -184,7 +176,7 @@ For each loop, every currently known root is tracked. New endpoints that do not 
 - perturbation vectors used;
 - whether all attempted paths and endpoint verifications succeeded.
 
-Each `MonodromyRootInfo` records `digits`, `verification_digits`, an arbitrary-precision `relative_residual`, `verified`, `source_loop`, and `path_index`. `digits` is the numerical working precision; `verification_digits` is the residual target actually used to verify that retained root. Seed roots have `source_loop=None`; newly discovered roots record the first loop and path that supplied the retained representative. Loop endpoints are re-corrected against the closed base system before they are admitted to the orbit, so this metadata describes the retained base-system root rather than only the raw loop endpoint.
+Each `MonodromyRootInfo` records `digits`, `verification_digits`, an arbitrary-precision `relative_residual`, `verified`, `source_loop`, and `path_index`. `digits` is the numerical working precision; `verification_digits` is the residual target actually used to verify that retained root. Seed roots have `source_loop=None`; newly discovered roots record the first loop and path that supplied the retained representative. Loop endpoints are re-corrected against the closed base system before they are admitted to the orbit, so this metadata describes the retained base-system root instead of only the raw loop endpoint.
 
 ### Algebraic-system example
 
@@ -215,7 +207,7 @@ The same projection/filtering rule applies to radicals. For example, the polynom
 
 Paths starting from distinct roots on the same loop are independent. `track_loop(..., parallel=True)` and `discover_monodromy_orbit(..., parallel=True)` therefore use a process pool.
 
-Processes are used rather than threads because arbitrary-precision numerical contexts should not be shared implicitly between independent path trackers.
+Processes are used instead of threads because arbitrary-precision numerical contexts should not be shared implicitly between independent path trackers.
 
 ## Stopping criteria
 
@@ -229,13 +221,9 @@ If an independently justified **distinct** root count is supplied through `expec
 
 For the additive parameter family $F(x)-sr=0$, implicit differentiation gives
 
-$$
-Jx'=r,
-$$
+$$ Jx'=r, $$
 
-$$
-Jx''=-H_F[x',x'].
-$$
+$$ Jx''=-H_F[x',x']. $$
 
 `second_order_trace_test` measures the summed coordinate acceleration under the additive deformation `F(x) - s*r = 0`. The function name refers to this second derivative of the coordinate trace; it does not implement the generic linear-slice trace theorem.
 
@@ -249,7 +237,7 @@ Successive monodromy loops can be viewed as mark/recapture experiments. `capture
 
 The statistical model describes the explored monodromy population and can still miss disconnected orbits. It must not be interpreted as a deterministic all-roots proof.
 
-`MonodromyOrbitResult` therefore intentionally has no universal `complete` Boolean. Instead inspect `stopping_reason` and `completeness_basis`.
+`MonodromyOrbitResult` therefore has no universal `complete` Boolean. Instead inspect `stopping_reason` and `completeness_basis`.
 
 ## Residual scaling and precision escalation
 
@@ -275,7 +263,7 @@ recognized = recognize_system_roots(
 
 Exact recognition certifies individual reconstructed roots; it does **not** alter `stopping_reason` or `completeness_basis`. A partially discovered orbit can therefore contain exactly certified roots without becoming a certified complete root set.
 
-## What is deliberately not implemented yet
+## What is not implemented yet
 
 The current monodromy layer still does **not** include:
 
@@ -288,7 +276,7 @@ The current monodromy layer still does **not** include:
 For the distinction between verified roots and a complete root set, see [Completeness versus Verification](completeness-versus-verification.md).
 ## Endpoint matching safety
 
-Root matching uses a scale-aware tolerance. If an endpoint lies within tolerance of more than one supplied root, the match is treated as ambiguous and reported as unmatched (`None`) rather than choosing an arbitrary nearest label. Tighten tolerances or increase precision before interpreting such a loop as a permutation.
+Root matching uses a scale-aware tolerance. If an endpoint lies within tolerance of more than one supplied root, the match is treated as ambiguous and reported as unmatched (`None`) instead of choosing an arbitrary nearest label. Tighten tolerances or increase precision before interpreting such a loop as a permutation.
 
 
 ## Worked example: core seed → monodromy → exact recognition

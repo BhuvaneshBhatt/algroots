@@ -1,10 +1,9 @@
-# Benchmarks
+# Gröbner benchmarks
 
-The benchmark suite is opt-in so normal unit-test CI does not become timing-sensitive.
-Install it with `python -m pip install -e ".[benchmark]"`, then run:
+`bench_cross_cas.py` compares the fixed native F4 kernel with SymPy, Singular and Macaulay2 on identical exact inputs. Candidate computation, interpreter startup and independent verification are recorded separately. Missing executables, timeouts and failed checks are retained in the output.
 
-```bash
-python -m pytest benchmarks --benchmark-only
+```sh
+python benchmarks/bench_cross_cas.py --cases cyclic5 noon4 katsura5 --primes 101 1009 --orders grevlex --repetitions 5 --verify --output results.json
 ```
 
-The suite covers representative shape-position solving, action-matrix solving, and continuation path tracking. It deliberately contains no absolute wall-clock pass/fail thresholds: hardware and CI noise make those brittle. `pytest-benchmark` can save and compare JSON baselines when evaluating a structural change.
+Native computations use `f4_tiled_finish`. Rational runs select candidate-only reconstruction or exact certification with `--qq-mode`; that choice controls verification, not the basis algorithm. `gb_case_catalog.py` records all polynomial definitions and source provenance. The certificate helpers check ideal membership, reducedness and S-pair identities independently of the native kernel.

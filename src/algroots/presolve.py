@@ -7,6 +7,8 @@ import sympy as sp
 
 @dataclass(frozen=True)
 class AffinePresolve:
+    """An affine-reduced system with substitutions for reconstructing original coordinates."""
+
     equations: tuple
     variables: tuple
     substitutions: tuple

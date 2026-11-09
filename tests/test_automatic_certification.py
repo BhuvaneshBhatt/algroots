@@ -70,8 +70,8 @@ def test_algebraic_box_limitation_is_explicit():
 
 
 def test_empty_and_opt_out():
-    assert polysolve((1,), (x,), certify="required").root_certifications == ()
-    assert polysolve((x - 1,), (x,)).root_certifications is None
+    assert polysolve((1,), (x,), certify="required", recognize=False).root_certifications == ()
+    assert polysolve((x - 1,), (x,), recognize=False).root_certifications is None
 
 
 @pytest.mark.parametrize(

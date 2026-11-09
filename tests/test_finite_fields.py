@@ -30,12 +30,14 @@ def test_coefficient_fields(p, degree):
 @pytest.mark.parametrize("p,degree", [(2, 1), (3, 1), (2, 2), (3, 2)])
 def test_finite_local_factors(p, degree):
     field = finite_field(p, degree)
-    algebra = QuotientAlgebra.from_polynomials((x**p, y * y), (x, y), domain=field)
+    algebra = QuotientAlgebra.from_polynomials(
+        (x**p, y * y), (x, y), domain=field, groebner_backend="sympy"
+    )
     assert algebra.geometric_solution_count == 1
     assert len(nilradical_basis(algebra)) == 2 * p - 1
-    assert reduced_algebra(algebra).dimension == 1
+    assert reduced_algebra(algebra, groebner_backend="sympy").dimension == 1
     assert algebra.trace_pairing == sp.zeros(2 * p)
-    ((component, residue),) = primary_decomposition(algebra)
+    ((component, residue),) = primary_decomposition(algebra, groebner_backend="sympy")
     assert component.dimension == 2 * p and residue.dimension == 1 and residue.is_field
     q = field_order(field)
     operator = frobenius_matrix(algebra)
@@ -44,8 +46,10 @@ def test_finite_local_factors(p, degree):
 
 
 def test_nonmonogenic_product():
-    algebra = QuotientAlgebra.from_polynomials((x * x - x, y * y - y), (x, y), domain=sp.GF(2))
-    factors = primary_decomposition(algebra)
+    algebra = QuotientAlgebra.from_polynomials(
+        (x * x - x, y * y - y), (x, y), domain=sp.GF(2), groebner_backend="sympy"
+    )
+    factors = primary_decomposition(algebra, groebner_backend="sympy")
     assert len(factors) == 4
     assert sum(c.dimension for c, r in factors) == algebra.dimension
     assert all(c.dimension == r.dimension == 1 and r.is_field for c, r in factors)
@@ -54,8 +58,10 @@ def test_nonmonogenic_product():
 
 
 def test_residue_extension():
-    algebra = QuotientAlgebra.from_polynomials(((x * x + x + 1) ** 2,), (x,), domain=sp.GF(2))
-    ((component, residue),) = primary_decomposition(algebra)
+    algebra = QuotientAlgebra.from_polynomials(
+        ((x * x + x + 1) ** 2,), (x,), domain=sp.GF(2), groebner_backend="sympy"
+    )
+    ((component, residue),) = primary_decomposition(algebra, groebner_backend="sympy")
     assert component.dimension == 4 and residue.dimension == 2 and residue.is_field
     assert algebra.geometric_solution_count == 2
     assert len(nilradical_basis(algebra)) == 2
@@ -72,7 +78,9 @@ def test_factorization_and_scalars():
     assert sorted((f.degree(), e) for f, e in factors) == [(1, 1), (1, 3), (1, 3)]
     value = field_element((field.symbol + 1) / 2, field)
     assert value * field.convert(2) == field.convert(field.symbol + 1)
-    algebra = QuotientAlgebra.from_polynomials((x * x - field.to_sympy(value),), (x,), domain=field)
+    algebra = QuotientAlgebra.from_polynomials(
+        (x * x - field.to_sympy(value),), (x,), domain=field, groebner_backend="sympy"
+    )
     assert algebra.minimal_polynomial(x, t) == sp.Poly(
         t * t - field.to_sympy(value), t, domain=field
     )
@@ -82,12 +90,14 @@ def test_factorization_and_scalars():
 
 def test_imperfect_constants():
     field = sp.GF(2).frac_field(t)
-    algebra = QuotientAlgebra.from_polynomials((x * x - t,), (x,), domain=field)
+    algebra = QuotientAlgebra.from_polynomials(
+        (x * x - t,), (x,), domain=field, groebner_backend="sympy"
+    )
     assert algebra.minimal_polynomial(x, y) == sp.Poly(y * y - t, y, domain=field)
     with pytest.raises(NotImplementedError, match="finite"):
         nilradical_basis(algebra)
     with pytest.raises(NotImplementedError, match="finite"):
-        primary_decomposition(algebra)
+        primary_decomposition(algebra, groebner_backend="sympy")
 
 
 @pytest.mark.parametrize("arguments", [(9,), (3, 0), (True,), (3, 2, {"modulus": a * a - 1})])

@@ -6,20 +6,20 @@ Run from the repository root: python examples/12_bounded_homotopy_recovery.py
 
 import sympy as sp
 
-from algroots import HomotopyRecoveryOptions, polysolve
+from algroots import HomotopyRecoveryOptions, PrecisionOptions, SolverOptions, polysolve
 
 
 def main():
     x = sp.Symbol("x")
-    options = HomotopyRecoveryOptions(max_paths=4, gamma_attempts=1, max_retry_rounds=1)
+    options = SolverOptions(
+        precision=PrecisionOptions(digits=30, recognize=False),
+        recovery=HomotopyRecoveryOptions(max_paths=4, gamma_attempts=1, max_retry_rounds=1),
+    )
     result = polysolve(
         (x**2,),
         (x,),
         method="homotopy",
-        homotopy_recovery=True,
-        recovery_options=options,
-        digits=30,
-        recognize=False,
+        options=options,
     )
     assert result.completeness.status == "certified" and len(result.roots) == 1
     assert result.root_certifications[0].certificate.multiplicity == 2

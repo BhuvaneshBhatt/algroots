@@ -6,16 +6,11 @@
 
 An order ideal $\mathcal O$ is a divisor-closed finite set of monomials. Its border is
 
-$$
-\partial\mathcal O
-=\{x_i m : m\in\mathcal O\}\setminus\mathcal O.
-$$
+$$ \partial\mathcal O =\{x_i m : m\in\mathcal O\}\setminus\mathcal O. $$
 
 For each border monomial $b$, a border basis supplies an exact relation
 
-$$
-b-\sum_{m\in\mathcal O} c_m m=0
-$$
+$$ b-\sum_{m\in\mathcal O} c_m m=0 $$
 
 in the quotient algebra. These relations determine exact normal forms and multiplication operators.
 
@@ -35,9 +30,7 @@ assert border.has_commuting_multiplication_matrices()
 
 For each coordinate $x_i$, `BorderBasisResult.multiplication_matrices[x_i]` represents multiplication by $x_i$ on the finite quotient algebra. Exact quotient multiplication must commute:
 
-$$
-M_{x_i}M_{x_j}=M_{x_j}M_{x_i}.
-$$
+$$ M_{x_i}M_{x_j}=M_{x_j}M_{x_i}. $$
 
 `commutation_residuals()` returns the exact pairwise commutators and `has_commuting_multiplication_matrices()` checks that each is identically zero.
 

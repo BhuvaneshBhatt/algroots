@@ -77,7 +77,7 @@ assert F.extension_degree == 2 and not F.contains(z)
 
 ## Multivariate constructive Lüroth generators
 
-`luroth_generator(functions, *, variables, constants=QQ, parameter=None, generator_symbols=None)` implements Algorithm 3.1 of [Gutiérrez, Rubio and Sevilla (2002), *On Multivariate Rational Function Decomposition*](https://grupos.unican.es/amac/articles/JSC02.pdf). It accepts rational functions in any nonempty tuple of independent variables, with rational or exact algebraic-number constants. The variables are inputs of the rational functions, rather than additional constants.
+`luroth_generator(functions, *, variables, constants=QQ, parameter=None, generator_symbols=None)` implements Algorithm 3.1 of [Gutiérrez, Rubio and Sevilla (2002), *On Multivariate Rational Function Decomposition*](https://grupos.unican.es/amac/articles/JSC02.pdf). It accepts rational functions in any nonempty tuple of independent variables, with rational or exact algebraic-number constants. The variables are inputs of the rational functions, instead of additional constants.
 
 The returned `LurothGeneratorResult` has three possible outcomes:
 

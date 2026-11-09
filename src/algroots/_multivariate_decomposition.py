@@ -15,6 +15,7 @@ import sympy as sp
 from sympy.polys.polyerrors import BasePolynomialError
 
 from ._luroth import RationalCoordinateMap, rational_values, smallest_coefficient
+from .domains import polynomial as domain_polynomial
 from .function_fields import _constant_domain
 
 
@@ -185,7 +186,7 @@ def _recover(original, function, variables, parameter, constants, comparison, fa
         sp.prod(factors[i].as_expr() for i in indices), *comparison, *variables, domain=constants
     ).monic()
     ambient = constants.frac_field(*variables)
-    polynomial = sp.Poly(product.as_expr(), *comparison, domain=ambient).monic()
+    polynomial = domain_polynomial(product.as_expr(), comparison, ambient).monic()
     inner = smallest_coefficient(polynomial, ambient)
     degree = max(sum(m[: len(comparison)]) for m in product.monoms())
     if _degree(inner, variables, constants) != degree:

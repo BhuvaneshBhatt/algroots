@@ -73,6 +73,8 @@ def test_all_python_fences_are_syntactically_valid_or_explicit_signatures():
         "docs/certification-workflow.md",
         "docs/recovery-workflow.md",
         "docs/quotient-tools.md",
+        "docs/groebner-bases.md",
+        "docs/solver-settings.md",
     ],
 )
 def test_new_workflow_snippets_are_independently_copyable(relative_path):

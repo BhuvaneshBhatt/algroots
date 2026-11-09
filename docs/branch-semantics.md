@@ -8,29 +8,21 @@ Algebraizing radicals and rational powers is not merely a matter of raising both
 
 Consider:
 
-$$
-\sqrt{x}=x-2.
-$$
+$$ \sqrt{x}=x-2. $$
 
 Squaring gives:
 
-$$
-x=(x-2)^2,
-$$
+$$ x=(x-2)^2, $$
 
 or
 
-$$
-x^2-5x+4=0.
-$$
+$$ x^2-5x+4=0. $$
 
 The polynomial roots are $x=1$ and $x=4$.
 
 But:
 
-$$
-\sqrt{1}=1\ne-1=1-2,
-$$
+$$ \sqrt{1}=1\ne-1=1-2, $$
 
 so $x=1$ is extraneous. Only $x=4$ satisfies the original principal-square-root equation.
 
@@ -54,9 +46,7 @@ For a rational exponent $p/q$, algebraization introduces a polynomial relation i
 
 For example,
 
-$$
-x^{2/3}=4
-$$
+$$ x^{2/3}=4 $$
 
 has polynomial consequences that can suggest both $8$ and $-8$. Under SymPy's principal complex-power semantics, however, the original expression does not treat those candidates identically.
 
@@ -68,19 +58,15 @@ Negative rational powers also impose a domain restriction.
 
 For:
 
-$$
-x^{-1/2}=2,
-$$
+$$ x^{-1/2}=2, $$
 
-the base cannot be zero. The algebraized polynomial relation is constructed so that the inverse relation is represented without silently allowing the forbidden base, and final domain checks remain in place.
+the base cannot be zero. The algebraized polynomial relation is constructed so that the inverse relation is represented without allowing the forbidden base, and final domain checks remain in place.
 
 ## Rational-function poles
 
 Consider an unevaluated form of:
 
-$$
-\frac{x^2-1}{x-1}=0.
-$$
+$$ \frac{x^2-1}{x-1}=0. $$
 
 The numerator vanishes at $x=1$, but the original rational expression is undefined there.
 

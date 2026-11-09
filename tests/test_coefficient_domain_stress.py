@@ -28,6 +28,6 @@ x, y = sp.symbols("x y")
     ],
 )
 def test_exact_large_and_algebraic_coefficients(equations):
-    result = polysolve(equations, (x, y), digits=55)
+    result = polysolve(equations, (x, y), digits=55, recognize=False)
     assert result.roots
     assert result.max_relative_residual < sp.Float("1e-25")

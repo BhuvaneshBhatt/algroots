@@ -116,7 +116,12 @@ def test_expansion_limit_checked_before_materialization():
 
 def test_empty_repeated_view_has_trivial_certified_order():
     result = polysolve(
-        (1,), (x,), root_mode="with_multiplicity", multiplicity="required", root_order="required"
+        (1,),
+        (x,),
+        root_mode="with_multiplicity",
+        multiplicity="required",
+        root_order="required",
+        recognize=False,
     )
     assert result.roots == result.output_roots == result.multiplicities == ()
     assert len(result) == 0 and result.ordering.status == "certified"

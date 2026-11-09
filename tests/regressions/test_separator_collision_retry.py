@@ -18,6 +18,6 @@ def test_colliding_separator_is_not_accepted(monkeypatch):
     import algroots.solver as solver
 
     monkeypatch.setattr(solver, "_separator_candidates", lambda count: ((1, 1), (1, 2)))
-    result = polysolve([x**2 - 1, y**2 - 1], (x, y), method="action", digits=40)
+    result = polysolve([x**2 - 1, y**2 - 1], (x, y), method="action", digits=40, recognize=False)
     assert result.separator_coeffs == (1, 2)
     assert len(result.roots) == 4

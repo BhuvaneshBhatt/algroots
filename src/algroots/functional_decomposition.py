@@ -17,6 +17,8 @@ import sympy as sp
 from sympy.polys.polyerrors import BasePolynomialError
 
 from ._coefficient_curves import CoefficientFieldParametrization
+from .domains import field_element
+from .domains import polynomial as domain_polynomial
 from .function_fields import _constant_domain, coefficient_field
 from .quotient import QuotientAlgebra
 from .subfields import field_normal_form
@@ -50,7 +52,7 @@ def _rational(expression, variable, constants):
         )
     try:
         field = constants.frac_field(variable)
-        return field.to_sympy(field.convert(expression))
+        return field.to_sympy(field_element(expression, field))
     except (ValueError, TypeError, BasePolynomialError) as exc:
         raise FunctionalDecompositionError(
             "an exact rational function over the constants is required"
@@ -207,7 +209,7 @@ def _products(factors, degree, variable, comparison):
 def _recover_rational(original, variable, parameter, constants, comparison, factors, indices):
     function = _rational(original, variable, constants)
     product = sp.prod(factors[i].as_expr() for i in indices)
-    polynomial = sp.Poly(product, comparison, domain=constants.frac_field(variable)).monic()
+    polynomial = domain_polynomial(product, (comparison,), constants.frac_field(variable)).monic()
     d = polynomial.degree()
     inner = next((c for c in polynomial.all_coeffs()[1:] if variable in c.free_symbols), None)
     if inner is None or _degree(inner, variable, constants) != d:
@@ -217,7 +219,7 @@ def _recover_rational(original, variable, parameter, constants, comparison, fact
     # exactly this polynomial before recovering the uniquely determined outer.
     near = _cross_polynomial(inner, variable, comparison, constants)
     if (
-        sp.Poly(near.as_expr(), comparison, domain=constants.frac_field(variable)).monic()
+        domain_polynomial(near.as_expr(), (comparison,), constants.frac_field(variable)).monic()
         != polynomial
     ):
         return None

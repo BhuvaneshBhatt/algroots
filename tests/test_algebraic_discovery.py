@@ -4,7 +4,6 @@ import os
 import subprocess
 import sys
 from dataclasses import replace
-from pathlib import Path
 
 import pytest
 import sympy as sp
@@ -28,7 +27,6 @@ PAPER = x**4 - z * x * x * (x + 1) + z**3 * (x + 1) ** 2
     "first", ["algroots._algebraic_discovery", "algroots.functional_decomposition"]
 )
 def test_import_orders_work_in_a_fresh_process(first, tmp_path):
-    source = str(Path(__file__).resolve().parents[1] / "src")
     program = f"""import {first}
 import sympy as sp
 from algroots.functional_decomposition import discover_algebraic_factors
@@ -38,7 +36,7 @@ assert discover_algebraic_factors(x*x+z*x+z,(x,z)).verify()
     process = subprocess.run(
         [sys.executable, "-c", program],
         cwd=tmp_path,
-        env=dict(os.environ, PYTHONPATH=source),
+        env={key: value for key, value in os.environ.items() if key != "PYTHONPATH"},
         capture_output=True,
         text=True,
         timeout=30,

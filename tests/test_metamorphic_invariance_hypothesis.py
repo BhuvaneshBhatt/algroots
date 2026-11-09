@@ -57,6 +57,7 @@ def test_nonzero_equation_scaling_preserves_roots(equations, first_scale, second
         (first_scale * equations[0], second_scale * equations[1]),
         (x, y),
         digits=30,
+        recognize=False,
     )
     _assert_same_root_set(baseline.roots, transformed.roots)
 

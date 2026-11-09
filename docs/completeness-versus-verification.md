@@ -3,7 +3,7 @@
 A numerical root solver has two separate responsibilities:
 
 1. return points that really satisfy the equations;
-2. avoid silently missing other roots.
+2. avoid missing other roots.
 
 These are **soundness/verification** and **completeness** respectively.
 
@@ -11,21 +11,15 @@ These are **soundness/verification** and **completeness** respectively.
 
 Consider:
 
-$$
-x^4-5x^2+4=0.
-$$
+$$ x^4-5x^2+4=0. $$
 
 Its roots are:
 
-$$
--2,\ -1,\ 1,\ 2.
-$$
+$$ -2,\ -1,\ 1,\ 2. $$
 
 Suppose a hypothetical numerical routine returns only:
 
-$$
--2,\ -1,\ 1.
-$$
+$$ -2,\ -1,\ 1. $$
 
 Every returned value has exactly zero residual. A verification loop such as
 
@@ -44,9 +38,7 @@ No amount of residual checking on the three returned roots can reveal the missin
 
 For a zero-dimensional polynomial ideal,
 
-$$
-A=K[x_1,\ldots,x_n]/I
-$$
+$$ A=K[x_1,\ldots,x_n]/I $$
 
 has finite dimension $D$.
 
@@ -74,9 +66,7 @@ The quotient dimension counts algebraic multiplicity.
 
 For:
 
-$$
-x^2=0,
-$$
+$$ x^2=0, $$
 
 $D=2$ but there is only one distinct geometric root. Therefore the simple rule
 
@@ -92,9 +82,7 @@ This is why multiplicity and simple-eigensystem checks matter.
 
 For:
 
-$$
-\sqrt{x}=x-2,
-$$
+$$ \sqrt{x}=x-2, $$
 
 the algebraized polynomial system has an extraneous root $x=1$.
 

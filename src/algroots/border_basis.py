@@ -6,6 +6,7 @@ from functools import cached_property
 
 import sympy as sp
 
+from .basis import groebner_basis as verified_groebner_basis
 from .quotient import QuotientAlgebra, QuotientAlgebraError
 from .rational_univariate.quotient import (
     _as_rational_polynomial,
@@ -623,6 +624,8 @@ def compute_border_basis_linear(
     groebner_order: str = "grevlex",
     max_degree: int | None = None,
     strict: bool = True,
+    groebner_backend="native",
+    groebner_limits=None,
 ) -> BorderBasisResult:
     """Compute an exact border basis from Macaulay linear algebra.
 
@@ -632,7 +635,8 @@ def compute_border_basis_linear(
     row space. A supporting Groebner basis is used to certify the ideal is
     zero-dimensional and to provide the quotient dimension; border relations and
     multiplication matrices are not obtained by reducing border monomials with
-    that Groebner basis.
+    that Groebner basis. Supporting bases default to native F4; use
+    ``groebner_backend="sympy"`` for the portable implementation.
     """
 
     variable_tuple = tuple(variables)
@@ -649,7 +653,14 @@ def compute_border_basis_linear(
         ) from exc
     if not polys:
         raise BorderBasisError("at least one polynomial generator is required")
-    groebner_basis = sp.groebner(polys, *variable_tuple, order=groebner_order, domain=domain)
+    groebner_basis = verified_groebner_basis(
+        polys,
+        variable_tuple,
+        order=groebner_order,
+        domain=domain,
+        backend=groebner_backend,
+        limits=groebner_limits,
+    )
     if groebner_basis.polys == [sp.Poly(1, *variable_tuple, domain=domain)]:
         empty = sp.zeros(0, 0)
         return BorderBasisResult(
@@ -712,6 +723,8 @@ def _prepare_border_basis_input(
     *,
     domain: sp.polys.domains.Domain,
     groebner_order: str,
+    groebner_backend,
+    groebner_limits,
 ) -> tuple[
     tuple[sp.Symbol, ...],
     list[sp.Expr],
@@ -731,7 +744,14 @@ def _prepare_border_basis_input(
         ) from exc
     if not polys:
         raise BorderBasisError("at least one polynomial generator is required")
-    groebner_basis = sp.groebner(polys, *variable_tuple, order=groebner_order, domain=domain)
+    groebner_basis = verified_groebner_basis(
+        polys,
+        variable_tuple,
+        order=groebner_order,
+        domain=domain,
+        backend=groebner_backend,
+        limits=groebner_limits,
+    )
     return variable_tuple, polys, groebner_basis
 
 
@@ -764,6 +784,8 @@ def _choose_order_ideal(
     order_ideal: Iterable[Sequence[int] | sp.Expr] | None,
     domain: sp.polys.domains.Domain,
     groebner_order: str,
+    groebner_backend,
+    groebner_limits,
 ) -> tuple[sp.polys.polytools.GroebnerBasis, tuple[tuple[int, ...], ...]]:
     reduction_basis = groebner_basis
     try:
@@ -774,8 +796,13 @@ def _choose_order_ideal(
     if order_ideal is None and len(variables) == 2:
         reversed_variables = tuple(reversed(variables))
         try:
-            reversed_basis = sp.groebner(
-                polys, *reversed_variables, order=groebner_order, domain=domain
+            reversed_basis = verified_groebner_basis(
+                polys,
+                reversed_variables,
+                order=groebner_order,
+                domain=domain,
+                backend=groebner_backend,
+                limits=groebner_limits,
             )
             reversed_quotient = QuotientAlgebra.from_groebner_basis(
                 reversed_basis, reversed_variables
@@ -911,6 +938,8 @@ def compute_border_basis(
     strict: bool = True,
     algorithm: str = "groebner",
     max_degree: int | None = None,
+    groebner_backend="native",
+    groebner_limits=None,
 ) -> BorderBasisResult:
     """Compute an exact border basis for a rational zero-dimensional ideal.
 
@@ -918,6 +947,8 @@ def compute_border_basis(
     the quotient representation from a supporting Groebner basis, while the
     linear/Macaulay route uses exact coefficient linear algebra. It is not a
     numerical AVI/SVD approximate-border algorithm.
+    Supporting bases use native F4 by default; select
+    ``groebner_backend="sympy"`` for portable construction.
     """
     algorithm_key = algorithm.lower().replace("_", "-")
     if algorithm_key in {"linear", "macaulay", "macaulay-linear", "native"}:
@@ -926,11 +957,13 @@ def compute_border_basis(
             if strict:
                 raise BorderBasisError(message)
             variable_tuple = tuple(variables)
-            groebner_basis = sp.groebner(
+            groebner_basis = verified_groebner_basis(
                 [sp.sympify(poly) for poly in polynomials],
-                *variable_tuple,
+                variable_tuple,
                 order=groebner_order,
                 domain=domain,
+                backend=groebner_backend,
+                limits=groebner_limits,
             )
             return _empty_border_result(variable_tuple, groebner_basis, message=message)
         return compute_border_basis_linear(
@@ -940,6 +973,8 @@ def compute_border_basis(
             groebner_order=groebner_order,
             max_degree=max_degree,
             strict=strict,
+            groebner_backend=groebner_backend,
+            groebner_limits=groebner_limits,
         )
     if algorithm_key not in {"groebner", "groebner-derived", "standard"}:
         raise BorderBasisError(f"unknown border-basis algorithm: {algorithm!r}")
@@ -949,6 +984,8 @@ def compute_border_basis(
         variables,
         domain=domain,
         groebner_order=groebner_order,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
     )
     if groebner_basis.polys == [sp.Poly(1, *variable_tuple, domain=domain)]:
         return _empty_border_result(variable_tuple, groebner_basis)
@@ -966,6 +1003,8 @@ def compute_border_basis(
             order_ideal=order_ideal,
             domain=domain,
             groebner_order=groebner_order,
+            groebner_backend=groebner_backend,
+            groebner_limits=groebner_limits,
         )
         border_tuple, border_polys = _construct_border_relations(
             reduction_basis, variable_tuple, order_tuple, domain=domain

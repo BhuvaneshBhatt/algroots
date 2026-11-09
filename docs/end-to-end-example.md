@@ -4,13 +4,9 @@ This example follows a system from its original algebraic form through algebraiz
 
 Consider:
 
-$$
-\sqrt{x+y}=x-1,
-$$
+$$ \sqrt{x+y}=x-1, $$
 
-$$
-x^2+y^2=5.
-$$
+$$ x^2+y^2=5. $$
 
 ## 1. Original problem
 
@@ -45,39 +41,29 @@ print(algebraized.nonzero_constraints)
 
 Conceptually, introduce an auxiliary variable $u$ representing:
 
-$$
-u=\sqrt{x+y}.
-$$
+$$ u=\sqrt{x+y}. $$
 
 The polynomial relation is:
 
-$$
-u^2=x+y,
-$$
+$$ u^2=x+y, $$
 
 and the original equation also relates:
 
-$$
-u=x-1.
-$$
+$$ u=x-1. $$
 
 Together with:
 
-$$
-x^2+y^2=5,
-$$
+$$ x^2+y^2=5, $$
 
 this gives a zero-dimensional augmented polynomial system.
 
-The exact generated symbol names are implementation details; use the fields on `AlgebraizedSystem` rather than depending on a particular auxiliary-variable name.
+The exact generated symbol names are implementation details; use the fields on `AlgebraizedSystem` instead of depending on a particular auxiliary-variable name.
 
 ## 3. Why the original equation must be retained
 
 The polynomial equation
 
-$$
-u^2=x+y
-$$
+$$ u^2=x+y $$
 
 does not by itself encode the principal square-root condition. It admits both signs of $u$.
 
@@ -117,9 +103,7 @@ finite quotient dimension D
 
 For a zero-dimensional ideal:
 
-$$
-A=K[x,y,u]/I
-$$
+$$ A=K[x,y,u]/I $$
 
 is finite-dimensional.
 
@@ -131,15 +115,11 @@ With `method="auto"`, `algroots` can use a favorable shape representation or the
 
 In the action path, choose a separating linear form:
 
-$$
-L=c_xx+c_yy+c_uu.
-$$
+$$ L=c_xx+c_yy+c_uu. $$
 
 The solver constructs the multiplication matrix:
 
-$$
-M_L.
-$$
+$$ M_L. $$
 
 It does **not** need separate dense matrices $M_x$, $M_y$, and $M_u$.
 
@@ -149,19 +129,13 @@ The exact entries needed for the separator action are converted to arbitrary-pre
 
 For a simple separating eigensystem:
 
-$$
-M_L^T v_j=\lambda_j v_j.
-$$
+$$ M_L^T v_j=\lambda_j v_j. $$
 
 The eigenvectors encode evaluation of quotient-basis elements at the corresponding roots.
 
 Coordinate values are recovered from the exact normal forms:
 
-$$
-\operatorname{NF}(x),\qquad
-\operatorname{NF}(y),\qquad
-\operatorname{NF}(u).
-$$
+$$ \operatorname{NF}(x),\qquad \operatorname{NF}(y),\qquad \operatorname{NF}(u). $$
 
 If the eigensystem cannot be isolated or the resulting roots fail verification, the action path can retry at higher precision up to `max_precision_digits`.
 
@@ -181,15 +155,11 @@ It does not yet answer the branch question.
 
 Auxiliary coordinates are removed and the candidate is projected back to:
 
-$$
-(x,y).
-$$
+$$ (x,y). $$
 
 Then `algroots` evaluates the **original** equation:
 
-$$
-\sqrt{x+y}-(x-1)
-$$
+$$ \sqrt{x+y}-(x-1) $$
 
 using its principal branch.
 
@@ -284,4 +254,4 @@ exact coordinate reconstruction
 exact joint certification
 ```
 
-This division of labor is central to `algroots`: exact algebra determines the finite solution structure, arbitrary-precision numerical algebra extracts roots efficiently, and exact reconstruction is a default best-effort post-processing stage rather than being carried through every numerical operation.
+This division of labor is central to `algroots`: exact algebra determines the finite solution structure, arbitrary-precision numerical algebra extracts roots efficiently, and exact reconstruction is a default best-effort post-processing stage instead of being carried through every numerical operation.

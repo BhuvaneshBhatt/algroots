@@ -29,7 +29,7 @@ assert deflation.regular and deflation.verify()
 
 `certify_root_box` proves that an **open** rational complex coordinate box contains exactly one geometric root. `RationalComplexBox.bounds` consists of one tuple `(real_lower, real_upper, imaginary_lower, imaginary_upper)` per coordinate. Every endpoint must be an exact rational and both intervals must have positive width. This API currently requires rational polynomial coefficients.
 
-The proof counts roots of the squarefree separator polynomial in the linear image of the input box using exact complex root isolation. It then refines the parameter's rational isolating interval/rectangle and propagates it through the exact RUR coordinate maps with rational rectangle arithmetic. Every coordinate must be proved strictly inside the supplied box. A coarse separator image, boundary root, empty box or insufficient refinement is rejected. Coarse-box rejection is conservative: it need not mean the original coordinate box actually contains multiple roots.
+The proof counts roots of the squarefree separator polynomial in the linear image of the input box using exact complex root isolation. It then refines the parameter's rational isolating interval/rectangle and propagates it through the exact RUR coordinate maps with rational rectangle arithmetic. Every coordinate must be proved strictly inside the supplied box. A coarse separator image, boundary root, empty box or insufficient refinement is rejected. Coarse-box rejection is validated: it need not mean the original coordinate box actually contains multiple roots.
 
 <!-- algroots: execute -->
 ```python
@@ -41,7 +41,7 @@ assert certificate.multiplicity == 2
 assert certificate.is_singular and certificate.verify()
 ```
 
-`cauchy_endgame(..., certify=True)` applies this proof to a converged numerical endpoint. It constructs a rational box around the exact binary value of the numerical estimate unless `certification_box` is supplied. The numerical estimate must lie inside that box. `status="certified_endpoint"` means a unique exact target root was proved in the recorded box; the numerical path and Puiseux cycle number remain numerical. Certification failure raises `RootCertificationError` rather than silently substituting a residual check. A nonconverged endgame returns no certificate. The target parameter must be exact algebraic; rational-box certification additionally requires rational specialized equations.
+`cauchy_endgame(..., certify=True)` applies this proof to a converged numerical endpoint. It constructs a rational box around the exact binary value of the numerical estimate unless `certification_box` is supplied. The numerical estimate must lie inside that box. `status="certified_endpoint"` means a unique exact target root was proved in the recorded box; the numerical path and Puiseux cycle number remain numerical. Certification failure raises `RootCertificationError` instead of substituting a residual check. A nonconverged endgame returns no certificate. The target parameter must be exact algebraic; rational-box certification additionally requires rational specialized equations.
 
 Pass `deflate=True` together with `certify=True` to attach targeted exact deflation. The result's `certificate` and `deflation` records are distinct from its numerical `endpoint` and sampled error estimate.
 

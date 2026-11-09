@@ -1,0 +1,22 @@
+{
+  "semialg": {
+    "repository": "BhuvaneshBhatt/semialg",
+    "commit": "ec039d253b77c7945ad8cb638d32031317b33f36"
+  },
+  "alggeom": {
+    "repository": "BhuvaneshBhatt/alggeom",
+    "commit": "06aa4b7fa7ecc1d22e39b858303d9b134d71663f"
+  },
+  "funcprops": {
+    "repository": "BhuvaneshBhatt/funcprops",
+    "commit": "ee66b4d36b33117977d3292309fc2a923e2bc625"
+  },
+  "symbopt": {
+    "repository": "BhuvaneshBhatt/symbopt",
+    "commit": "25d382383c00c1394844a9bacb535d31bab486dc"
+  },
+  "probstats": {
+    "repository": "BhuvaneshBhatt/probstats",
+    "commit": "1bb14ca2d04d4ffb7d2f0c17963f716814b35f1a"
+  }
+}

@@ -5,7 +5,6 @@ import subprocess
 import sys
 from dataclasses import replace
 from itertools import combinations
-from pathlib import Path
 
 import pytest
 import sympy as sp
@@ -193,7 +192,7 @@ def test_rational_poles_and_reduction():
 
 
 @pytest.mark.parametrize("function", [x**6, (x + 1 / x) ** 2, (x**4 + x) / (x + 1)])
-def test_univariate_parity_and_sequence_dispatch_preserve_legacy_contract(function):
+def test_univariate_sequence_dispatch(function):
     scalar_route = rational_decompose(function, x, parameter=t)
     direct = multivariate_rational_decompose(function, (x,), parameter=t)
     dispatch = rational_decompose(function, (x,), parameter=t)
@@ -304,7 +303,6 @@ def test_search_and_composition_tampering_are_rejected():
     "first", ["algroots._multivariate_decomposition", "algroots.functional_decomposition"]
 )
 def test_fresh_import_orders_and_public_namespace(first, tmp_path):
-    source = str(Path(__file__).resolve().parents[1] / "src")
     program = f"""import {first}
 import algroots
 from algroots.functional_decomposition import multivariate_rational_decompose
@@ -316,7 +314,7 @@ assert not hasattr(algroots,"multivariate_rational_decompose")
     process = subprocess.run(
         [sys.executable, "-c", program],
         cwd=tmp_path,
-        env=dict(os.environ, PYTHONPATH=source),
+        env={key: value for key, value in os.environ.items() if key != "PYTHONPATH"},
         capture_output=True,
         text=True,
         timeout=30,

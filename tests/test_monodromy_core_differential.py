@@ -21,7 +21,7 @@ def _as_seed(root):
 
 def test_multivariate_loop_endpoints_are_exactly_the_core_solver_root_set():
     equations = (x**2 - 1, y**2 - 4)
-    solved = polysolve(equations, (x, y), digits=40)
+    solved = polysolve(equations, (x, y), digits=40, recognize=False)
     starts = tuple(_as_seed(root) for root in solved.roots)
     loop = closed_additive_loop(equations, (x, y), (2, 0))
     paths = track_loop(loop, starts, options=OPTIONS)
@@ -37,7 +37,7 @@ def test_multivariate_loop_endpoints_are_exactly_the_core_solver_root_set():
 
 def test_coupled_multivariate_loop_preserves_core_solver_root_set():
     equations = (x**2 + y - 2, y**2 - 1)
-    solved = polysolve(equations, (x, y), digits=40)
+    solved = polysolve(equations, (x, y), digits=40, recognize=False)
     starts = tuple(_as_seed(root) for root in solved.roots)
     loop = closed_additive_loop(equations, (x, y), (0.35 + 0.2j, -0.25 + 0.15j))
     paths = track_loop(loop, starts, options=OPTIONS)

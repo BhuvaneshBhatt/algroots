@@ -93,12 +93,12 @@ def test_solver_integer_options_reject_flags_and_nonintegers(option, value):
 @pytest.mark.parametrize("value", [0, 1, 0.0, 1.0, None, [], "yes"])
 def test_certification_mode_has_explicit_types(value):
     with pytest.raises(PolynomialSystemInputError, match="certify"):
-        polysolve((x * x - 1,), (x,), certify=value)
+        polysolve((x * x - 1,), (x,), certify=value, recognize=False)
 
 
 def test_unhashable_variable_has_public_input_error():
     with pytest.raises(PolynomialSystemInputError, match="Symbol"):
-        polysolve((x * x - 1,), ([x],))
+        polysolve((x * x - 1,), ([x],), recognize=False)
 
 
 def test_flint_precision_restored_exactly_on_nested_exception():

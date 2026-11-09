@@ -33,16 +33,16 @@ def _match_roots(left, right, tol=1e-14):
     ],
 )
 def test_shape_and_action_backends_agree(equations, variables):
-    shape = polysolve(equations, variables, method="shape", digits=35)
-    action = polysolve(equations, variables, method="action", digits=35)
+    shape = polysolve(equations, variables, method="shape", digits=35, recognize=False)
+    action = polysolve(equations, variables, method="action", digits=35, recognize=False)
     assert len(shape.roots) == len(action.roots)
     _match_roots(shape.roots, action.roots)
 
 
 def test_action_and_triangular_agree_on_branching_system():
     equations = [x**2 - 1, y**2 - 1]
-    action = polysolve(equations, (x, y), method="action", digits=35)
-    triangular = polysolve(equations, (x, y), method="triangular", digits=35)
+    action = polysolve(equations, (x, y), method="action", digits=35, recognize=False)
+    triangular = polysolve(equations, (x, y), method="triangular", digits=35, recognize=False)
     assert len(action.roots) == len(triangular.roots) == 4
     _match_roots(action.roots, triangular.roots)
 
@@ -61,9 +61,9 @@ def test_randomized_shape_action_and_auto_agree_on_constructed_families():
             x - shear * y - offset,
             y**degree - constant,
         )
-        shape = polysolve(equations, (x, y), method="shape", digits=40)
-        action = polysolve(equations, (x, y), method="action", digits=40)
-        automatic = polysolve(equations, (x, y), method="auto", digits=40)
+        shape = polysolve(equations, (x, y), method="shape", digits=40, recognize=False)
+        action = polysolve(equations, (x, y), method="action", digits=40, recognize=False)
+        automatic = polysolve(equations, (x, y), method="auto", digits=40, recognize=False)
 
         assert len(shape.roots) == len(action.roots) == len(automatic.roots) == degree
         _match_roots(shape.roots, action.roots, tol=1e-12)
@@ -81,13 +81,8 @@ def test_action_triangular_differential():
         a = rng.choice((1, 2, 3, 5))
         b = rng.choice((1, 2, 3, 7))
         equations = (x**2 - a, y**2 - b)
-        action = polysolve(equations, (x, y), method="action", digits=40)
-        triangular = polysolve(
-            equations,
-            (x, y),
-            method="triangular",
-            digits=40,
-        )
+        action = polysolve(equations, (x, y), method="action", digits=40, recognize=False)
+        triangular = polysolve(equations, (x, y), method="triangular", digits=40, recognize=False)
         assert len(action.roots) == len(triangular.roots) == 4
         _match_roots(action.roots, triangular.roots, tol=1e-12)
 

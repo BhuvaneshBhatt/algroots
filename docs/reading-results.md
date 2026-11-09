@@ -1,6 +1,6 @@
 # Reading results
 
-`polysolve` returns `PolynomialSystemRoots`. `algsolve` returns `AlgebraicSystemRoots`, which also describes the augmented polynomial system, branch filtering and nonzero constraints. Use attributes rather than parsing printed representations.
+`polysolve` returns `PolynomialSystemRoots`. `algsolve` returns `AlgebraicSystemRoots`, which also describes the augmented polynomial system, branch filtering and nonzero constraints. Use attributes instead of parsing printed representations.
 
 ## Coordinates and counts
 

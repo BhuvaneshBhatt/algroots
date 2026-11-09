@@ -2,7 +2,9 @@
 
 ## Root and specialized namespaces
 
-The root exports only `polysolve`, `algsolve`, `PolynomialSystemRoots`, `AlgebraicSystemRoots`, `CompletenessEvidence`, `HomotopyRecoveryOptions`, `PolynomialSystemError`, `PolynomialSystemInputError`, `NotZeroDimensionalError`, `SystemSolveLimitError`, `__version__`.
+<!-- api-exports -->
+The root exports `VerifiedGroebnerFamily`, `VerifiedRationalUnivariateFamily`, `RationalUnivariateCertificate`, `certify_rational_univariate_representation`, `AlgebraicFunctionField`, `FieldSpecialization`, `TowerCompression`, `GroebnerCertificate`, `certify_groebner_basis`, `parametric_groebner_basis`, `GroebnerSpecialization`, `groebner_backends`, `GroebnerBackendInfo`, `ExecutionLimits`, `ExecutionError`, `ExecutionTimeout`, `run_supervised`, `PrecisionOptions`, `SolverLimits`, `SolverOptions`, `groebner_basis`, `QuotientAlgebra`, `NativeF4Limits`, `GroebnerLimitError`, `GroebnerVerificationError`, `GroebnerBackendUnavailable`, `polysolve`, `algsolve`, `PolynomialSystemRoots`, `AlgebraicSystemRoots`, `CompletenessEvidence`, `HomotopyRecoveryOptions`, `PolynomialSystemError`, `PolynomialSystemInputError`, `NotZeroDimensionalError`, `SystemSolveLimitError`, `__version__`.
+<!-- /api-exports -->
 
 Advanced imports use the namespaces below. Types remain public for annotations and result inspection.
 
@@ -47,7 +49,21 @@ This page covers the high-level root API and the specialized public namespaces.
 
 `QuotientAlgebra` is the expert-facing structural representation of a finite exact quotient algebra. It centralizes the Gröbner basis, standard-monomial staircase, quotient dimension, exact normal forms and coordinate vectors, variable and general multiplication matrices, trace pairing, and separating-element construction used by the RUR, action-matrix, and exact border-basis backends.
 
-Construct it with `QuotientAlgebra.from_polynomials(polynomials, variables, domain=None, order="grevlex", max_dimension=None)` or, when a compatible exact Gröbner basis already exists, `QuotientAlgebra.from_groebner_basis(...)`. Positive-dimensional ideals, inexact coefficients, or an exceeded dimension guard raise `QuotientAlgebraError`.
+Construct it from polynomials or reuse a compatible exact Gröbner basis. The signatures below are generated from the public constructors. Positive-dimensional ideals, inexact coefficients, or an exceeded dimension guard raise `QuotientAlgebraError`.
+
+
+<!-- api-signature: QuotientAlgebra.from_polynomials -->
+```python
+QuotientAlgebra.from_polynomials(polynomials, variables, *, domain=None, order='grevlex', max_dimension=None, normal_form_cache_size=128, groebner_backend='native', groebner_limits=None)
+```
+<!-- /api-signature -->
+
+
+<!-- api-signature: QuotientAlgebra.from_groebner_basis -->
+```python
+QuotientAlgebra.from_groebner_basis(groebner_basis, variables=None, *, max_dimension=None, normal_form_cache_size=128)
+```
+<!-- /api-signature -->
 
 An explicit domain may be `QQ.frac_field(z)` or a fraction field over an exact algebraic number field. Coefficient parameters must be distinct from quotient variables. Inference retains the rational/algebraic-number contract used by the numerical solvers; declaring a parameter field does not enable numerical root extraction for symbolic parameters.
 
@@ -63,7 +79,7 @@ See [Certified functional decomposition](functional-decomposition.md) for automa
 
 See [Normalized curve genus and rationality](curves.md) for `PlaneCurve`, projective normalization genus, verified birational maps, exact `QQ` conic obstructions and explicit constants extensions. Algebraic coefficient fields expose `curve_model()`, `genus`, `rationality()` and `rational_parametrization()`.
 
-This API is equality-only. Boolean formulas, inequalities, real-sign filtering, and quantifier elimination belong in downstream semialgebraic packages rather than this quotient layer.
+This API is equality-only. Boolean formulas, inequalities, real-sign filtering, and quantifier elimination belong in downstream semialgebraic packages instead of this quotient layer.
 
 ## Finite fields and finite-algebra decomposition
 
@@ -84,36 +100,11 @@ For complete, executable constructions, a nonmonogenic example, and the distinct
 
 ## `algsolve`
 
+<!-- api-signature: algsolve -->
 ```python
-algsolve(
-    equations,
-    variables,
-    *,
-    digits=50,
-    verification_digits=None,
-    guard_digits=10,
-    maxsteps=200,
-    max_solutions=10_000,
-    max_action_dimension=256,
-    max_precision_digits=None,
-    max_auxiliary_variables=32,
-    method="auto",
-    recognize=True,
-    recognition_max_degree=8,
-    max_homotopy_paths=10_000,
-    homotopy_seed=0,
-    homotopy_gamma_attempts=4,
-    homotopy_parallel=False,
-    homotopy_max_workers=None,
-    presolve=True,
-    variable_order="auto",
-    root_mode="distinct",
-    multiplicity="auto",
-    root_order="canonical",
-    max_returned_roots=10_000,
-    ordering_max_refinements=64,
-)
+algsolve(equations, variables, *, digits=50, verification_digits=None, guard_digits=10, maxsteps=200, max_solutions=10000, max_action_dimension=256, max_precision_digits=None, max_auxiliary_variables=32, method='auto', groebner_backend='native', groebner_limits=None, recognize=True, recognition_max_degree=8, max_homotopy_paths=10000, homotopy_seed=0, homotopy_gamma_attempts=4, homotopy_parallel=False, homotopy_max_workers=None, presolve=True, variable_order='auto', root_mode='distinct', multiplicity='auto', root_order='canonical', max_returned_roots=10000, ordering_max_refinements=64, options=None)
 ```
+<!-- /api-signature -->
 
 Find all distinct verified roots of a supported zero-dimensional algebraic equation system.
 
@@ -146,44 +137,11 @@ The final root list has passed original algebraic equation and domain/branch val
 
 ## `polysolve`
 
+<!-- api-signature: polysolve -->
 ```python
-polysolve(
-    equations,
-    variables,
-    *,
-    digits=50,
-    verification_digits=None,
-    guard_digits=10,
-    maxsteps=200,
-    max_solutions=10_000,
-    max_action_dimension=256,
-    max_precision_digits=None,
-    method="auto",
-    recognize=True,
-    recognition_max_degree=8,
-    max_homotopy_paths=10_000,
-    homotopy_seed=0,
-    homotopy_gamma_attempts=4,
-    homotopy_parallel=False,
-    homotopy_max_workers=None,
-    presolve=True,
-    variable_order="auto",
-    presolve_max_terms=1000,
-    presolve_max_degree=16,
-    presolve_growth_factor=4,
-    certify=False,
-    certification_max_dimension=128,
-    certification_max_refinements=128,
-    certification_max_box_attempts=16,
-    homotopy_recovery=False,
-    recovery_options=None,
-    root_mode="distinct",
-    multiplicity="auto",
-    root_order="canonical",
-    max_returned_roots=10_000,
-    ordering_max_refinements=64,
-)
+polysolve(equations, variables, *, digits=50, verification_digits=None, guard_digits=10, maxsteps=200, max_solutions=10000, max_action_dimension=256, max_precision_digits=None, method='auto', groebner_backend='native', groebner_limits=None, recognize=True, recognition_max_degree=8, max_homotopy_paths=10000, homotopy_seed=0, homotopy_gamma_attempts=4, homotopy_parallel=False, homotopy_max_workers=None, presolve=True, variable_order='auto', presolve_max_terms=1000, presolve_max_degree=16, presolve_growth_factor=4, certify=False, certification_max_dimension=128, certification_max_refinements=128, certification_max_box_attempts=16, homotopy_recovery=False, recovery_options=None, root_mode='distinct', multiplicity='auto', root_order='canonical', max_returned_roots=10000, ordering_max_refinements=64, options=None)
 ```
+<!-- /api-signature -->
 
 This is the lower-level polynomial solver. It uses the same numerical controls as `algsolve` but does not algebraize rational powers/rational functions or perform original algebraic branch filtering.
 
@@ -193,14 +151,11 @@ For `method="homotopy"`, `max_homotopy_paths` limits the Bézout path count befo
 
 ## `algebraize_system`
 
+<!-- api-signature: algebraize_system -->
 ```python
-algebraize_system(
-    equations,
-    variables,
-    *,
-    max_auxiliary_variables=32,
-)
+algebraize_system(equations, variables, *, max_auxiliary_variables=32)
 ```
+<!-- /api-signature -->
 
 Returns an `AlgebraizedSystem` containing the exact original equations and their augmented polynomial representation.
 
@@ -208,17 +163,11 @@ Algebraization is not itself a proof that every augmented polynomial root satisf
 
 ## `recognize_system_roots`
 
+<!-- api-signature: recognize_system_roots -->
 ```python
-recognize_system_roots(
-    result,
-    *,
-    max_degree,
-    max_height=None,
-    min_relation_bits=None,
-    degree_cost=0,
-    require_certified=False,
-)
+recognize_system_roots(result, *, max_degree, max_height=None, min_relation_bits=None, degree_cost=0, require_certified=False)
 ```
+<!-- /api-signature -->
 
 Run `algrecognize` on the numerical coordinates in an existing root result, reconstruct compatible exact SymPy algebraic roots, and test the reconstructed tuple against the original equations.
 
@@ -263,30 +212,11 @@ See [Exact Recognition](exact-recognition.md) for the recognition pipeline, trus
 
 ### `discover_monodromy_orbit`
 
+<!-- api-signature: discover_monodromy_orbit -->
 ```python
-discover_monodromy_orbit(
-    equations,
-    variables,
-    seeds,
-    *,
-    max_loops=10,
-    radius=1.0,
-    match_tolerance=1e-7,
-    random_seed=None,
-    options=None,
-    parallel=False,
-    max_workers=None,
-    expected_root_count=None,
-    trace_test=False,
-    trace_tolerance=1e-8,
-    statistical_stop=False,
-    confidence=0.95,
-    min_loops_before_stopping=2,
-    max_auxiliary_variables=32,
-    recognize=True,
-    recognition_max_degree=8,
-)
+discover_monodromy_orbit(equations, variables, seeds, *, max_loops=10, radius=1.0, match_tolerance=1e-07, random_seed=None, options=None, parallel=False, max_workers=None, expected_root_count=None, trace_test=False, trace_tolerance=1e-08, statistical_stop=False, confidence=0.95, min_loops_before_stopping=2, max_auxiliary_variables=32, recognize=True, recognition_max_degree=8)
 ```
+<!-- /api-signature -->
 
 The high-level orbit-discovery function accepts the same algebraic expression subset as `algsolve`. Algebraic seeds are lifted to principal-branch auxiliary coordinates, tracking occurs in the exact augmented polynomial system, and returned roots are projected and reverified against the original equations and nonzero constraints. `expected_root_count` counts distinct returned original-system roots, not branch-invalid augmented-cover roots.
 
@@ -443,54 +373,41 @@ An exact point tied to a root of a `RationalUnivariateRepresentation`. `coordina
 
 `compute_rational_univariate_representation`
 
+<!-- api-signature: compute_rational_univariate_representation -->
 ```python
-compute_rational_univariate_representation(
-    polynomials,
-    variables,
-    parameter=None,
-    *,
-    max_separating_attempts=64,
-)
+compute_rational_univariate_representation(polynomials, variables, parameter=None, *, max_separating_attempts=64, domain=None, groebner_backend='native', groebner_limits=None)
 ```
+<!-- /api-signature -->
 
 Construct an exact RUR for a zero-dimensional polynomial system over `QQ` or an exact algebraic number field.
 
 `solve_rur_representation`
 
+<!-- api-signature: solve_rur_representation -->
 ```python
-solve_rur_representation(
-    representation,
-    *,
-    real=True,
-)
+solve_rur_representation(representation, *, real=True)
 ```
+<!-- /api-signature -->
 
 Return the distinct exact roots encoded by an existing RUR.
 
 `solve_rur_points`
 
+<!-- api-signature: solve_rur_points -->
 ```python
-solve_rur_points(
-    representation,
-    *,
-    real=True,
-)
+solve_rur_points(representation, *, real=True)
 ```
+<!-- /api-signature -->
 
 Return the distinct roots as `RationalUnivariatePoint` objects.
 
 `solve_zero_dimensional_system_with_rur`
 
+<!-- api-signature: solve_zero_dimensional_system_with_rur -->
 ```python
-solve_zero_dimensional_system_with_rur(
-    polynomials,
-    variables,
-    *,
-    real=True,
-    parameter=None,
-    max_separating_attempts=64,
-)
+solve_zero_dimensional_system_with_rur(polynomials, variables, *, real=True, parameter=None, max_separating_attempts=64, domain=None, groebner_backend='native', groebner_limits=None)
 ```
+<!-- /api-signature -->
 
 Construct an RUR and return its distinct exact roots.
 
@@ -510,35 +427,21 @@ Exact border-basis data for a zero-dimensional quotient algebra. It exposes the 
 
 `compute_border_basis`
 
+<!-- api-signature: compute_border_basis -->
 ```python
-compute_border_basis(
-    polynomials,
-    variables,
-    *,
-    order_ideal=None,
-    domain=QQ,
-    groebner_order="grevlex",
-    strict=True,
-    algorithm="groebner",
-    max_degree=None,
-)
+compute_border_basis(polynomials, variables, *, order_ideal=None, domain=QQ, groebner_order='grevlex', strict=True, algorithm='groebner', max_degree=None, groebner_backend='native', groebner_limits=None)
 ```
+<!-- /api-signature -->
 
 Construct an exact border basis either from a supporting Gröbner basis or by the native Macaulay linear-algebra route.
 
 `compute_border_basis_linear`
 
+<!-- api-signature: compute_border_basis_linear -->
 ```python
-compute_border_basis_linear(
-    polynomials,
-    variables,
-    *,
-    domain=QQ,
-    groebner_order="grevlex",
-    max_degree=None,
-    strict=True,
-)
+compute_border_basis_linear(polynomials, variables, *, domain=QQ, groebner_order='grevlex', max_degree=None, strict=True, groebner_backend='native', groebner_limits=None)
 ```
+<!-- /api-signature -->
 
 Construct an exact border basis using Macaulay linear algebra, with a supporting Gröbner basis retained for exact normal-form validation.
 
@@ -557,7 +460,7 @@ Enumeration evidence on `PolynomialSystemRoots.completeness` separates an exact 
 
 ### `ProjectiveHomotopy` and `projective_homotopy`
 
-`projective_homotopy(expressions, variables, parameter, patch=...)` homogenizes an analytic polynomial homotopy and adds a constant linear patch. Track its `system` using `track_path`, starting from `lift(affine_point)`; recover finite coordinates with `dehomogenize(point)`. Paths reaching the patch hyperplane require chart switching, which this first implementation does not provide. This expert API supports some affine paths to infinity and reports no proof of projective coverage. These endgame and projective APIs are opt-in; `polysolve` homotopy keeps its conservative finite regular endpoint contract.
+`projective_homotopy(expressions, variables, parameter, patch=...)` homogenizes an analytic polynomial homotopy and adds a constant linear patch. Track its `system` using `track_path`, starting from `lift(affine_point)`; recover finite coordinates with `dehomogenize(point)`. Paths reaching the patch hyperplane require chart switching, which this first implementation does not provide. This expert API supports some affine paths to infinity and reports no proof of projective coverage. These endgame and projective APIs are opt-in; `polysolve` homotopy keeps its validated finite regular endpoint contract.
 
 
 ## Rigorous singular certificates and deflation
@@ -588,7 +491,7 @@ The public entry points are `certify_isolated_root`, `certify_root_box`, `deflat
 
 RUR numerical extraction shares the Arb-backed squarefree univariate extractor with shape/triangular solving. `numerical_rur_roots` accepts `max_precision_digits`; `polysolve` forwards the same budget. Returned coordinates remain numerical midpoints and still undergo original-equation verification. The extraction budget bounds Arb coefficient-ball and root-isolation precision. Each isolation call uses the current working bit precision as its ceiling; bounded retries increase this only up to `max_precision_digits`. Exact centroid translation reduces cancellation before ball conversion. Triangular substitutions retain exact rational midpoints of prior coordinates before polynomial construction, so coefficient rounding cannot manufacture repeated factors. As with all numerical branches, the reconstructed points must pass original-equation verification. Algebraic coefficient conversion uses additional SymPy evaluation guard digits; the ceiling refers to Arb working and isolation precision, not symbolic evaluation.
 
-Trace vectors, pairings and general element actions stream basis multiplication matrices rather than caching all of them. The explicit expert property `basis_multiplication_matrices` still materializes them when requested. The pairing and variable-action storage remain quadratic in quotient dimension (per variable), and exactness is unchanged.
+Trace vectors, pairings and general element actions stream basis multiplication matrices instead of caching all of them. The explicit expert property `basis_multiplication_matrices` still materializes them when requested. The pairing and variable-action storage remain quadratic in quotient dimension (per variable), and exactness is unchanged.
 
 Additional public batched proof function: `certify_numerical_roots`.
 
@@ -618,7 +521,7 @@ Recovery currently requires rational coefficients and a globally finite ideal. I
 
 Presolve can probe substitutions rejected by its growth estimate using exact sparse arithmetic. Final term/degree limits remain unchanged. The probe bounds intermediate support to at most 4,096 terms, multiplication/accumulation work to 32,768 operations, rational products to 8,192 bits and exponent bit length to 64. A refused probe leaves the pivot intact. `AffinePresolve.cancellation_probes` and `cancellation_acceptances` count this work; high-level cost estimates expose them as `presolve_cancellation_probes` and `presolve_cancellation_acceptances`.
 
-`QuotientAlgebra.operation_diagnostics` returns a copy of exact-operation timing and counter observations. `SolveCostDiagnostics.quotient_operation_statistics` exposes these for the solving quotient, including action construction, traces, rank, standard-basis coordinate shortcuts and streamed-action reuse. Nested trace-pairing time includes trace-vector work if the latter was not already cached. Rational geometric counts use exact-domain rank; algebraic fields retain the profiled expression-rank route. Streamed multivariate traces retain at most eight basis actions, so temporary matrix storage remains quadratic in dimension.
+`QuotientAlgebra.operation_diagnostics` returns a copy of exact-operation timing and counter observations. `SolveCostDiagnostics.quotient_operation_statistics` exposes these for the solving quotient, including action construction, traces, rank, standard-basis coordinate shortcuts and streamed-action reuse. Nested trace-pairing time includes trace-vector work if the latter was not already cached. Geometric counts use exact coefficient-domain rank over rational, algebraic and parameter fields. Streamed multivariate traces retain at most eight basis actions, so temporary matrix storage follows sparse support and can reach quadratic size after fill.
 
 
 ### Certification and continuation call signatures
@@ -627,94 +530,51 @@ These signatures are checked against the runtime public API. See the workflow gu
 
 `certify_isolated_root`
 
+<!-- api-signature: certify_isolated_root -->
 ```python
-certify_isolated_root(
-    equations,
-    variables,
-    point,
-    *,
-    max_quotient_dimension=256,
-)
+certify_isolated_root(equations, variables, point, *, max_quotient_dimension=256, groebner_backend='native', groebner_limits=None)
 ```
+<!-- /api-signature -->
 
 `certify_root_box`
 
+<!-- api-signature: certify_root_box -->
 ```python
-certify_root_box(
-    equations,
-    variables,
-    box,
-    *,
-    max_quotient_dimension=256,
-    max_refinements=64,
-)
+certify_root_box(equations, variables, box, *, max_quotient_dimension=256, max_refinements=64, groebner_backend='native', groebner_limits=None)
 ```
+<!-- /api-signature -->
 
 `certify_numerical_roots`
 
+<!-- api-signature: certify_numerical_roots -->
 ```python
-certify_numerical_roots(
-    result,
-    *,
-    max_quotient_dimension=128,
-    max_refinements=128,
-    required=False,
-    max_box_attempts=16,
-)
+certify_numerical_roots(result, *, max_quotient_dimension=128, max_refinements=128, required=False, max_box_attempts=16, groebner_backend='native', groebner_limits=None)
 ```
+<!-- /api-signature -->
 
 `deflate_isolated_root`
 
+<!-- api-signature: deflate_isolated_root -->
 ```python
-deflate_isolated_root(
-    equations,
-    variables,
-    point,
-    *,
-    max_stages=8,
-    max_added_equations=1024,
-    max_quotient_dimension=256,
-)
+deflate_isolated_root(equations, variables, point, *, max_stages=8, max_added_equations=1024, max_quotient_dimension=256)
 ```
+<!-- /api-signature -->
 
 `cauchy_endgame`
 
+<!-- api-signature: cauchy_endgame -->
 ```python
-cauchy_endgame(
-    system,
-    start,
-    *,
-    target=1,
-    radius=0.1,
-    samples=32,
-    max_cycle=8,
-    levels=4,
-    tolerance=None,
-    options=None,
-    certify=False,
-    certification_box=None,
-    deflate=False,
-    max_quotient_dimension=256,
-)
+cauchy_endgame(system, start, *, target=1, radius=0.1, samples=32, max_cycle=8, levels=4, tolerance=None, options=None, certify=False, certification_box=None, deflate=False, max_quotient_dimension=256)
 ```
+<!-- /api-signature -->
 
 `track_projective_path`
 
+<!-- api-signature: track_projective_path -->
 ```python
-track_projective_path(
-    projective,
-    start,
-    *,
-    t_start=0,
-    t_end=1,
-    options=None,
-    segment_size=0.05,
-    min_segment=1e-08,
-    switch_ratio=0.5,
-    max_segments=1000,
-    max_chart_switches=128,
-)
+track_projective_path(projective, start, *, t_start=0, t_end=1, options=None, segment_size=0.05, min_segment=1e-08, switch_ratio=0.5, max_segments=1000, max_chart_switches=128)
 ```
+<!-- /api-signature -->
 
 ## Root multiplicity views and ordering
 
@@ -724,7 +584,7 @@ Both solvers accept `root_mode="distinct"` or `"with_multiplicity"`. `.roots` an
 
 Canonical ordering is lexicographic in `(Re(x1), Im(x1), Re(x2), Im(x2), ...)`, using the supplied variable order after reconstruction and filtering. Exact certified/recognized points are compared algebraically using root separation and rational isolating intervals. All point metadata is permuted together. Otherwise arbitrary-precision numerical coordinates provide a deterministic order for that result; precision/backend-independent ordering remains unproved. `.ordering.status` is `"certified"` or `"numerical"` and `.ordering.basis` explains which route was used. Ordering evidence does not certify completeness or membership.
 
-`root_order="required"` requests bounded exact point certification if necessary and raises `RootOrderingError` if exact ordering cannot be established. Interval refinement is limited by `ordering_max_refinements`; exact comparison currently supports algebraic differences of degree at most 64 (including a conservative composite-degree guard). Opaque real/imaginary projections that cannot be resolved by certificate boxes or exact equality are reported as unresolved, rather than forcing an unbounded symbolic comparison. These are structural budgets, not wall-clock limits. Zero/one-point order is trivially certified. Principal-branch and pole filtering in `algsolve` never transfers polynomial-cover multiplicities; repeated output is refused for such projected roots when multiplicities are unknown.
+`root_order="required"` requests bounded exact point certification if necessary and raises `RootOrderingError` if exact ordering cannot be established. Interval refinement is limited by `ordering_max_refinements`; exact comparison currently supports algebraic differences of degree at most 64 (including a validated composite-degree guard). Opaque real/imaginary projections that cannot be resolved by certificate boxes or exact equality are reported as unresolved, instead of forcing an unbounded symbolic comparison. These are structural budgets, not wall-clock limits. Zero/one-point order is trivially certified. Principal-branch and pole filtering in `algsolve` never transfers polynomial-cover multiplicities; repeated output is refused for such projected roots when multiplicities are unknown.
 
 <!-- algroots: execute -->
 ```python
@@ -746,3 +606,167 @@ assert result.ordering.status == "certified"
 ```
 
 `RootMultiplicityError` and `RootOrderingError` are available from `algroots.errors`.
+
+## Gröbner bases
+
+`groebner_basis` returns a reduced monic SymPy `GroebnerBasis`. The [Gröbner guide](groebner-bases.md) documents its domain, order, backend, verification, and limit contracts.
+
+<!-- api-signature: groebner_basis -->
+```python
+groebner_basis(polynomials, variables, *, domain=None, order='grevlex', backend='native', limits=None, execution=None, certificate=None, verification='reference', proof_limits=None)
+```
+<!-- /api-signature -->
+
+## Backend discovery and solver settings
+
+`groebner_backends` returns `GroebnerBackendInfo` records keyed by engine name. Each record describes availability, supported domains and orders, the accepted limit class, installation instructions, and native size bounds. Discovery does not choose a backend.
+
+`PrecisionOptions`, `SolverLimits`, and `SolverOptions` group advanced settings for `polysolve` and `algsolve`. Each `<factory>` default below creates an independent default settings object. See [Solver settings](solver-settings.md) for examples, conflict rules, and recovery scope.
+
+`ExecutionLimits` and `run_supervised` bound a spawned worker calculation, including independent verification and result transfer. `ExecutionTimeout` inherits both `ExecutionError` and `TimeoutError`. Worker failures without a transferable result raise `ExecutionError`; transferable calculation errors retain their types. See [Supervised execution](supervised-execution.md) for supported platforms and serialization requirements.
+
+<!-- api-signature: groebner_backends -->
+```python
+groebner_backends()
+```
+<!-- /api-signature -->
+
+<!-- api-signature: ExecutionLimits -->
+```text
+ExecutionLimits(timeout, memory_mib=None)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: SolverOptions -->
+```text
+SolverOptions(precision=<factory>, limits=<factory>, recovery=None, execution=None)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: SolverLimits -->
+```text
+SolverLimits(maxsteps=200, max_solutions=10000, max_action_dimension=256, max_homotopy_paths=10000, max_returned_roots=10000, ordering_max_refinements=64)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: run_supervised -->
+```python
+run_supervised(function, /, *args, execution, **kwargs)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: PrecisionOptions -->
+```text
+PrecisionOptions(digits=50, verification_digits=None, guard_digits=10, max_precision_digits=None, recognize=True, recognition_max_degree=8)
+```
+<!-- /api-signature -->
+
+## Parameter specialization
+
+`parametric_groebner_basis` returns `GroebnerSpecialization`: a generic basis, verified generator-combination identities, and nonzero conditions for safe specialization. Its `specialize` method recomputes original inputs on exceptional fibers. `as_formula` retains both the generic and exceptional equality branches. See [Coefficient fields and specialization](coefficient-fields.md).
+
+<!-- api-signature: parametric_groebner_basis -->
+```python
+parametric_groebner_basis(polynomials, variables, parameters, *, domain=None, order='grevlex', backend='native', limits=None, proof_limits=None, execution=None)
+```
+<!-- /api-signature -->
+
+For exact reusable proof objects, see [Sparse quotients and certificates](sparse-quotients-and-certificates.md). `certify_groebner_basis` returns `GroebnerCertificate`; `certify_rational_univariate_representation` returns `RationalUnivariateCertificate`. `AlgebraicFunctionField`, `TowerCompression`, and `FieldSpecialization` describe [parameter-dependent algebraic fields](algebraic-function-fields.md).
+
+## Coefficient fields and reusable certificates
+
+<!-- api-signature: certify_groebner_basis -->
+```text
+certify_groebner_basis(polynomials, variables, *, candidate=None, domain=None, order='grevlex', backend='native', limits=None, proof_limits=None)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: certify_rational_univariate_representation -->
+```text
+certify_rational_univariate_representation(polynomials, variables, *, parameters=(), domain=None, candidate=None, basis_certificate=None, parameter=None, backend='native', limits=None, proof_limits=None)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: AlgebraicFunctionField -->
+```text
+AlgebraicFunctionField(modulus)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: AlgebraicFunctionField.extend -->
+```text
+AlgebraicFunctionField.extend(self, modulus, *, max_degree=64, max_attempts=32)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: AlgebraicFunctionField.factor_univariate -->
+```text
+AlgebraicFunctionField.factor_univariate(self, polynomial, *, max_attempts=32, max_degree=256)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: AlgebraicFunctionField.specialize -->
+```text
+AlgebraicFunctionField.specialize(self, values, *, roots, limits=None)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: QuotientAlgebra.from_certificate -->
+```text
+QuotientAlgebra.from_certificate(certificate, **options)
+```
+<!-- /api-signature -->
+
+
+## Repeated fibers and local coefficient models
+
+`VerifiedGroebnerFamily` and `VerifiedRationalUnivariateFamily` are detached checked snapshots. Create them with `GroebnerCertificate.prepare()` or `RationalUnivariateCertificate.prepare()`. The field methods enumerate exact branches, recover local regular values and adjoin independent parameters.
+
+<!-- api-signature: VerifiedGroebnerFamily -->
+```text
+VerifiedGroebnerFamily(certificate)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: VerifiedGroebnerFamily.specialize -->
+```text
+VerifiedGroebnerFamily.specialize(self, values, *, backend='native', limits=None)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: VerifiedRationalUnivariateFamily -->
+```text
+VerifiedRationalUnivariateFamily(certificate)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: VerifiedRationalUnivariateFamily.specialize_field -->
+```text
+VerifiedRationalUnivariateFamily.specialize_field(self, embedding)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: GroebnerCertificate.prepare -->
+```text
+GroebnerCertificate.prepare(self)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: RationalUnivariateCertificate.prepare -->
+```text
+RationalUnivariateCertificate.prepare(self)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: AlgebraicFunctionField.specializations -->
+```text
+AlgebraicFunctionField.specializations(self, values, *, real=False, max_branches=64, limits=None)
+```
+<!-- /api-signature -->
+
+<!-- api-signature: AlgebraicFunctionField.with_parameters -->
+```text
+AlgebraicFunctionField.with_parameters(self, *parameters)
+```
+<!-- /api-signature -->
+

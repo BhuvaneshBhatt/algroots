@@ -6,21 +6,15 @@
 
 For a target system
 
-$$
-F=(f_1,\ldots,f_n), \qquad d_i=\deg(f_i),
-$$
+$$ F=(f_1,\ldots,f_n), \qquad d_i=\deg(f_i), $$
 
 `algroots` uses the total-degree start system
 
-$$
-G_i(x)=x_i^{d_i}-1.
-$$
+$$ G_i(x)=x_i^{d_i}-1. $$
 
 Its roots are products of roots of unity, so all start points are known explicitly. The number of paths is the Bézout count
 
-$$
-D=\prod_{i=1}^n d_i.
-$$
+$$ D=\prod_{i=1}^n d_i. $$
 
 This is a path count, not necessarily the number of finite affine solutions of the target. Some paths can go to infinity, and several paths can coalesce at a singular target root.
 
@@ -28,11 +22,9 @@ This is a path count, not necessarily the number of finite affine solutions of t
 
 For each start point, the backend tracks
 
-$$
-H_i(x,t)=(1-t)\,\gamma\,G_i(x)+t f_i(x), \qquad 0\le t\le1.
-$$
+$$ H_i(x,t)=(1-t)\,\gamma\,G_i(x)+t f_i(x), \qquad 0\le t\le1. $$
 
-The gamma trick is generic rather than universal: exceptional gamma values can produce singular or numerically poor paths. `algroots` therefore tries a deterministic sequence of exact complex rational gamma values controlled by `homotopy_seed` and `homotopy_gamma_attempts`.
+The gamma trick is generic instead of universal: exceptional gamma values can produce singular or numerically poor paths. `algroots` therefore tries a deterministic sequence of exact complex rational gamma values controlled by `homotopy_seed` and `homotopy_gamma_attempts`.
 
 <!-- algroots: execute -->
 ```python
@@ -84,7 +76,7 @@ result = polysolve(
 )
 ```
 
-Each worker compiles the symbolic homotopy once and then tracks multiple start points. Start points are generated lazily rather than materialized as one large Cartesian product.
+Each worker compiles the symbolic homotopy once and then tracks multiple start points. Start points are generated lazily instead of materialized as one large Cartesian product.
 
 ## Algebraic equations
 
@@ -92,7 +84,7 @@ Each worker compiles the symbolic homotopy once and then tracks multiple start p
 
 ## Current scope and failure semantics
 
-The current backend is conservative. It is intended for regular square systems whose required paths terminate at distinct finite nonsingular roots. It raises `HomotopySolveError` rather than returning a potentially incomplete root set when:
+The current backend is validated. It is intended for regular square systems whose required paths terminate at distinct finite nonsingular roots. It raises `HomotopySolveError` instead of returning a potentially incomplete root set when:
 
 - a required path cannot be tracked successfully;
 - the affine path appears to diverge;

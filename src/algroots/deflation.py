@@ -22,6 +22,8 @@ from .numerical import (
 
 @dataclass(frozen=True)
 class DeflationStage:
+    """One exact rank-increasing determinantal deflation step at the selected point."""
+
     rank_before: int
     pivot_rows: tuple
     pivot_columns: tuple
@@ -32,6 +34,8 @@ class DeflationStage:
 
 @dataclass(frozen=True)
 class DeflatedRefinement:
+    """A numerical refinement obtained from an exact deflated system."""
+
     root: tuple
     converged: bool
     deflated_relative_residual: object
@@ -42,6 +46,8 @@ class DeflatedRefinement:
 
 @dataclass(frozen=True)
 class DeflationResult:
+    """An exact local deflation with its rank, added equations, and stopping reason."""
+
     certificate: object
     equations: tuple
     variables: tuple

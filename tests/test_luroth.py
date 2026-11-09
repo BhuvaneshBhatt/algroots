@@ -172,7 +172,7 @@ def test_variable_order_and_birational_ambient_changes_preserve_the_field(variab
     assert changed.contains(transformed) and not changed.contains(x)
 
 
-def test_coefficient_field_dispatch_and_legacy_one_variable_result():
+def test_coefficient_field_dispatch():
     multivariate = coefficient_field(
         [(x / y) ** 2, (x / y) ** 3], ambient=sp.QQ.frac_field(x, y), parameter=t
     )

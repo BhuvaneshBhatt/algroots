@@ -1,6 +1,6 @@
 # Exact Recognition
 
-The public polynomial, algebraic, and monodromy solvers attempt exact recognition by default with a conservative `recognition_max_degree=8`. Numerical roots always remain available in `result.roots`; certified reconstructions are attached as `result.recognized_roots`. A failed recognition attempt does not invalidate a verified numerical solve and is reported in `result.recognition_error`. Pass `recognize=False` to disable automatic recognition.
+The public polynomial, algebraic, and monodromy solvers attempt exact recognition by default with a validated `recognition_max_degree=8`. Numerical roots always remain available in `result.roots`; certified reconstructions are attached as `result.recognized_roots`. A failed recognition attempt does not invalidate a verified numerical solve and is reported in `result.recognition_error`. Pass `recognize=False` to disable automatic recognition.
 
 Use `recognize_system_roots(...)` explicitly when you need custom `max_degree`, height, relation-score, or degree-cost settings. `algroots` can reconstruct exact algebraic coordinates from roots that have already been found numerically. Recognition remains a logically separate post-processing stage even though it runs by default: it can strengthen the statement about an **individual root**, but it does not create evidence that a numerical root set is complete.
 
@@ -51,7 +51,7 @@ For a conventional `PolynomialSystemRoots` or `AlgebraicSystemRoots`, the solver
 | `source_loop` | first loop that discovered the root, or `None` for a seed |
 | `path_index` | path that supplied the retained representative |
 
-`digits` is **not** a claim that every working digit is correct. In particular, recognition uses the more conservative `verification_digits` as its trusted input precision.
+`digits` is **not** a claim that every working digit is correct. In particular, recognition uses the more validated `verification_digits` as its trusted input precision.
 
 ## Certification and completeness are independent
 
@@ -77,4 +77,4 @@ These parameters control the recognition search; they are not substitutes for nu
 
 ## Failure modes
 
-Recognition can fail because no relation satisfies the requested bounds, because the numerical coordinate does not uniquely identify one exact root of the recognized polynomial, or because the reconstructed tuple fails exact substitution. With `require_certified=True`, incomplete scalar or joint certification raises `ExactCertificationError` rather than returning a result that looks stronger than the evidence supports.
+Recognition can fail because no relation satisfies the requested bounds, because the numerical coordinate does not uniquely identify one exact root of the recognized polynomial, or because the reconstructed tuple fails exact substitution. With `require_certified=True`, incomplete scalar or joint certification raises `ExactCertificationError` instead of returning a result that looks stronger than the evidence supports.

@@ -12,7 +12,7 @@ def test_pole_saturation():
         sp.Pow(denominator, -1, evaluate=False),
         evaluate=False,
     )
-    result = algsolve([rational, x - 1], (x, y), digits=40)
+    result = algsolve([rational, x - 1], (x, y), digits=40, recognize=False)
     assert len(result.roots) == 1
     root = result.roots[0]
     assert abs(complex(sp.N(root[0] - 1, 20))) < 1e-15

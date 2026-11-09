@@ -26,8 +26,9 @@ def test_high_level_roots_are_subset_of_projected_algebraized_candidates(equatio
         algebraized.polynomial_equations,
         algebraized.augmented_variables,
         digits=45,
+        recognize=False,
     )
-    high = algsolve(equations, variables, digits=45)
+    high = algsolve(equations, variables, digits=45, recognize=False)
 
     projected = tuple(root[: len(variables)] for root in polynomial.roots)
     for root in high.roots:
@@ -36,8 +37,8 @@ def test_high_level_roots_are_subset_of_projected_algebraized_candidates(equatio
 
 def test_polynomial_input_high_and_low_level_agree_exactly_as_root_sets():
     equations = (x**2 + y**2 - 1, x * y - sp.Rational(1, 4))
-    high = algsolve(equations, (x, y), digits=40)
-    low = polysolve(equations, (x, y), digits=40)
+    high = algsolve(equations, (x, y), digits=40, recognize=False)
+    low = polysolve(equations, (x, y), digits=40, recognize=False)
     assert len(high.roots) == len(low.roots)
     for root in high.roots:
         assert any(_close_tuple(root, other) for other in low.roots)

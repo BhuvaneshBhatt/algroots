@@ -50,6 +50,11 @@ class SystemSolveLimitError(PolynomialSystemError):
 
 
 _SPECIALIZED_ERRORS = {
+    "ExecutionError": "execution",
+    "ExecutionTimeout": "execution",
+    "GroebnerLimitError": "groebner_errors",
+    "GroebnerVerificationError": "groebner_errors",
+    "GroebnerBackendUnavailable": "groebner_errors",
     "ExactCertificationError": "recognition",
     "RootCertificationError": "certification",
     "RationalUnivariateError": "rational_univariate",

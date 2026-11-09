@@ -35,6 +35,7 @@ def test_shape_backend_uses_common_validation() -> None:
         guard_digits=15,
         verification_digits=25,
         method="shape",
+        recognize=False,
     )
 
     assert result.working_digits == 55
@@ -52,6 +53,7 @@ def test_action_backend_uses_common_validation() -> None:
         guard_digits=15,
         verification_digits=20,
         method="action",
+        recognize=False,
     )
 
     assert result.working_digits >= 50
@@ -68,6 +70,7 @@ def test_triangular_backend_uses_common_validation() -> None:
         guard_digits=15,
         verification_digits=20,
         method="triangular",
+        recognize=False,
     )
 
     assert len(result.diagnostics) == len(result.roots) == 3
@@ -82,6 +85,7 @@ def test_overdetermined_system_refines_and_verifies() -> None:
         digits=40,
         guard_digits=20,
         verification_digits=25,
+        recognize=False,
     )
 
     assert len(result.roots) == 1

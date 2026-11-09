@@ -21,7 +21,7 @@ def test_fraction_field_factories_preserve_domains_and_basis():
     assert q.coordinate_vector((x + 1) / z) == sp.Matrix([1 / z, 1 / z, 0])
     assert q.multiplication_matrix(x) == r.multiplication_matrix(x)
     assert q.geometric_solution_count == 3
-    assert q.operation_diagnostics["rank_backend"] == "fraction_domain"
+    assert q.operation_diagnostics["rank_backend"] == "coefficient_domain"
 
 
 def test_explicit_fraction_field():

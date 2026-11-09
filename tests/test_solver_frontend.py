@@ -1,4 +1,4 @@
-"""Exactness, reuse and structural performance guards for the new portfolio."""
+"""Exactness, reuse and structural performance guards for the solver portfolio."""
 
 import pytest
 import sympy as sp
@@ -75,21 +75,23 @@ def test_presolve_never_divides_by_variable_coefficients():
 @pytest.mark.parametrize(
     "method,conversions", [("auto", 0), ("action", 0), ("rur", 0), ("shape", 1), ("triangular", 1)]
 )
-def test_one_groebner_and_lazy_fglm(monkeypatch, method, conversions):
+def test_single_basis_and_lazy_fglm(monkeypatch, method, conversions):
     calls, fglm_calls = [], []
-    original = sp.groebner
-    basis_type = type(original((x**2 - 2,), x))
+    from algroots import groebner as construction
+
+    original = construction.compute_groebner_basis
+    basis_type = sp.GroebnerBasis
     original_fglm = basis_type.fglm
 
-    def groebner(*args, **kwargs):
-        calls.append(kwargs.get("order"))
-        return original(*args, **kwargs)
+    def groebner(inputs, ring, **kwargs):
+        calls.append(str(ring.order))
+        return original(inputs, ring, **kwargs)
 
     def fglm(self, *args, **kwargs):
         fglm_calls.append(kwargs)
         return original_fglm(self, *args, **kwargs)
 
-    monkeypatch.setattr(sp, "groebner", groebner)
+    monkeypatch.setattr(construction, "compute_groebner_basis", groebner)
     monkeypatch.setattr(basis_type, "fglm", fglm)
     polysolve((x**2 - 2,), (x,), method=method, recognize=False)
     assert calls == ["grevlex"]
@@ -155,14 +157,16 @@ def test_many_affine_variables_reduce_before_groebner(monkeypatch):
     equations = tuple(variables[i] - (i + 1) * variables[-1] for i in range(24)) + (
         variables[-1] ** 2 - 2,
     )
-    original = sp.groebner
+    from algroots import groebner as construction
+
+    original = construction.compute_groebner_basis
     sizes = []
 
-    def record(equations, *gens, **kwargs):
-        sizes.append(len(gens))
-        return original(equations, *gens, **kwargs)
+    def record(equations, ring, **kwargs):
+        sizes.append(len(ring.symbols))
+        return original(equations, ring, **kwargs)
 
-    monkeypatch.setattr(sp, "groebner", record)
+    monkeypatch.setattr(construction, "compute_groebner_basis", record)
     result = polysolve(equations, variables, recognize=False, digits=25)
     assert sizes == [1]
     assert len(result.roots) == 2
@@ -198,23 +202,13 @@ def test_sparse_cyclic_krylov_avoids_characteristic_polynomial(monkeypatch):
     assert separator.geometric_solution_count == 12
 
 
-def test_noncyclic_krylov_retains_multiplicities(monkeypatch):
-    from algroots.rational_univariate import linear_algebra
-
-    original = linear_algebra.packed_krylov_minimal_polynomial
-    closures = []
-
-    def record(matrix, parameter):
-        try:
-            return original(matrix, parameter)
-        except ValueError:
-            closures.append(matrix.rows)
-            raise
-
-    monkeypatch.setattr(linear_algebra, "packed_krylov_minimal_polynomial", record)
+def test_noncyclic_krylov_retains_multiplicities():
     quotient = QuotientAlgebra.from_polynomials((x**4, y**4), (x, y))
-    separator = quotient.separating_element(sp.Symbol("t"))
-    assert closures == [16]
+    t = sp.Symbol("t")
+    assert quotient.minimal_polynomial(x + y, t) == sp.Poly(t**7, t, domain=sp.QQ)
+    assert quotient.characteristic_polynomial(x + y, t) == sp.Poly(t**16, t, domain=sp.QQ)
+    separator = quotient.separating_element(t)
+    assert separator.defining_polynomial == sp.Poly(t, t, domain=sp.QQ)
     assert separator.geometric_solution_count == 1
     assert separator.coordinate_denominator.as_expr() == 16
 

@@ -241,6 +241,8 @@ def algsolve(
     max_precision_digits: int | None = None,
     max_auxiliary_variables: int = 32,
     method: SolveMethod = "auto",
+    groebner_backend="native",
+    groebner_limits=None,
     recognize: bool = True,
     recognition_max_degree: int = 8,
     max_homotopy_paths: int = 10_000,
@@ -255,9 +257,12 @@ def algsolve(
     root_order: str = "canonical",
     max_returned_roots: int = 10_000,
     ordering_max_refinements: int = 64,
+    options=None,
 ) -> AlgebraicSystemRoots:
     """Find all distinct roots of a zero-dimensional exact algebraic system.
 
+    ``options=SolverOptions(...)`` groups precision, resource and worker settings.
+    ``groebner_backend`` and ``groebner_limits`` select verified basis construction.
     Exact algebraic recognition is attempted by default for the final projected
     roots. Pass ``recognize=False`` to disable recognition.
 
@@ -267,6 +272,27 @@ def algsolve(
     branches, so every projected result is checked against the original equations
     and all retained denominator constraints before it is returned.
     """
+    if options is not None:
+        from .options import _solver_settings, _supervise_solver
+
+        settings = _solver_settings(options, locals())
+        if options.execution is not None:
+            return _supervise_solver(algsolve, equations, variables, locals())
+        digits = settings["digits"]
+        verification_digits = settings["verification_digits"]
+        guard_digits = settings["guard_digits"]
+        max_precision_digits = settings["max_precision_digits"]
+        recognize = settings["recognize"]
+        recognition_max_degree = settings["recognition_max_degree"]
+        maxsteps = settings["maxsteps"]
+        max_solutions = settings["max_solutions"]
+        max_action_dimension = settings["max_action_dimension"]
+        max_homotopy_paths = settings["max_homotopy_paths"]
+        max_returned_roots = settings["max_returned_roots"]
+        ordering_max_refinements = settings["ordering_max_refinements"]
+        if options.recovery is not None:
+            raise ValueError("grouped recovery is supported by polysolve(method='homotopy') only")
+
     validate_output_options(
         root_mode, multiplicity, root_order, max_returned_roots, ordering_max_refinements
     )
@@ -287,6 +313,8 @@ def algsolve(
         max_action_dimension=max_action_dimension,
         max_precision_digits=max_precision_digits,
         method=method,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
         recognize=False,
         multiplicity=multiplicity
         if not algebraized.auxiliary_variables and not algebraized.nonzero_constraints

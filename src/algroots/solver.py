@@ -279,18 +279,14 @@ def _normalize_equations(
     return tuple(normalized)
 
 
-def _groebner_basis(equations: tuple[Any, ...], variables: tuple[Any, ...]):
-    try:
-        return sp.groebner(
-            equations,
-            *variables,
-            order="grevlex",
-            extension=True,
-        )
-    except (sp.PolynomialError, TypeError, ValueError) as exc:
-        raise PolynomialSystemInputError(
-            "could not construct an exact Gröbner basis for the system"
-        ) from exc
+def _groebner_basis(equations, variables, backend="native", limits=None):
+    # Solver inputs have already been normalized and validated. Preserve the
+    # direct SymPy construction path instead of parsing the same inputs again.
+    if backend == "sympy" and limits is None:
+        return sp.groebner(equations, *variables, order="grevlex", extension=True)
+    from .basis import groebner_basis
+
+    return groebner_basis(equations, variables, order="grevlex", backend=backend, limits=limits)
 
 
 def _is_unit_ideal(basis) -> bool:
@@ -1490,6 +1486,8 @@ def _polysolve(
     max_action_dimension: int = 256,
     max_precision_digits: int | None = None,
     method: SolveMethod = "auto",
+    groebner_backend="native",
+    groebner_limits=None,
     recognize: bool = True,
     recognition_max_degree: int = 8,
     max_homotopy_paths: int = 10_000,
@@ -1510,6 +1508,7 @@ def _polysolve(
     for regular square systems whose Bézout paths have finite nonsingular
     endpoints. It is not selected by ``method="auto"``.
 
+    ``groebner_backend`` and ``groebner_limits`` select verified basis construction.
     Exact algebraic recognition is attempted by default after the numerical
     solve. Successfully recognized roots are stored in ``recognized_roots``.
     Recognition failure does not invalidate an otherwise verified numerical
@@ -1625,6 +1624,8 @@ def _polysolve(
     normalized = _normalize_equations(equations, variables)
     work_digits = digits + guard_digits
     if method == "homotopy":
+        if groebner_limits is not None:
+            raise ValueError("homotopy does not use Gröbner limits")
         return finish(
             _solve_total_degree_homotopy(
                 normalized,
@@ -1639,7 +1640,7 @@ def _polysolve(
             )
         )
     phase_started = perf_counter()
-    basis = _groebner_basis(normalized, variables)
+    basis = _groebner_basis(normalized, variables, groebner_backend, groebner_limits)
     phase_times["solve.groebner"] = perf_counter() - phase_started
     basis_exprs = tuple(poly.as_expr() for poly in basis.polys)
 
@@ -1809,6 +1810,8 @@ def polysolve(
     max_action_dimension: int = 256,
     max_precision_digits: int | None = None,
     method: SolveMethod = "auto",
+    groebner_backend="native",
+    groebner_limits=None,
     recognize: bool = True,
     recognition_max_degree: int = 8,
     max_homotopy_paths: int = 10_000,
@@ -1832,15 +1835,49 @@ def polysolve(
     root_order: str = "canonical",
     max_returned_roots: int = 10_000,
     ordering_max_refinements: int = 64,
+    options=None,
 ) -> PolynomialSystemRoots:
     """Solve exact finite systems with affine presolve and a lazy grevlex portfolio.
 
+    ``options=SolverOptions(...)`` groups precision, resource and worker settings.
+    ``groebner_backend`` and ``groebner_limits`` select verified basis construction.
     ``presolve=False`` preserves every input variable in the quotient.
     ``variable_order="auto"`` deterministically sorts remaining variables by
     occurrence count then degree, using minimum-fill ordering when its graph
     cost is strictly lower; public coordinates keep the supplied order.
-    Other keyword controls are documented by ``_polysolve``.
+    See docs/solver-settings.md for advanced settings and conflict rules.
     """
+    if options is not None:
+        from .options import _solver_settings, _supervise_solver
+
+        settings = _solver_settings(options, locals())
+        if options.execution is not None:
+            return _supervise_solver(polysolve, equations, variables, locals())
+        digits = settings["digits"]
+        verification_digits = settings["verification_digits"]
+        guard_digits = settings["guard_digits"]
+        max_precision_digits = settings["max_precision_digits"]
+        recognize = settings["recognize"]
+        recognition_max_degree = settings["recognition_max_degree"]
+        maxsteps = settings["maxsteps"]
+        max_solutions = settings["max_solutions"]
+        max_action_dimension = settings["max_action_dimension"]
+        max_homotopy_paths = settings["max_homotopy_paths"]
+        max_returned_roots = settings["max_returned_roots"]
+        ordering_max_refinements = settings["ordering_max_refinements"]
+        if options.recovery is not None:
+            if homotopy_recovery or recovery_options is not None:
+                raise ValueError(
+                    "set recovery inside SolverOptions or through flat recovery keywords, not both"
+                )
+            homotopy_recovery = True
+            recovery_options = options.recovery
+
+    from .basis import _validate_backend
+
+    _validate_backend(groebner_backend, groebner_limits)
+    if method == "homotopy" and groebner_limits is not None:
+        raise ValueError("homotopy does not use Gröbner limits")
     validate_output_options(
         root_mode, multiplicity, root_order, max_returned_roots, ordering_max_refinements
     )
@@ -1853,6 +1890,8 @@ def polysolve(
         certification_max_dimension=certification_max_dimension,
         certification_max_refinements=certification_max_refinements,
         certification_max_box_attempts=certification_max_box_attempts,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
     )
     total_started = perf_counter()
     timings = {}
@@ -1869,32 +1908,25 @@ def polysolve(
         recognize,
         recognition_max_degree,
     )
-    options = dict(locals())
-    for name in (
-        "root_mode",
-        "multiplicity",
-        "root_order",
-        "max_returned_roots",
-        "ordering_max_refinements",
-        "output_options",
-        "equations",
-        "variables",
-        "presolve",
-        "variable_order",
-        "presolve_max_terms",
-        "presolve_max_degree",
-        "presolve_growth_factor",
-        "certify",
-        "certification_max_dimension",
-        "certification_max_refinements",
-        "certification_max_box_attempts",
-        "homotopy_recovery",
-        "recovery_options",
-        "total_started",
-        "timings",
-        "phase_started",
-    ):
-        options.pop(name)
+    options = dict(
+        digits=digits,
+        verification_digits=verification_digits,
+        guard_digits=guard_digits,
+        maxsteps=maxsteps,
+        max_solutions=max_solutions,
+        max_action_dimension=max_action_dimension,
+        max_precision_digits=max_precision_digits,
+        method=method,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
+        recognize=recognize,
+        recognition_max_degree=recognition_max_degree,
+        max_homotopy_paths=max_homotopy_paths,
+        homotopy_seed=homotopy_seed,
+        homotopy_gamma_attempts=homotopy_gamma_attempts,
+        homotopy_parallel=homotopy_parallel,
+        homotopy_max_workers=homotopy_max_workers,
+    )
     from .certification import _positive_integer, certify_numerical_roots
     from .presolve import affine_presolve, polynomial_presolve
 
@@ -2125,6 +2157,8 @@ def polysolve(
                 max_refinements=certification_max_refinements,
                 required=certify == "required",
                 max_box_attempts=certification_max_box_attempts,
+                groebner_backend=groebner_backend,
+                groebner_limits=groebner_limits,
             ),
         )
     timings["certification"] = perf_counter() - phase_started

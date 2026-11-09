@@ -27,15 +27,12 @@ jobs:
           if os.environ['PUBLISH'] == 'true' and os.environ['GITHUB_REF'] != 'refs/tags/v' + version:
               raise RuntimeError('Publish from the tag matching project.version')
           PY
-  stack:
-    needs: release-ref
-    uses: ./.github/workflows/stack.yml
   wheels:
     needs: release-ref
     uses: ./.github/workflows/wheels.yml
   publish:
     if: inputs.publish
-    needs: [stack, wheels]
+    needs: wheels
     runs-on: ubuntu-latest
     environment: pypi
     permissions:

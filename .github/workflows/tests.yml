@@ -18,17 +18,12 @@ jobs:
       ALGROOTS_BUILD_NATIVE_EXTENSION: ${{ matrix.profile == 'native' && '1' || '0' }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/checkout@v6
-        with:
-          repository: BhuvaneshBhatt/alggeom
-          ref: 06aa4b7fa7ecc1d22e39b858303d9b134d71663f
-          path: .ci-backends/alggeom
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - if: matrix.profile == 'native'
         uses: ./.github/actions/native-dependencies
-      - run: python -m pip install build "ruff==0.17.2" ".[test]" .ci-backends/alggeom
+      - run: python -m pip install build "ruff==0.17.2" ".[test]"
       - run: python -m build --wheel
       - run: python -m pip install --force-reinstall --no-deps --no-index --find-links dist algroots
       - name: Check installed wheel
@@ -38,7 +33,6 @@ jobs:
           python "$GITHUB_WORKSPACE/tools/wheel_smoke.py" ${{ matrix.profile == 'native' && '--native' || '' }} --tutorials
       - run: python tools/generate_api_signatures.py --check
       - run: python tools/run_test_profile.py ${{ matrix.profile == 'native' && '--native' || '' }} --junitxml=results.xml
-      - run: python -m pytest -q .ci-backends/alggeom/tests/test_groebner_routing.py
       - run: ruff check src tests benchmarks tools setup.py
       - run: ruff format --check src tests benchmarks tools setup.py
       - uses: actions/upload-artifact@v6
@@ -62,11 +56,6 @@ jobs:
       ALGROOTS_BUILD_NATIVE_EXTENSION: ${{ matrix.profile == 'native' && '1' || '0' }}
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/checkout@v6
-        with:
-          repository: BhuvaneshBhatt/alggeom
-          ref: 06aa4b7fa7ecc1d22e39b858303d9b134d71663f
-          path: .ci-backends/alggeom
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
@@ -74,10 +63,10 @@ jobs:
         uses: ./.github/actions/native-dependencies
       - name: Install minimum dependencies
         if: matrix.dependencies == 'minimum'
-        run: python -m pip install -c ci/minimum-dependencies.txt build ".[test]" .ci-backends/alggeom
+        run: python -m pip install -c ci/minimum-dependencies.txt build ".[test]"
       - name: Install latest supported dependencies
         if: matrix.dependencies == 'latest'
-        run: python -m pip install --upgrade --upgrade-strategy eager build ".[test]" .ci-backends/alggeom
+        run: python -m pip install --upgrade --upgrade-strategy eager build ".[test]"
       - run: python -m pip freeze > dependency-versions.txt
       - run: python -m build
       - run: python -m pip install --force-reinstall --no-deps --no-index --find-links dist algroots

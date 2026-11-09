@@ -17,16 +17,11 @@ jobs:
       ALGROOTS_BUILD_NATIVE_EXTENSION: '1'
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/checkout@v6
-        with:
-          repository: BhuvaneshBhatt/alggeom
-          ref: b2557d533d4c1b5d7d7fa40a963ccda8b0d39ae4
-          path: .ci-backends/alggeom
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - uses: ./.github/actions/native-dependencies
-      - run: python -m pip install build ".[test]" .ci-backends/alggeom
+      - run: python -m pip install build ".[test]"
       - run: python -m build --wheel
       - if: runner.os == 'Linux'
         run: python -m pip install auditwheel

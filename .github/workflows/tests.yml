@@ -7,7 +7,7 @@ env:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: ${{ matrix.os == 'windows-latest' && matrix.profile == 'native' && 60 || 45 }}
     strategy:
       fail-fast: false
       matrix:
@@ -36,7 +36,7 @@ jobs:
           cd "$RUNNER_TEMP"
           python "$GITHUB_WORKSPACE/tools/wheel_smoke.py" ${{ matrix.profile == 'native' && '--native --extension-fields' || '' }} --tutorials
       - run: python tools/generate_api_signatures.py --check
-      - run: python tools/run_test_profile.py ${{ matrix.profile == 'native' && '--native' || '' }} --junitxml=results.xml
+      - run: python tools/run_test_profile.py ${{ matrix.profile == 'native' && '--native' || '' }} --verbose --junitxml=results.xml
       - run: ruff check src tests benchmarks tools setup.py
       - run: ruff format --check src tests benchmarks tools setup.py
       - uses: actions/upload-artifact@v6
@@ -82,7 +82,7 @@ jobs:
         run: |
           cd "$RUNNER_TEMP"
           python "$GITHUB_WORKSPACE/tools/wheel_smoke.py" ${{ matrix.profile == 'native' && '--native --extension-fields' || '' }} --tutorials
-      - run: python tools/run_test_profile.py ${{ matrix.profile == 'native' && '--native' || '' }} --junitxml=dependency-results.xml
+      - run: python tools/run_test_profile.py ${{ matrix.profile == 'native' && '--native' || '' }} --verbose --junitxml=dependency-results.xml
       - uses: actions/upload-artifact@v6
         if: always()
         with:

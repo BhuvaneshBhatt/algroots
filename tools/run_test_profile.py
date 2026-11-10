@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--native", action="store_true")
     parser.add_argument("--junitxml")
+    parser.add_argument("--verbose", action="store_true", help="show each test as it runs")
     args = parser.parse_args()
     from algroots.native_f4 import compiled_available
 
@@ -29,7 +30,7 @@ def main():
         parser.error("installed native availability differs from the selected test profile")
     root = Path(__file__).resolve().parents[1]
     tests = [root / "tests"] if args.native else [root / "tests" / p for p in PORTABLE_TESTS]
-    command = [sys.executable, "-m", "pytest", "-q", "-o", "pythonpath="]
+    command = [sys.executable, "-m", "pytest", "-v" if args.verbose else "-q", "-o", "pythonpath="]
     if args.junitxml:
         command.append("--junitxml=" + args.junitxml)
     command.extend(map(str, tests))

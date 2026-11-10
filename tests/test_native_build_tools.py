@@ -1,10 +1,13 @@
-"""Regression checks for verified downloads and native wheel repair."""
+"""Regression checks for native builds, verified downloads and wheel repair."""
 
 import hashlib
 import importlib.util
 import io
 import os
+import shutil
+import subprocess
 import sys
+import textwrap
 from http.client import IncompleteRead
 from pathlib import Path
 from types import SimpleNamespace
@@ -22,6 +25,45 @@ def _tool(name):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+@pytest.mark.parametrize("architecture", ["arm64", "x86_64"])
+def test_macos_build_architecture(tmp_path, architecture):
+    bash = shutil.which("bash")
+    if bash is None:
+        pytest.skip("requires Bash to execute the composite action")
+    action = (ROOT / ".github/actions/native-dependencies/action.yml").read_text(encoding="utf-8")
+    script = textwrap.dedent(action.split("run: |\n", 1)[1].split("\n    - ", 1)[0])
+    environment_file = tmp_path / "github-env"
+    environment = dict(
+        os.environ,
+        RUNNER_OS="macOS",
+        RUNNER_TEMP=tmp_path.as_posix(),
+        GITHUB_ENV=environment_file.as_posix(),
+        ARCHFLAGS="-arch arm64 -arch x86_64",
+        _PYTHON_HOST_PLATFORM="macosx-10.9-universal2",
+    )
+    # Model setup-python's universal framework defaults while running the actual action shell.
+    stubs = (
+        f"uname() {{ printf '%s\\n' {architecture}; }}\n"
+        'python() { printf \'%s\\n\' "$ARCHFLAGS" "$_PYTHON_HOST_PLATFORM" '
+        '"$MACOSX_DEPLOYMENT_TARGET" > "$RUNNER_TEMP/builder-env"; }\n'
+    )
+    subprocess.run([bash, "-e", "-c", stubs + script], check=True, env=environment)
+    assert (tmp_path / "builder-env").read_text(encoding="utf-8").splitlines() == [
+        f"-arch {architecture}",
+        f"macosx-14.0-{architecture}",
+        "14.0",
+    ]
+    exported = dict(
+        line.split("=", 1) for line in environment_file.read_text(encoding="utf-8").splitlines()
+    )
+    assert exported == {
+        "ARCHFLAGS": f"-arch {architecture}",
+        "_PYTHON_HOST_PLATFORM": f"macosx-14.0-{architecture}",
+        "MACOSX_DEPLOYMENT_TARGET": "14.0",
+        "ALGROOTS_FLINT_PREFIX": f"{tmp_path.as_posix()}/algroots-libs",
+    }
 
 
 @pytest.fixture
@@ -128,7 +170,10 @@ def test_linux_repair_library_path(monkeypatch, tmp_path, single):
     (prefix / "lib/libflint.so.24").touch()
     monkeypatch.setenv("ALGROOTS_FLINT_PREFIX", str(prefix))
     monkeypatch.setenv("LD_LIBRARY_PATH", "/python/lib")
-    monkeypatch.setattr(module.sys, "platform", "linux")
+    monkeypatch.setattr(
+        module, "os", SimpleNamespace(name="posix", environ=os.environ, pathsep=os.pathsep)
+    )
+    monkeypatch.setattr(module, "sys", SimpleNamespace(platform="linux", executable=sys.executable))
     calls = []
 
     def repair(command, *, check, env):

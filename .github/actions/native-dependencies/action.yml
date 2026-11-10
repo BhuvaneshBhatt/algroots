@@ -4,15 +4,28 @@ runs:
   using: composite
   steps:
     - if: runner.os != 'Windows'
+      name: Build Unix FLINT SDK
       shell: bash
       run: |
         if [ "$RUNNER_OS" = macOS ]; then
+          export ARCHFLAGS="-arch $(uname -m)"
+          export _PYTHON_HOST_PLATFORM="macosx-14.0-$(uname -m)"
           export MACOSX_DEPLOYMENT_TARGET=14.0
+          echo "ARCHFLAGS=$ARCHFLAGS" >> "$GITHUB_ENV"
+          echo "_PYTHON_HOST_PLATFORM=$_PYTHON_HOST_PLATFORM" >> "$GITHUB_ENV"
           echo 'MACOSX_DEPLOYMENT_TARGET=14.0' >> "$GITHUB_ENV"
         fi
         python tools/build_native_dependencies.py --prefix "$RUNNER_TEMP/algroots-libs"
         echo "ALGROOTS_FLINT_PREFIX=$RUNNER_TEMP/algroots-libs" >> "$GITHUB_ENV"
     - if: runner.os == 'Windows'
+      name: Restore Windows FLINT SDK
+      id: windows-sdk
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ runner.temp }}/algroots-vcpkg/installed/x64-windows
+        key: flint-${{ runner.os }}-${{ runner.arch }}-ec48c11eae9448c8c6e7739d93e06fa2433aa95f-x64-windows
+    - if: runner.os == 'Windows' && steps.windows-sdk.outputs.cache-hit != 'true'
+      name: Build Windows FLINT SDK
       shell: pwsh
       run: |
         $root = "$env:RUNNER_TEMP/algroots-vcpkg"
@@ -24,6 +37,16 @@ runs:
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
         & "$root/vcpkg.exe" install flint:x64-windows
         if ($LASTEXITCODE) { exit $LASTEXITCODE }
-        $prefix = "$root/installed/x64-windows"
+    - if: runner.os == 'Windows' && steps.windows-sdk.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      name: Cache Windows FLINT SDK
+      with:
+        path: ${{ runner.temp }}/algroots-vcpkg/installed/x64-windows
+        key: ${{ steps.windows-sdk.outputs.cache-primary-key }}
+    - if: runner.os == 'Windows'
+      name: Configure Windows FLINT SDK
+      shell: pwsh
+      run: |
+        $prefix = "$env:RUNNER_TEMP/algroots-vcpkg/installed/x64-windows"
         Add-Content $env:GITHUB_ENV "ALGROOTS_FLINT_PREFIX=$prefix"
         Add-Content $env:GITHUB_PATH "$prefix/bin"

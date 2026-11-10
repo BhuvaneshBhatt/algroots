@@ -174,6 +174,10 @@ def test_linux_repair_library_path(monkeypatch, tmp_path, single):
         module, "os", SimpleNamespace(name="posix", environ=os.environ, pathsep=os.pathsep)
     )
     monkeypatch.setattr(module, "sys", SimpleNamespace(platform="linux", executable=sys.executable))
+    executable = str(tmp_path / "repair-tools" / "auditwheel")
+    monkeypatch.setattr(
+        module.shutil, "which", lambda name: executable if name == "auditwheel" else None
+    )
     calls = []
 
     def repair(command, *, check, env):
@@ -188,7 +192,7 @@ def test_linux_repair_library_path(monkeypatch, tmp_path, single):
         sys, "argv", ["repair", str(wheel if single else source), "--output", str(output)]
     )
     module.main()
-    assert calls == [[sys.executable, "-m", "auditwheel", "repair", "-w", str(output), str(wheel)]]
+    assert calls == [[executable, "repair", "-w", str(output), str(wheel)]]
 
 
 def test_windows_repair_library_path(monkeypatch, tmp_path):

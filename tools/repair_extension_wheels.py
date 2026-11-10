@@ -57,10 +57,12 @@ def main():
                 str(wheel),
             ]
         else:
+            # manylinux installs auditwheel separately from each wheel's Python.
+            executable = shutil.which("auditwheel")
+            if executable is None:
+                raise RuntimeError("install auditwheel before repairing a Linux wheel")
             command = [
-                sys.executable,
-                "-m",
-                "auditwheel",
+                executable,
                 "repair",
                 "-w",
                 str(args.output),

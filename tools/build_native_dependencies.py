@@ -15,7 +15,7 @@ from pathlib import Path
 SOURCES = Path(__file__).with_name("native_sources.json")
 
 
-def download_archive(url: str, destination: Path, *, timeout: int = 120, attempts: int = 3) -> None:
+def download_archive(url: str, destination: Path, *, timeout: int = 180, attempts: int = 6) -> None:
     """Download an archive with retries for transient network failures."""
     if attempts < 1:
         raise ValueError("attempts must be positive")
@@ -24,12 +24,13 @@ def download_archive(url: str, destination: Path, *, timeout: int = 120, attempt
             with urllib.request.urlopen(url, timeout=timeout) as response:
                 destination.write_bytes(response.read())
             return
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, TimeoutError) as exc:
             if attempt >= attempts:
                 raise
-            wait = float(2**attempt)
+            wait = min(float(2**attempt), 30.0)
             print(
-                f"Retrying download for {url} in {wait:.1f}s (attempt {attempt + 1} of {attempts})"
+                f"Download failed for {url}: {exc}. Retrying in {wait:.1f}s "
+                f"(attempt {attempt + 1} of {attempts})"
             )
             time.sleep(wait)
 

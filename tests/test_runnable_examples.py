@@ -13,11 +13,11 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
-CATALOG = json.loads((EXAMPLES / "catalog.json").read_text())
+CATALOG = json.loads((EXAMPLES / "catalog.json").read_text(encoding="utf-8"))
 
 
 def _run(path, tmp_path, *arguments):
-    environment = dict(os.environ, PYTHONHASHSEED="0")
+    environment = dict(os.environ, PYTHONHASHSEED="0", PYTHONUTF8="1")
     environment.pop("PYTHONPATH", None)
     environment.pop("PYTHONOPTIMIZE", None)
     return subprocess.run(
@@ -26,6 +26,7 @@ def _run(path, tmp_path, *arguments):
         env=environment,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=120,
         check=False,
     )
@@ -43,12 +44,12 @@ def test_catalog_is_complete_and_uses_public_imports():
     names = [entry["file"] for entry in CATALOG]
     assert len(set(names)) == len(names)
     assert set(names) == {path.name for path in EXAMPLES.glob("[0-9][0-9]_*.py")}
-    documentation = (EXAMPLES / "README.md").read_text()
+    documentation = (EXAMPLES / "README.md").read_text(encoding="utf-8")
     for entry in CATALOG:
         assert re.fullmatch(r"[0-9]{2}_[a-z_]+\.py", entry["file"])
         assert all(isinstance(value, str) and value for value in entry.values())
         assert f"({entry['file']})" in documentation
-        tree = ast.parse((EXAMPLES / entry["file"]).read_text())
+        tree = ast.parse((EXAMPLES / entry["file"]).read_text(encoding="utf-8"))
         assert any(isinstance(node, ast.FunctionDef) and node.name == "main" for node in tree.body)
         for node in ast.walk(tree):
             if (

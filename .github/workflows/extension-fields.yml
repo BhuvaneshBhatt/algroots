@@ -2,6 +2,8 @@ name: Extension fields
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
+env:
+  PYTHONUTF8: '1'
 jobs:
   field-kernel:
     runs-on: ${{ matrix.os }}
@@ -23,13 +25,7 @@ jobs:
       - uses: ./.github/actions/native-dependencies
       - run: python -m pip install build ".[test]"
       - run: python -m build --wheel
-      - if: runner.os == 'Linux'
-        run: python -m pip install auditwheel
-      - if: runner.os == 'macOS'
-        run: python -m pip install delocate
-      - if: runner.os == 'Windows'
-        run: python -m pip install delvewheel
-      - run: python tools/repair_extension_wheels.py dist --output repaired
+      - uses: ./.github/actions/repair-native-wheels
       - run: python -m pip install --force-reinstall --no-deps --no-index --find-links repaired algroots
       - name: Verify installed extended fields
         shell: bash

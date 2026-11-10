@@ -4,6 +4,8 @@ on:
   workflow_call:
 permissions:
   contents: read
+env:
+  PYTHONUTF8: '1'
 jobs:
   native:
     runs-on: ${{ matrix.os }}

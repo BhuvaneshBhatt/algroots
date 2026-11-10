@@ -22,6 +22,7 @@ def _run(script, directory, environment, timeout):
         env=environment,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=timeout,
         check=False,
     )
@@ -43,8 +44,10 @@ def main():
             "algroots must be imported from the installed environment, outside the checkout"
         )
     data = Path(sysconfig.get_path("data")) / "share/algroots"
-    catalog = json.loads((data / "examples/catalog.json").read_text())
-    environment = dict(os.environ, PYTHONDONTWRITEBYTECODE="1", PYTHONNOUSERSITE="1")
+    catalog = json.loads((data / "examples/catalog.json").read_text(encoding="utf-8"))
+    environment = dict(
+        os.environ, PYTHONDONTWRITEBYTECODE="1", PYTHONNOUSERSITE="1", PYTHONUTF8="1"
+    )
     environment.pop("PYTHONPATH", None)
     environment.pop("PYTHONOPTIMIZE", None)
     documents = []
@@ -63,7 +66,7 @@ def main():
                 continue
             blocks = re.findall(
                 r"<!-- algroots: execute -->\s*```python\n(.*?)```",
-                document.read_text(),
+                document.read_text(encoding="utf-8"),
                 flags=re.S,
             )
             if blocks:
@@ -73,7 +76,8 @@ def main():
                     + "\n".join(
                         f"exec(compile({code!r}, {document.name!r}, 'exec'), namespace)"
                         for code in blocks
-                    )
+                    ),
+                    encoding="utf-8",
                 )
                 _run(script, directory, environment, args.timeout)
                 documents.append(document.name)

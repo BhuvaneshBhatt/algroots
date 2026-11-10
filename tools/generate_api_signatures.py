@@ -108,14 +108,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    previous = REFERENCE.read_text()
+    previous = REFERENCE.read_text(encoding="utf-8")
     generated = render(previous)
     if args.check:
         if previous != generated:
             parser.exit(1, "docs/api.md is stale; run python tools/generate_api_signatures.py\n")
         print("Public signatures and exports are current")
     else:
-        REFERENCE.write_text(generated)
+        REFERENCE.write_text(generated, encoding="utf-8")
 
 
 if __name__ == "__main__":

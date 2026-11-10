@@ -25,7 +25,9 @@ def test_generated_signatures():
 
 
 def test_readme_links():
-    targets = re.findall(r"(?<!!)\[[^\]]+\]\(([^)]+)\)", (ROOT / "README.md").read_text())
+    targets = re.findall(
+        r"(?<!!)\[[^\]]+\]\(([^)]+)\)", (ROOT / "README.md").read_text(encoding="utf-8")
+    )
     prefix = "https://github.com/BhuvaneshBhatt/algroots/blob/main/"
     for target in targets:
         if "/docs/" in target and ".md" in target:
@@ -144,7 +146,7 @@ def test_recovery_defaults_match_workflow_budget_table():
 
     from algroots import HomotopyRecoveryOptions
 
-    text = (DOCS / "recovery-workflow.md").read_text()
+    text = (DOCS / "recovery-workflow.md").read_text(encoding="utf-8")
     rows = dict(re.findall(r"\| `([a-z_]+)` \| (\d+) \|", text))
     assert {field.name: field.default for field in fields(HomotopyRecoveryOptions)} == {
         name: int(default) for name, default in rows.items()
@@ -164,7 +166,9 @@ def test_local_markdown_anchors_resolve():
             destination = (path.parent / filename).resolve() if filename else path
             if destination.suffix != ".md" or not destination.exists() or not fragment:
                 continue
-            content = re.sub(r"```.*?```", "", destination.read_text(), flags=re.DOTALL)
+            content = re.sub(
+                r"```.*?```", "", destination.read_text(encoding="utf-8"), flags=re.DOTALL
+            )
             anchors = set(re.findall(r'<a\s+(?:id|name)="([^"]+)"', content))
             counts = {}
             for heading in re.findall(r"^#{1,6}\s+(.+)$", content, flags=re.MULTILINE):
@@ -182,7 +186,7 @@ def test_documented_result_evidence_attributes_exist():
 
     from algroots import CompletenessEvidence
 
-    text = (DOCS / "reading-results.md").read_text()
+    text = (DOCS / "reading-results.md").read_text(encoding="utf-8")
     for field in fields(CompletenessEvidence):
         assert f"`{field.name}`" in text, field.name
 
@@ -190,8 +194,10 @@ def test_documented_result_evidence_attributes_exist():
 def test_citation_version_matches_project_metadata():
     import tomllib
 
-    version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
-    citation = (ROOT / "CITATION.cff").read_text()
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"][
+        "version"
+    ]
+    citation = (ROOT / "CITATION.cff").read_text(encoding="utf-8")
     match = re.search(r'^version:\s*"([^"]+)"$', citation, flags=re.MULTILINE)
     assert match is not None and match.group(1) == version
 

@@ -1,6 +1,7 @@
 """Tests for native dependency source downloads."""
 
 import importlib.util
+from http.client import IncompleteRead
 from pathlib import Path
 from urllib.error import URLError
 
@@ -32,7 +33,7 @@ def test_download_archive_retries_and_succeeds(monkeypatch, tmp_path):
     calls = {"count": 0}
 
     def flaky_urlopen(_url, *, timeout):
-        assert timeout == 120
+        assert timeout == 180
         calls["count"] += 1
         if calls["count"] < 3:
             raise URLError(TimeoutError("timed out"))
@@ -54,7 +55,7 @@ def test_download_archive_raises_after_last_retry(monkeypatch, tmp_path):
     calls = {"count": 0}
 
     def always_fails(_url, *, timeout):
-        assert timeout == 120
+        assert timeout == 180
         calls["count"] += 1
         raise URLError(TimeoutError("timed out"))
 
@@ -72,3 +73,25 @@ def test_download_archive_raises_after_last_retry(monkeypatch, tmp_path):
 
     assert calls["count"] == 4
     assert sleeps == [2.0, 4.0, 8.0]
+
+
+def test_download_archive_retries_on_incomplete_read(monkeypatch, tmp_path):
+    calls = {"count": 0}
+
+    def incomplete_then_success(_url, *, timeout):
+        assert timeout == 180
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise IncompleteRead(b"partial", 5)
+        return _Response(b"archive-bytes")
+
+    sleeps = []
+    monkeypatch.setattr(BUILD_NATIVE_DEPENDENCIES.urllib.request, "urlopen", incomplete_then_success)
+    monkeypatch.setattr(BUILD_NATIVE_DEPENDENCIES.time, "sleep", sleeps.append)
+
+    archive = tmp_path / "native.tar.gz"
+    BUILD_NATIVE_DEPENDENCIES.download_archive("https://example.test/native.tar.gz", archive)
+
+    assert archive.read_bytes() == b"archive-bytes"
+    assert calls["count"] == 2
+    assert sleeps == [2.0]

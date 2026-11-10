@@ -2,6 +2,7 @@
 
 import argparse
 import hashlib
+import http.client
 import json
 import os
 import platform
@@ -24,7 +25,7 @@ def download_archive(url: str, destination: Path, *, timeout: int = 180, attempt
             with urllib.request.urlopen(url, timeout=timeout) as response:
                 destination.write_bytes(response.read())
             return
-        except (urllib.error.URLError, TimeoutError) as exc:
+        except (urllib.error.URLError, TimeoutError, http.client.IncompleteRead) as exc:
             if attempt >= attempts:
                 raise
             wait = min(float(2**attempt), 30.0)

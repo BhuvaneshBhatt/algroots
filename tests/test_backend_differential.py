@@ -47,7 +47,7 @@ def test_action_and_triangular_agree_on_branching_system():
     _match_roots(action.roots, triangular.roots)
 
 
-def test_randomized_shape_action_and_auto_agree_on_constructed_families():
+def test_generated_backend_agreement():
     """Use deterministic exact systems where several independent backends apply."""
     import random
 

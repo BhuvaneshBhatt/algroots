@@ -1,7 +1,7 @@
 """Recover a multivariate Lüroth generator and verify field membership.
 
 Guarantee: Exact generator maps and transcendence-degree-one decisions.
-Run from the repository root: python examples/21_multivariate_luroth.py
+Run from the repository root: python examples/multivariate_luroth.py
 """
 
 import sympy as sp

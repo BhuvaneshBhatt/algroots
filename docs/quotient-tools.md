@@ -26,7 +26,7 @@ assert quotient.coordinate_vector(x) == sp.Matrix([0, 1, 0])
 
 [RUR](rational-univariate-representation.md) produces exact algebraic points; [border bases](exact-border-bases.md) currently have a rational-coefficient contract. Neither is an approximate representation for noisy inputs. Large exact Gröbner bases and fill during trace-pairing rank remain expensive.
 
-See [quotient example](../examples/04_quotient_and_cache.py), [border example](../examples/10_border_bases.py) and [Performance Model](performance-model.md).
+See [quotient example](../examples/quotient_and_cache.py), [border example](../examples/border_bases.py) and [Performance Model](performance-model.md).
 
 ## Finite algebras over rational-function fields
 

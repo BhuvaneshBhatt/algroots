@@ -39,9 +39,52 @@ def _all_parameter_roots(
         raise RationalUnivariateError(
             "exact enumeration of the RUR parameter roots failed"
         ) from exc
-    if not real:
+    if not real or not _real_coefficient_field(defining.domain):
         return roots
     return tuple(root for root in roots if root.is_real is True or sp.simplify(sp.im(root)) == 0)
+
+
+def _real_coefficient_field(domain):
+    return domain.is_QQ or domain.is_AlgebraicField and domain.ext.is_real is True
+
+
+def _real_coordinates(coordinates):
+    """Decide reality of algebraic coordinates without numerical tolerances."""
+    for value in coordinates:
+        if value.is_real is True:
+            continue
+        if value.is_real is False:
+            return False
+        imaginary = sp.simplify(sp.im(value))
+        if imaginary.is_zero is True:
+            continue
+        if imaginary.is_zero is False:
+            return False
+        try:
+            if not sp.to_number_field(imaginary).rep.is_zero:
+                return False
+        except (NotImplementedError, sp.PolynomialError, TypeError, ValueError) as exc:
+            raise RationalUnivariateError("could not decide whether a coordinate is real") from exc
+    return True
+
+
+def _solution_coordinates(representation, real):
+    """Evaluate parameter roots and enforce reality in the original coordinates.
+
+    Over a real coefficient field a real parameter has real coordinate maps.
+    Over a complex field neither implication holds: complex coordinates can
+    have a real separator, and a complex separator can encode a real point.
+    """
+    maps = representation.normalized_coordinate_polynomials()
+    check_coordinates = real and not _real_coefficient_field(
+        representation.defining_polynomial.domain
+    )
+    for root in _all_parameter_roots(representation, real=real):
+        coordinates = tuple(
+            sp.cancel(poly.as_expr().subs(representation.parameter, root)) for poly in maps
+        )
+        if not check_coordinates or _real_coordinates(coordinates):
+            yield root, coordinates
 
 
 def numerical_rur_roots(
@@ -98,13 +141,9 @@ def solve_rur_representation(
     if representation.defining_polynomial.degree() <= 0:
         return tuple()
 
-    t = representation.parameter
-    coordinate_polys = representation.normalized_coordinate_polynomials()
-    roots = _all_parameter_roots(representation, real=real)
     solutions: list[tuple[sp.Expr, ...]] = []
     seen_keys: set[tuple[str, ...]] = set()
-    for root in roots:
-        point = tuple(sp.cancel(poly.as_expr().subs(t, root)) for poly in coordinate_polys)
+    for _, point in _solution_coordinates(representation, real):
         key = tuple(sp.sstr(coord) for coord in point)
         if key in seen_keys:
             continue
@@ -153,12 +192,11 @@ def solve_rur_points(
     _require_constant_coefficients(representation)
     if representation.defining_polynomial.degree() <= 0:
         return tuple()
-    roots = _all_parameter_roots(representation, real=real)
     points: list[RationalUnivariatePoint] = []
     seen: set[tuple[str, ...]] = set()
-    for root in roots:
+    for root, coordinates in _solution_coordinates(representation, real):
         point = RationalUnivariatePoint(representation, root)
-        key = tuple(sp.sstr(coord) for coord in point.coordinates)
+        key = tuple(sp.sstr(coord) for coord in coordinates)
         if key in seen:
             continue
         seen.add(key)

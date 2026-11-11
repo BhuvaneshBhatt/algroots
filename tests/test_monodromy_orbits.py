@@ -43,7 +43,7 @@ def test_random_perturbation_has_requested_norm_and_is_reproducible():
     assert sum(abs(value) ** 2 for value in left) ** 0.5 == pytest.approx(2.5)
 
 
-def test_multiple_random_loops_discover_quadratic_orbit_from_one_seed():
+def test_seeded_quadratic_orbit():
     result = discover_monodromy_orbit(
         [x**2 - 1],
         (x,),
@@ -144,7 +144,7 @@ def test_random_orbit_discovery_is_reproducible():
         assert normalized_root_distance(first, second) < 1e-12
 
 
-def test_high_precision_root_distance_does_not_round_through_binary64():
+def test_high_precision_root_distance():
     with mp.workdps(110):
         left = (mp.mpf("1.00000000000000000000000000000000000000000000000001"),)
         right = (mp.mpf("1.00000000000000000000000000000000000000000000000002"),)
@@ -180,7 +180,7 @@ def test_expected_root_count_early_return_still_validates_system():
         )
 
 
-def test_seed_dimension_is_validated_before_expected_count_early_return():
+def test_seed_dimension_validation():
     with pytest.raises(ValueError, match="one coordinate per variable"):
         discover_monodromy_orbit(
             [x**2 - 1],

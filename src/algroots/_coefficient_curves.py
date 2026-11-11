@@ -19,6 +19,7 @@ class CoefficientCurveModel:
     generator_images: tuple[sp.Expr, ...]
 
     def to_ambient(self, expression):
+        """Embed an expression from this presentation in its original ambient field."""
         expression = sp.sympify(expression)
         if expression.free_symbols - set(self.curve.variables):
             raise CurveError("plane expressions may use only the plane coordinates")
@@ -29,6 +30,7 @@ class CoefficientCurveModel:
         )
 
     def verify(self):
+        """Check the plane equation and both embeddings of the generated coefficient field."""
         if not self.field.verify() or self.curve.domain != self.field.constants:
             return False
         if len(self.generator_images) != len(self.field.generators):
@@ -60,20 +62,24 @@ class CoefficientFieldParametrization:
 
     @property
     def parameter(self):
+        """The parameter of the rational presentation."""
         return self.parametrization.parameter
 
     @property
     def generator_expression(self):
+        """The generating rational function in the original formal coordinates."""
         return self.parametrization.inverse.xreplace(
             dict(zip(self.model.curve.variables, self.model.coordinate_expressions, strict=True))
         )
 
     @property
     def generator(self):
+        """The generating element in the original ambient field."""
         return self.model.field.to_ambient(self.generator_expression)
 
     @property
     def coefficient_images(self):
+        """Images of the original coefficient generators in the parameter field."""
         substitutions = dict(
             zip(self.model.curve.variables, self.parametrization.affine_coordinates, strict=True)
         )
@@ -85,13 +91,16 @@ class CoefficientFieldParametrization:
 
     @property
     def forward_guard(self):
+        """Nonvanishing condition under which the forward rational map is defined."""
         return sp.And(*(sp.Ne(sp.fraction(c)[1], 0) for c in self.coefficient_images))
 
     @property
     def inverse_guard(self):
+        """Nonvanishing condition under which the inverse rational map is defined."""
         return sp.Ne(sp.fraction(sp.cancel(self.generator_expression))[1], 0)
 
     def to_ambient(self, expression):
+        """Embed an expression from this presentation in its original ambient field."""
         expression = sp.sympify(expression)
         if expression.free_symbols - {self.parameter}:
             raise CurveError("expression may use only the rational parameter")
@@ -100,6 +109,7 @@ class CoefficientFieldParametrization:
         )
 
     def to_source(self, value):
+        """Express an ambient element in the coordinates of this presentation."""
         membership = self.model.field.express(value)
         if not membership.belongs:
             raise CurveError("element does not belong to the coefficient field")
@@ -110,6 +120,7 @@ class CoefficientFieldParametrization:
         return Kt.to_sympy(field_element(expression, Kt))
 
     def verify(self):
+        """Check the rational coefficient maps and their inverse identities."""
         if not self.model.verify() or self.parametrization.curve != self.model.curve:
             return False
         if (
@@ -129,6 +140,7 @@ class CoefficientFieldParametrization:
 
 
 def coefficient_curve_model(field):
+    """Construct a plane curve and both coefficient-field embeddings."""
     from .quotient import QuotientAlgebra
 
     if field.base_index is None:

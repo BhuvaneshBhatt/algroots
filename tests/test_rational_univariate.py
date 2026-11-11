@@ -37,7 +37,7 @@ def test_rur_complex_irreducible_cubic_uses_crootof():
     assert all(isinstance(root[0], sp.CRootOf) for root in roots)
 
 
-def test_rur_records_quotient_multiplicity_separately_from_geometric_roots():
+def test_rur_multiplicity_counts():
     x = sp.Symbol("x")
     rep = compute_rational_univariate_representation([x**2], [x])
     assert rep.dimension == 2

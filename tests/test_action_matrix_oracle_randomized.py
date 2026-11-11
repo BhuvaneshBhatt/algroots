@@ -52,7 +52,7 @@ def test_separator_reference_matrices():
             assert form == expected
 
 
-def test_randomized_coordinate_forms_remain_exact_under_affine_coupling():
+def test_affine_action_invariance():
     """Broaden the exact matrix oracle beyond the original square/square family."""
     rng = random.Random(918273)
     for _ in range(10):

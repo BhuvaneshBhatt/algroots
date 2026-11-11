@@ -9,6 +9,7 @@ from typing import Any
 import mpmath as mp
 import sympy as sp
 
+from ._precision import working_precision
 from ._validation import validate_recognition_options
 from .algebraization import AlgebraizedSystem, algebraize_system
 from .numerical import NumericExpression, number_to_mpc
@@ -77,7 +78,7 @@ class _AlgebraicProjector:
         """Lift an original-variable root to the principal algebraic sheet."""
         if len(root) != self.original_count:
             raise ValueError("every seed root must have one coordinate per variable")
-        with mp.workdps(digits + 10):
+        with working_precision(digits + 10):
             values = [number_to_mpc(value, digits + 5) for value in root]
             for evaluator in self._lift_evals:
                 values.append(evaluator.evaluate(tuple(values), digits + 5))
@@ -93,7 +94,7 @@ class _AlgebraicProjector:
         """Project and verify one augmented root against the original system."""
         if len(full_root) != len(self.algebraized.augmented_variables):
             raise ValueError("augmented root dimension does not match polynomial variables")
-        with mp.workdps(work_digits + 10):
+        with working_precision(work_digits + 10):
             values = tuple(number_to_mpc(value, work_digits + 5) for value in full_root)
             threshold = mp.power(10, -verification_digits)
             if any(
@@ -148,7 +149,7 @@ class _CompiledAlgResidual:
         )
 
     def evaluate(self, values: tuple[Any, ...], digits: int) -> mp.mpf:
-        with mp.workdps(digits + 8):
+        with working_precision(digits + 8):
             value = self.evaluator.evaluate(values, digits + 5)
             if len(self.term_evaluators) == 1:
                 scale = max(mp.mpf(1), abs(value))

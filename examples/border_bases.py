@@ -1,7 +1,7 @@
 """Compare exact border-basis constructions.
 
 Guarantee: Exact quotient relations and commutation.
-Run from the repository root: python examples/10_border_bases.py
+Run from the repository root: python examples/border_bases.py
 """
 
 import sympy as sp

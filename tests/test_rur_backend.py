@@ -18,7 +18,6 @@ def test_rur_backend_returns_all_complex_roots_and_representation():
     result = polysolve(equations, (x, y), method="rur", digits=35, recognize=False)
     assert result.method == "rational_univariate"
     assert len(result.roots) == 2
-    assert result.rational_univariate_representation is not None
     assert result.rational_univariate_representation.solution_count == 2
     for root in result.roots:
         assert abs(complex(sp.N(root[0] ** 2 - 2, 25))) < 1e-20
@@ -37,7 +36,6 @@ def test_rur_backend_unit_ideal_is_empty():
     x = sp.symbols("x")
     result = polysolve((sp.Integer(1),), (x,), method="rur", recognize=False)
     assert result.roots == ()
-    assert result.rational_univariate_representation is not None
     assert result.rational_univariate_representation.solution_count == 0
 
 
@@ -46,7 +44,6 @@ def test_rur_backend_supports_exact_algebraic_coefficients():
     result = polysolve((x**2 - sp.sqrt(2),), (x,), method="rur", digits=35, recognize=False)
     assert len(result.roots) == 2
     rep = result.rational_univariate_representation
-    assert rep is not None
     assert rep.defining_polynomial.domain.is_AlgebraicField
     for root in result.roots:
         assert abs(complex(sp.N(root[0] ** 2 - sp.sqrt(2), 30))) < 1e-25
@@ -74,7 +71,7 @@ def test_invalid_method_message_includes_rur():
         polysolve((x - 1,), (x,), method="bad", recognize=False)  # type: ignore[arg-type]
 
 
-def test_numerical_rur_backend_does_not_require_exact_root_enumeration(monkeypatch):
+def test_rur_avoids_exact_enumeration(monkeypatch):
     x = sp.symbols("x")
 
     def fail_exact_roots(self, *args, **kwargs):  # pragma: no cover - must not run

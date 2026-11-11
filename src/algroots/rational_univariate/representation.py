@@ -38,6 +38,7 @@ class RationalUnivariateRepresentation:
 
     @property
     def dimension(self) -> int:
+        """The vector-space dimension, including nonreduced multiplicities."""
         return (
             self.quotient_dimension
             if self.quotient_dimension is not None
@@ -46,6 +47,7 @@ class RationalUnivariateRepresentation:
 
     @property
     def solution_count(self) -> int:
+        """The number of distinct geometric points represented by the squarefree polynomial."""
         return (
             self.geometric_solution_count
             if self.geometric_solution_count is not None
@@ -54,9 +56,11 @@ class RationalUnivariateRepresentation:
 
     @property
     def is_empty(self) -> bool:
+        """Whether the representation describes an empty solution set."""
         return self.defining_polynomial.degree() <= 0
 
     def coordinate_expressions(self) -> tuple[sp.Expr, ...]:
+        """Return the original rational coordinate maps before modular denominator inversion."""
         denominator = self.coordinate_denominator.as_expr()
         return tuple(
             sp.cancel(numer.as_expr() / denominator) for numer in self.coordinate_numerators
@@ -100,10 +104,12 @@ class RationalUnivariatePoint:
 
     @property
     def variables(self) -> tuple[sp.Symbol, ...]:
+        """Coordinate symbols in their declared order."""
         return self.representation.variables
 
     @property
     def coordinates(self) -> tuple[sp.Expr, ...]:
+        """Evaluate the denominator-free coordinate maps at the represented parameter root."""
         t = self.representation.parameter
         return tuple(
             sp.cancel(poly.as_expr().subs(t, self.root))
@@ -112,4 +118,5 @@ class RationalUnivariatePoint:
 
     @property
     def assignment(self) -> Mapping[sp.Symbol, sp.Expr]:
+        """Map each coordinate symbol to its exact represented value."""
         return dict(zip(self.variables, self.coordinates, strict=True))

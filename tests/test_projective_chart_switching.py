@@ -113,7 +113,7 @@ def test_cauchy_endgame_certifies_and_deflates_singular_endpoint(multiplicity):
     assert result.limitations  # No numerical path completeness claim.
 
 
-def test_unrelated_box_and_invalid_certification_controls_are_rejected():
+def test_endpoint_box_validation():
     system = SympyHomotopy((x - (1 - t),), (x,), t)
     with pytest.raises(ValueError, match="requires certify"):
         cauchy_endgame(system, (mp.mpf(".1"),), deflate=True)
@@ -167,7 +167,7 @@ def test_endgame_proof_options_are_validated_before_tracking(kwargs):
         cauchy_endgame(system, (mp.mpf(".1"),), **kwargs)
 
 
-def test_homotopy_retries_smaller_steps_after_duplicate_regular_endpoints():
+def test_duplicate_endpoint_retry():
     from algroots import polysolve
 
     y = sp.Symbol("y")

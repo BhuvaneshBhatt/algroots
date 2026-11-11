@@ -1,7 +1,7 @@
 """Resolve closely spaced exact roots.
 
 Guarantee: Distinct exact endpoint proofs.
-Run from the repository root: python examples/08_clustered_roots.py
+Run from the repository root: python examples/clustered_roots.py
 """
 
 import sympy as sp

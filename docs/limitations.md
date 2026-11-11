@@ -36,6 +36,10 @@ Presolve applies exact substitution only when guarded degree, term, and growth e
 
 Calibration and cost estimates guide backend selection, not mathematical claims or universal runtime bounds. See [Performance Model](performance-model.md) and [Precision and Conditioning](precision-and-conditioning.md).
 
+## Numerical precision and concurrency
+
+Algroots serializes its own mpmath and FLINT precision scopes and restores nested contexts on errors. External code that directly changes either global context is outside that coordination. Use process workers for parallel numerical tracking. Exact native Gröbner arithmetic is independent of these numerical contexts. See [Precision and Conditioning](precision-and-conditioning.md).
+
 ## Numerical continuation and homotopy
 
 Ordinary `polysolve(..., method="homotopy")` targets regular square systems whose total-degree paths reach finite nonsingular endpoints. It is not selected by automatic dispatch; multiplicities or paths to infinity can cause failure even when the finite affine roots exist. The continuation and monodromy interfaces provide numerical path/orbit evidence, not certified interval path tubes or projective completeness.

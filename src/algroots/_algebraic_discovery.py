@@ -82,6 +82,7 @@ class DiscoveredAlgebraicFactor:
 
     @property
     def factor(self):
+        """The monic factor over the discovered coefficient extension."""
         x = self.relation.gens[0]
         return x**self.degree + sum(
             c * x ** (self.degree - i - 1) for i, c in enumerate(self.coefficients)
@@ -89,9 +90,11 @@ class DiscoveredAlgebraicFactor:
 
     @property
     def extension_degree(self):
+        """Degree of the discovered coefficient extension over the original constants."""
         return self.ambient.dimension
 
     def verify(self):
+        """Check the exact factorization and its declared coefficient-field embedding."""
         from .functional_decomposition import _input_relation, _integer, _symbols
 
         try:
@@ -136,6 +139,7 @@ class AlgebraicFactorDegree:
 
     @property
     def geometric_factor_count(self):
+        """Number of geometric factor choices covered by this orbit algebra."""
         return comb(self.relation.degree(self.relation.gens[0]), self.degree)
 
     def verify(self):
@@ -266,6 +270,7 @@ class AlgebraicFactorDiscovery:
 
     @property
     def orbits(self):
+        """All coefficient-field factor orbits covered by the discovery result."""
         return tuple(orbit for level in self.levels for orbit in level.orbits)
 
     @property
@@ -277,6 +282,7 @@ class AlgebraicFactorDiscovery:
         )
 
     def verify(self):
+        """Replay the factor orbits and the recorded degree-search coverage."""
         from .functional_decomposition import _input_relation, _integer
 
         try:
@@ -473,18 +479,22 @@ class AlgebraicDecompositionSearch:
 
     @property
     def relation(self):
+        """The original implicit polynomial relation."""
         return self.discovery.relation
 
     @property
     def candidate_count(self):
+        """Number of candidates in the declared finite search."""
         return len(self.discovery.orbits)
 
     @property
     def examined(self):
+        """Number of candidates for which the search recorded an outcome."""
         return len(self.attempts)
 
     @property
     def decompositions(self):
+        """The verified decompositions found by the search."""
         return tuple(
             a.result.decomposition
             for a in self.attempts
@@ -493,6 +503,7 @@ class AlgebraicDecompositionSearch:
 
     @property
     def complete(self):
+        """Whether the recorded search is complete within its stated scope."""
         n = self.relation.degree(self.relation.gens[0])
         return (
             self.discovery.complete
@@ -503,6 +514,7 @@ class AlgebraicDecompositionSearch:
 
     @property
     def status(self):
+        """The decomposition outcome implied by the stored evidence."""
         if self.decompositions:
             return "decomposable"
         if not self.complete:
@@ -560,6 +572,7 @@ def search_algebraic_decomposition(
     max_steps,
     max_dimension,
 ):
+    """Search coefficient-field factor orbits and retain exact reconstruction evidence."""
     from .functional_decomposition import (
         FunctionalDecompositionError,
         _input_relation,

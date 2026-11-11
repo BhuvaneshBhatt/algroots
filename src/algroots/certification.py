@@ -11,6 +11,7 @@ from sympy.polys.matrices import DomainMatrix
 
 from ._validation import validate_integer as _positive_integer
 from ._validation import validate_variables
+from .domains import polynomial
 from .errors import PolynomialSystemError
 from .quotient import QuotientAlgebra
 from .rational_univariate.construction import rur_from_quotient
@@ -68,6 +69,7 @@ class IsolatedRootCertificate:
 
     @property
     def is_singular(self):
+        """Whether the exact Jacobian rank is smaller than the number of coordinates."""
         return self.jacobian_rank < len(self.variables)
 
     def verify(
@@ -149,11 +151,11 @@ def _field_value(value, field):
 
 
 def _evaluate(expression, variables, point, field, values=None):
-    polynomial = sp.Poly(expression, *variables, domain=field)
+    poly = polynomial(expression, variables, field)
     if values is None:
         values = tuple(_field_value(v, field) for v in point)
     result = field.zero
-    for powers, coefficient in polynomial.terms():
+    for powers, coefficient in poly.terms():
         term = field.from_sympy(coefficient)
         for value, power in zip(values, powers, strict=True):
             term *= value**power
@@ -227,7 +229,7 @@ def certify_isolated_root(
     """Prove exact membership, isolation, Jacobian rank and local multiplicity.
 
     Accepts exact rational/algebraic coefficients and coordinates. The whole
-    input ideal must be zero-dimensional. This deliberately refuses floating
+    input ideal must be zero-dimensional. This rejects floating
     candidates and positive-dimensional ideals, even if a local point looks isolated.
     """
     _positive_integer(max_quotient_dimension, "max_quotient_dimension")

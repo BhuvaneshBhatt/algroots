@@ -1,8 +1,10 @@
 """Validate installed wheel arithmetic and explicit native availability."""
 
 import argparse
+import importlib
 import subprocess
 import sys
+from importlib.metadata import distribution
 from pathlib import Path
 
 import sympy as sp
@@ -17,7 +19,22 @@ def main():
     parser.add_argument("--native", action="store_true")
     parser.add_argument("--tutorials", action="store_true")
     parser.add_argument("--extension-fields", action="store_true")
+    parser.add_argument("--stable-abi", action="store_true")
     args = parser.parse_args()
+    if args.stable_abi:
+        if not args.native:
+            parser.error("--stable-abi requires --native")
+        metadata = distribution("algroots").read_text("WHEEL")
+        tags = [
+            line.split(": ", 1)[1] for line in metadata.splitlines() if line.startswith("Tag: ")
+        ]
+        if not tags or any(not tag.startswith("cp311-abi3-") for tag in tags):
+            raise RuntimeError("installed native wheel does not declare cp311-abi3")
+        for name in ("_native_f4", "_native_extension", "_ff_sparse"):
+            module = importlib.import_module("algroots." + name)
+            if not module.__file__.endswith((".abi3.so", ".pyd")):
+                raise RuntimeError(f"{name} did not load a Stable-ABI extension")
+        print("Stable ABI modules loaded on Python", sys.version.split()[0])
     if compiled_available() != args.native:
         raise RuntimeError("installed kernel availability differs from the build profile")
     x, y = sp.symbols("x y")

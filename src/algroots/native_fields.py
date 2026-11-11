@@ -136,22 +136,17 @@ class _FieldModel:
             self.tower, self.alpha, self._tower_conversion = original_tower.rational_model()
         else:
             self.tower = None
-        self.parameters = (
-            self.tower.parameters
-            if self.tower
-            else tuple(ring.domain.symbols)
-            if ring.domain.is_FractionField
-            else ()
-        )
-        self.ground = (
-            self.tower.domain
-            if self.tower
-            else ring.domain.domain
-            if self.parameters
-            else ring.domain
-        )
-        if self.tower and self.parameters:
-            self.ground = self.ground.domain
+        if self.tower:
+            self.parameters = self.tower.parameters
+            self.ground = self.tower.domain
+            if self.parameters:
+                self.ground = self.ground.domain
+        elif ring.domain.is_FractionField:
+            self.parameters = tuple(ring.domain.symbols)
+            self.ground = ring.domain.domain
+        else:
+            self.parameters = ()
+            self.ground = ring.domain
         if self.ground != sp.QQ and not self.ground.is_AlgebraicField:
             raise ValueError("native field images require rational or number-field constants")
         self.extension = bool(self.tower) or self.ground.is_AlgebraicField
@@ -172,6 +167,11 @@ class _FieldModel:
         )
 
     def coefficient(self, value):
+        """Separate parameter support from the constant power-basis coordinates.
+
+        Tower coefficients share a scalar denominator so specialization cannot
+        change their relative coordinates in a split modular component.
+        """
         if self.tower:
             value = self._tower_conversion(value)
             coordinates = list(reversed(value.rep.to_list()))
@@ -201,6 +201,7 @@ class _FieldModel:
         return {(): value}, {(): self.ground.one}
 
     def sample(self, prime, point, limits, stats):
+        """Compute one modular fiber and accumulate image time even on rejection."""
         started = perf_counter()
         try:
             if self.extension:

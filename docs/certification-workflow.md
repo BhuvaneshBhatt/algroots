@@ -21,7 +21,7 @@ for attempt in result.root_certifications:
         print(attempt.certificate.point, attempt.box_attempts)
 ```
 
-The controls are `certification_max_dimension`, `certification_max_refinements` and `certification_max_box_attempts`. An insufficient dimension budget returns `unavailable` under `auto`; an exhausted box attempt returns `failed`. Neither is a certificate. See [Limits and failures](../examples/15_limits_and_failures.py).
+The controls are `certification_max_dimension`, `certification_max_refinements` and `certification_max_box_attempts`. An insufficient dimension budget returns `unavailable` under `auto`; an exhausted box attempt returns `failed`. Neither is a certificate. See [Limits and failures](../examples/limits_and_failures.py).
 
 ## Exact points and user-supplied boxes
 

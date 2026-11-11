@@ -7,12 +7,14 @@ import multiprocessing
 import random
 from collections.abc import Iterator, Sequence
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 
 import sympy as sp
 
 from .continuation import PathResult, PathTrackerOptions, SympyHomotopy, track_path
+from .domains import algebraic_polynomial
 from .errors import HomotopySolveError, SystemSolveLimitError
 
 
@@ -41,17 +43,40 @@ class TotalDegreeHomotopyOptions:
             raise ValueError("homotopy_gamma_attempts must be a positive integer")
 
 
+@lru_cache(maxsize=128)
+def _homotopy_parameter(symbols):
+    """Reserve a private coordinate for an input's complete free-symbol set.
+
+    Reusing it preserves symbolic caches across repeated solves. If an earlier
+    private coordinate becomes an input, it changes the cache key and receives
+    a different Dummy, so the new continuation parameter remains independent.
+    """
+    return sp.Dummy("homotopy_parameter", real=True)
+
+
 @dataclass(frozen=True)
 class TotalDegreeHomotopy:
-    """A total-degree start-to-target homotopy for a square polynomial system."""
+    """A total-degree start-to-target homotopy for a square polynomial system.
+
+    A private continuation coordinate is shared by the equations and compiled
+    system; it cannot collide with a user coordinate or coefficient symbol.
+    """
 
     equations: tuple[Any, ...]
     variables: tuple[sp.Symbol, ...]
     degrees: tuple[int, ...]
     gamma: Any
+    parameter: sp.Symbol = field(init=False, compare=False, repr=False)
+
+    def __post_init__(self):
+        symbols = frozenset(self.variables).union(
+            *(sp.sympify(eq).free_symbols for eq in self.equations)
+        )
+        object.__setattr__(self, "parameter", _homotopy_parameter(symbols))
 
     @property
     def path_count(self) -> int:
+        """The Bézout number of total-degree start paths."""
         count = 1
         for degree in self.degrees:
             count *= degree
@@ -66,14 +91,15 @@ class TotalDegreeHomotopy:
         )
 
     def expressions(self) -> tuple[Any, ...]:
-        parameter = sp.Symbol("_algroots_homotopy_t", real=True)
-        return self._expressions(parameter)
+        """Return the start-to-target equations in the shared continuation parameter."""
+        return self._expressions(self.parameter)
 
     def system(self) -> SympyHomotopy:
-        parameter = sp.Symbol("_algroots_homotopy_t", real=True)
-        return SympyHomotopy(self._expressions(parameter), self.variables, parameter)
+        """Compile the start-to-target equations for analytic path tracking."""
+        return SympyHomotopy(self.expressions(), self.variables, self.parameter)
 
     def with_gamma(self, gamma: Any) -> TotalDegreeHomotopy:
+        """Return the same polynomial problem with a different homotopy multiplier."""
         return TotalDegreeHomotopy(self.equations, self.variables, self.degrees, gamma)
 
     def iter_start_points(self) -> Iterator[tuple[Any, ...]]:
@@ -137,7 +163,7 @@ def build_total_degree_homotopy(
     degrees: list[int] = []
     for equation in equations:
         try:
-            polynomial = sp.Poly(equation, *variables, extension=True)
+            polynomial = algebraic_polynomial(equation, variables)
         except (sp.PolynomialError, TypeError, ValueError) as exc:
             raise HomotopySolveError("total-degree homotopy requires polynomial equations") from exc
         if polynomial.is_zero:

@@ -122,7 +122,7 @@ def test_invalid_rational_options(options):
         rational_decompose(x**4, x, **options)
 
 
-def test_paper_example_without_adjoining_the_input_to_coefficient_field():
+def test_implicit_coefficient_field():
     F = x**4 - z * x * x * (x + 1) + z**3 * (x + 1) ** 2
     A = QuotientAlgebra.from_polynomials([a * a - z * a + z**3], (a,), domain=sp.QQ.frac_field(z))
     result = algebraic_decompose(F, (x, z), candidate=x * x - a * (x + 1), ambient=A, parameter=y)
@@ -149,7 +149,7 @@ def test_overlapping_conjugate_factors_give_a_resultant_power():
     assert not replace(result.decomposition, unit=2).verify()
 
 
-def test_full_factor_can_expose_a_nontrivial_rational_inner_component():
+def test_full_factor_inner_component():
     A = QuotientAlgebra.from_polynomials([a - z], (a,), domain=sp.QQ.frac_field(z))
     F = x * x - z**4 - 1
     result = algebraic_decompose(F, (x, z), candidate=F, ambient=A, parameter=y)
@@ -214,7 +214,7 @@ def test_reducible_reconstructed_factor_is_rejected():
     assert result.reason == "reducible_candidate" and result.verify()
 
 
-def test_candidate_is_normalized_in_the_ambient_field_before_degree_checks():
+def test_candidate_degree_normalization():
     modulus = a * a - z * a + z**3
     A = QuotientAlgebra.from_polynomials([modulus], (a,), domain=sp.QQ.frac_field(z))
     F = x**4 - z * x * x * (x + 1) + z**3 * (x + 1) ** 2

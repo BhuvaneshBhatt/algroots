@@ -1,8 +1,8 @@
 """Exact multivariate QQ normal forms backed by compiled FLINT arithmetic.
 
 The underlying fmpq_mpoly quotient/remainder operations execute in FLINT's C
-library through python-flint.  Python coordinates repeated single-divisor
-passes, because python-flint 0.9 does not expose FLINT's divrem_ideal routine.
+library through python-flint. Python coordinates repeated single-divisor
+passes because the bindings do not expose FLINT's ideal-division routine.
 
 For a Groebner basis, a complete remainder is unique.  The input divisors need
 not be a Groebner basis: the result is still a valid fully reduced remainder,
@@ -58,11 +58,13 @@ class FLINTQQNormalForm:
     def convert(self, polynomial):
         # str(c) is exact for both SymPy QQ representations (PythonMPQ and
         # FLINT-backed fmpq). Never convert through a floating-point number.
+        """Convert one sparse QQ polynomial without passing coefficients through floating point."""
         return self.ctx.from_dict(
             {tuple(exponents): self._fmpq(str(coeff)) for exponents, coeff in polynomial.terms()}
         )
 
     def remainder(self, polynomial, *, converted=False):
+        """Compute a fully reduced exact remainder within the single-divisor pass budget."""
         current = polynomial if converted else self.convert(polynomial)
         if not current or not self.divisors:
             return current
@@ -208,6 +210,7 @@ class FLINTQQNormalForm:
         return True
 
     def s_pair_remainder(self, first, second):
+        """Reduce an S-polynomial using compiled exact QQ arithmetic."""
         left = self.divisors[first]
         right = self.divisors[second]
         left_lm = left.monoms()[0]

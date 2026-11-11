@@ -297,17 +297,6 @@ def preferred_matrix_storage(matrix: sp.Matrix, *, sparse_cutoff=None) -> str:
     return "sparse" if matrix_density(matrix) < cutoff else "dense"
 
 
-# Sparse production separators may use packed Krylov with full cyclic closure.
-# Dense and noncyclic separators retain the characteristic-polynomial fallback.
-__all__ = [
-    "krylov_minimal_polynomial",
-    "packed_krylov_minimal_polynomial",
-    "packed_krylov_coefficients",
-    "matrix_density",
-    "preferred_matrix_storage",
-]
-
-
 def sparse_characteristic_coefficients(matrix):
     """Return exact characteristic coefficients using cyclic invariant quotients.
 
@@ -383,3 +372,15 @@ def sparse_characteristic_coefficients(matrix):
         ]
     terms = polynomials[0].to_dict()
     return [terms.get((i,), domain.zero) for i in range(n, -1, -1)]
+
+
+__all__ = [
+    "krylov_minimal_polynomial",
+    "packed_krylov_minimal_polynomial",
+    "packed_krylov_coefficients",
+    "sparse_krylov_coefficients",
+    "sparse_characteristic_coefficients",
+    "sparse_solve",
+    "matrix_density",
+    "preferred_matrix_storage",
+]

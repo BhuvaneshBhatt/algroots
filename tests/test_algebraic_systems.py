@@ -135,7 +135,7 @@ def test_denominator_saturation_removes_pole_component():
     assert result.nonzero_constraints
 
 
-def test_projected_deduplication_keeps_diagnostics_and_residual_aligned():
+def test_projected_metadata_alignment():
     from algroots.algebraic import _filter_algebraic_roots
     from algroots.algebraization import AlgebraizedSystem
     from algroots.solver import PolynomialSystemRoots, RootDiagnostics

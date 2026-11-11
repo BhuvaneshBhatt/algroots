@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 
 PORTABLE_TESTS = (
+    "test_precision_contexts.py",
+    "test_coefficient_state.py",
     "test_native_defaults.py",
     "test_groebner_api.py",
     "test_groebner_generated.py",

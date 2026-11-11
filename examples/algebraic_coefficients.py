@@ -1,7 +1,7 @@
 """Solve and certify an algebraic-field system.
 
 Guarantee: Exact point certificate; automatic boxes remain rational-only.
-Run from the repository root: python examples/06_algebraic_coefficients.py
+Run from the repository root: python examples/algebraic_coefficients.py
 """
 
 import sympy as sp

@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ['3.11', '3.12', '3.13', '3.14']
+        python: ['3.11', '3.12', '3.13', '3.14', '3.15']
         profile: [native, fallback]
     env:
       ALGROOTS_BUILD_NATIVE_F4: ${{ matrix.profile == 'native' && '1' || '0' }}
@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           cd "$RUNNER_TEMP"
-          python "$GITHUB_WORKSPACE/tools/wheel_smoke.py" ${{ matrix.profile == 'native' && '--native --extension-fields' || '' }} --tutorials
+          python "$GITHUB_WORKSPACE/tools/wheel_smoke.py" ${{ matrix.profile == 'native' && '--native --extension-fields --stable-abi' || '' }} --tutorials
       - run: python tools/generate_api_signatures.py --check
       - run: python tools/run_test_profile.py ${{ matrix.profile == 'native' && '--native' || '' }} --verbose --junitxml=results.xml
       - run: ruff check src tests benchmarks tools setup.py
@@ -81,7 +81,7 @@ jobs:
         shell: bash
         run: |
           cd "$RUNNER_TEMP"
-          python "$GITHUB_WORKSPACE/tools/wheel_smoke.py" ${{ matrix.profile == 'native' && '--native --extension-fields' || '' }} --tutorials
+          python "$GITHUB_WORKSPACE/tools/wheel_smoke.py" ${{ matrix.profile == 'native' && '--native --extension-fields --stable-abi' || '' }} --tutorials
       - run: python tools/run_test_profile.py ${{ matrix.profile == 'native' && '--native' || '' }} --verbose --junitxml=dependency-results.xml
       - uses: actions/upload-artifact@v6
         if: always()

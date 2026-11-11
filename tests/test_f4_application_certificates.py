@@ -98,7 +98,7 @@ def test_full_two_sided_certificate(case, prime, order):
     assert verify_sympy(definition, prime, order, basis)
 
 
-def test_structural_checks_alone_cannot_prove_two_sided_ideal_equality():
+def test_two_sided_ideal_proof():
     # (x,y^3) is a *strictly larger* ideal than (x^2,xy,y^3).
     # Its reduced GB passes S-pairs and reduces all original generators.
     case = build_case("nilpotent_primary")

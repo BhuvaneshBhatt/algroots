@@ -1,7 +1,7 @@
 """Deflate and replay an exact singular-root proof.
 
 Guarantee: Local exact deflation; finite ideal required.
-Run from the repository root: python examples/11_singular_deflation.py
+Run from the repository root: python examples/singular_deflation.py
 """
 
 import sympy as sp

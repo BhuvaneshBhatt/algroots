@@ -5,12 +5,14 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Protocol
 
 import mpmath as mp
 import sympy as sp
 
-from .numerical import number_to_mpc
+from ._precision import working_precision
+from .numerical import number_to_mpc, sympy_to_mpc
 
 
 class PathTrackingError(RuntimeError):
@@ -26,11 +28,17 @@ class HomotopySystem(Protocol):
 
     variables: tuple[Any, ...]
 
-    def evaluate(self, values: Sequence[Any], t: Any) -> mp.matrix: ...
+    def evaluate(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        """Evaluate the equations at coordinates and a continuation parameter."""
+        ...
 
-    def jacobian(self, values: Sequence[Any], t: Any) -> mp.matrix: ...
+    def jacobian(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        """Evaluate derivatives with respect to the solution coordinates."""
+        ...
 
-    def parameter_derivative(self, values: Sequence[Any], t: Any) -> mp.matrix: ...
+    def parameter_derivative(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        """Evaluate derivatives with respect to the continuation parameter."""
+        ...
 
 
 @dataclass(frozen=True)
@@ -114,6 +122,59 @@ class PathResult:
     classification: str = "success"
 
 
+@lru_cache(maxsize=128)
+def _constant_values(constants, digits):
+    """Cache algebraic constant approximations at their requested working precision."""
+    return tuple(sympy_to_mpc(value, digits) for value in constants)
+
+
+def _bind_constants(function, constants):
+    if not constants:
+        return function
+
+    def evaluate(*values):
+        return function(*values, *_constant_values(constants, mp.mp.dps))
+
+    return evaluate
+
+
+@lru_cache(maxsize=64)
+def _compile_homotopy(expressions, variables, parameter):
+    """Compile immutable symbolic data, independent of numerical precision.
+
+    Compiled functions read mpmath's active context when evaluated. Sharing
+    them avoids repeated differentiation and code generation. Algebraic
+    constants are supplied separately, with their numerical cache keyed by
+    the current working precision.
+    """
+    constants = tuple(
+        sorted(
+            set().union(*(expr.atoms(sp.CRootOf, sp.AlgebraicNumber) for expr in expressions)),
+            key=sp.default_sort_key,
+        )
+    )
+    placeholders = tuple(sp.Dummy("coefficient") for _ in constants)
+    if constants:
+        # RootOf binds its defining variable and has no mpmath printer. Pass
+        # its current-precision value as a separate compiled argument instead.
+        replacements = dict(zip(constants, placeholders, strict=True))
+        expressions = tuple(expr.xreplace(replacements) for expr in expressions)
+    args = (*variables, parameter, *placeholders)
+    jacobian = sp.Matrix(expressions).jacobian(variables)
+    derivative = [sp.diff(expr, parameter) for expr in expressions]
+    expanded_terms = [sp.Add.make_args(sp.expand(expr)) for expr in expressions]
+    function = sp.lambdify(args, expressions, modules="mpmath")
+    jacobian_function = sp.lambdify(args, jacobian.tolist(), modules="mpmath")
+    derivative_function = sp.lambdify(args, derivative, modules="mpmath")
+    term_functions = tuple(sp.lambdify(args, terms, modules="mpmath") for terms in expanded_terms)
+    return (
+        _bind_constants(function, constants),
+        _bind_constants(jacobian_function, constants),
+        _bind_constants(derivative_function, constants),
+        tuple(_bind_constants(f, constants) for f in term_functions),
+    )
+
+
 class SympyHomotopy:
     """Analytic homotopy compiled from SymPy expressions."""
 
@@ -132,26 +193,24 @@ class SympyHomotopy:
             raise ValueError("path tracking currently requires a square system")
         if len(set(self.variables)) != len(self.variables):
             raise ValueError("variables must be distinct")
-        args = (*self.variables, self.parameter)
-        jacobian = sp.Matrix(self.expressions).jacobian(self.variables)
-        derivative = [sp.diff(expr, self.parameter) for expr in self.expressions]
-        expanded_terms = [sp.Add.make_args(sp.expand(expr)) for expr in self.expressions]
-        self._function = sp.lambdify(args, self.expressions, modules="mpmath")
-        self._jacobian = sp.lambdify(args, jacobian.tolist(), modules="mpmath")
-        self._derivative = sp.lambdify(args, derivative, modules="mpmath")
-        self._term_functions = tuple(
-            sp.lambdify(args, terms, modules="mpmath") for terms in expanded_terms
+        if self.parameter in self.variables:
+            raise ValueError("the continuation parameter must be distinct from solution variables")
+        self._function, self._jacobian, self._derivative, self._term_functions = _compile_homotopy(
+            self.expressions, self.variables, self.parameter
         )
 
     def evaluate(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        """Evaluate the compiled homotopy equations in arbitrary-precision arithmetic."""
         raw = self._function(*values, t)
         return mp.matrix([mp.mpc(value) for value in raw])
 
     def jacobian(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        """Evaluate the compiled coordinate Jacobian."""
         raw = self._jacobian(*values, t)
         return mp.matrix([[mp.mpc(value) for value in row] for row in raw])
 
     def parameter_derivative(self, values: Sequence[Any], t: Any) -> mp.matrix:
+        """Evaluate the compiled derivative in the continuation direction."""
         raw = self._derivative(*values, t)
         return mp.matrix([mp.mpc(value) for value in raw])
 
@@ -392,7 +451,7 @@ def track_path(
 
     def recorrect_current_point() -> None:
         nonlocal x_values, max_residual
-        with mp.workdps(digits + 10):
+        with working_precision(digits + 10):
             current = mp.matrix([mp.mpc(value) for value in x_values])
             target = residual_target()
             corrected, _, residual = _newton_correct(
@@ -421,7 +480,7 @@ def track_path(
         return True
 
     # Correct the supplied seed at the initial parameter before continuation.
-    with mp.workdps(digits + 10):
+    with working_precision(digits + 10):
         seed = mp.matrix(list(x_values))
         seed_target = residual_target()
         try:
@@ -448,7 +507,7 @@ def track_path(
         final_step = step >= remaining
         step = min(step, remaining)
         signed_step = direction * step
-        with mp.workdps(digits + 10):
+        with working_precision(digits + 10):
             x = mp.matrix([mp.mpc(value) for value in x_values])
             current_t = mp.mpf(t)
             # Preserve the requested endpoint object on the final step. A

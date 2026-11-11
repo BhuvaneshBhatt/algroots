@@ -1,7 +1,7 @@
 """Retain principal branches and exclude poles.
 
 Guarantee: Original expression and domain checks.
-Run from the repository root: python examples/02_branches_and_poles.py
+Run from the repository root: python examples/branches_and_poles.py
 """
 
 import sympy as sp

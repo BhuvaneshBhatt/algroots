@@ -1,7 +1,7 @@
 """Discover a quadratic orbit from one supplied seed.
 
 Guarantee: Numerical orbit discovery; no automatic exact count.
-Run from the repository root: python examples/14_seeded_monodromy.py
+Run from the repository root: python examples/seeded_monodromy.py
 """
 
 import sympy as sp

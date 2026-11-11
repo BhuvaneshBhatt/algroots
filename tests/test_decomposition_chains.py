@@ -20,7 +20,7 @@ x, y, z = sp.symbols("x y z")
 PAPER = x**4 - z * x * x * (x + 1) + z**3 * (x + 1) ** 2
 
 
-def test_three_component_rational_chain_composes_and_resolves_every_leaf():
+def test_three_component_chain():
     result = rational_decomposition_chain(x**8, x)
     assert result.complete and result.status == "complete" and result.verify()
     assert len(result.components) == 3
@@ -42,7 +42,7 @@ def test_supplied_chain_certificate():
         rational_decomposition_chain(x**8, x, initial=initial)
 
 
-def test_supplied_algebraic_result_preserves_its_factor_reconstruction():
+def test_supplied_algebraic_reconstruction():
     initial = algebraic_decompose(PAPER, (x, z)).decompositions[0]
     result = algebraic_decomposition_chain(PAPER, (x, z), initial=initial, max_depth=1)
     assert result.root.supplied is initial and result.root.search is None and result.verify()
@@ -123,7 +123,7 @@ def test_algebraic_negative_proof_and_poly_input():
     assert result.root.search.complete and result.root.stop_reason == "indecomposable"
 
 
-def test_algebraic_resultant_power_and_repeated_ancestor_are_retained():
+def test_resultant_ancestor_evidence():
     result = algebraic_decomposition_chain(x**3 - 3 * x - z, (x, z), max_depth=4)
     assert result.root.split.exponent == 2
     assert result.exponent >= 2 and result.verify() and not result.complete
@@ -165,7 +165,7 @@ def test_factor_degree_limit():
 
 
 @pytest.mark.parametrize("mode", ["rational", "algebraic"])
-def test_unsupported_backend_is_diagnostic_and_never_a_negative_proof(monkeypatch, mode):
+def test_unsupported_backend_diagnostic(monkeypatch, mode):
     import algroots.functional_decomposition as fd
 
     def unsupported(*args, **kwargs):

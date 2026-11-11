@@ -1,7 +1,7 @@
 """Track a point through an automatic chart change.
 
 Guarantee: Numerical projective tracking only.
-Run from the repository root: python examples/13_projective_chart_switching.py
+Run from the repository root: python examples/projective_chart_switching.py
 """
 
 import sympy as sp

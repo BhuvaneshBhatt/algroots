@@ -16,6 +16,8 @@ Python 3.11 or newer is required. The dependencies include SymPy, mpmath, python
 python -m pip install algroots
 ```
 
+Native wheels use CPython’s Python 3.11 Stable ABI (`cp311-abi3`) for GIL-enabled CPython 3.11 and later Python 3.x releases. Wheels remain specific to an operating system and architecture. See [native wheels and Python compatibility](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/native-wheels.md) for supported platforms, source builds and artifact checks.
+
 ## Solve a polynomial system
 
 <!-- algroots: execute -->
@@ -86,7 +88,7 @@ Recognition is a different operation. By default, solvers attempt exact coordina
 | Singular-root proof and exact local deflation | `certify_isolated_root`, `deflate_isolated_root` | [Singular certification](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/singular-certification-and-charts.md) |
 | Bounded endgame/deflation/chart recovery | `polysolve(method="homotopy", homotopy_recovery=True)` | [Recovery](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/recovery-workflow.md) |
 | Numerical projective tracking | `projective_homotopy`, `track_projective_path` | [Chart switching](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/singular-certification-and-charts.md) |
-| Seeded experimental monodromy | `discover_monodromy_orbit` | [Monodromy](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/continuation-and-monodromy.md) |
+| Seeded numerical monodromy | `discover_monodromy_orbit` | [Monodromy](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/continuation-and-monodromy.md) |
 
 
 ## Functional decomposition, fields, and curves
@@ -136,10 +138,10 @@ The [examples catalog](https://github.com/BhuvaneshBhatt/algroots/blob/main/exam
 
 ```bash
 python examples/run_all.py
-python examples/run_all.py 07_multiplicity_and_boxes.py 15_limits_and_failures.py
+python examples/run_all.py multiplicity_and_boxes.py limits_and_failures.py
 ```
 
-Start with [Quick Start](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/quick-start.md), [Supported Problems](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/supported-problems.md), [Support Matrix](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/feature-support-matrix.md) and [Reading Results](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/reading-results.md). 
+Start with [Quick Start](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/quick-start.md), [Supported Problems](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/supported-problems.md), [Support Matrix](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/feature-support-matrix.md) and [Reading Results](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/reading-results.md).
 
 The [documentation index](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/index.md) links every topic, including the [API reference](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/api.md), [limitations](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/limitations.md) and [troubleshooting](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/troubleshooting.md).
 
@@ -153,7 +155,7 @@ python -m ruff check .
 python -m ruff format --check .
 ```
 
-Tests execute marked documentation and every catalog example, check navigation and API defaults, compare exact algebra against independent oracles, and exercise adversarial/resource limits. Benchmarks retain exact correctness checks but do not enforce wall-clock thresholds. See [Testing and Validation](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/testing-and-validation.md) and [Contributing](https://github.com/BhuvaneshBhatt/algroots/blob/main/CONTRIBUTING.md).
+Tests execute marked documentation and every catalog example, check navigation and API defaults, compare exact algebra against independent oracles, and exercise adversarial/resource limits. Benchmarks retain exact correctness checks but do not enforce wall-clock thresholds. See [Testing and Validation](https://github.com/BhuvaneshBhatt/algroots/blob/main/docs/testing-and-validation.md).
 
 ## License
 

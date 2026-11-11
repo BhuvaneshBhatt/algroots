@@ -14,7 +14,7 @@ def _complex_roots(roots):
     )
 
 
-def test_total_degree_homotopy_matches_action_on_regular_square_system():
+def test_homotopy_action_agreement():
     equations = (x**2 - 1, y**2 - 1)
     homotopy = polysolve(equations, (x, y), method="homotopy", digits=35, recognize=False)
     action = polysolve(equations, (x, y), method="action", digits=35, recognize=False)
@@ -22,7 +22,7 @@ def test_total_degree_homotopy_matches_action_on_regular_square_system():
     assert homotopy.homotopy_paths_total == 4
     assert homotopy.homotopy_paths_succeeded == 4
     assert homotopy.homotopy_paths_failed == 0
-    assert homotopy.homotopy_gamma is not None
+    assert homotopy.homotopy_gamma != 0
     left = _complex_roots(homotopy.roots)
     right = _complex_roots(action.roots)
     assert len(left) == len(right) == 4
@@ -70,7 +70,7 @@ def test_total_degree_homotopy_rejects_singular_coalescing_endpoint():
         )
 
 
-def test_total_degree_homotopy_path_limit_is_separate_from_solution_limit():
+def test_path_and_solution_budgets():
     with pytest.raises(SystemSolveLimitError, match="max_homotopy_paths"):
         polysolve(
             (x**4 - 1, y**4 - 1),
@@ -82,7 +82,7 @@ def test_total_degree_homotopy_path_limit_is_separate_from_solution_limit():
         )
 
 
-def test_total_degree_homotopy_inconsistent_constant_equation_has_no_paths():
+def test_inconsistent_homotopy():
     result = polysolve(
         (sp.Integer(1),),
         (x,),
@@ -95,7 +95,7 @@ def test_total_degree_homotopy_inconsistent_constant_equation_has_no_paths():
     assert result.homotopy_paths_failed == 0
 
 
-def test_algebraic_solver_reports_current_homotopy_scope_for_radicals():
+def test_radical_homotopy_scope():
     with pytest.raises(HomotopySolveError, match="projective"):
         algsolve(
             (sp.sqrt(x) - 2,),
@@ -181,7 +181,6 @@ def test_total_degree_homotopy_accepts_tiny_but_regular_jacobian():
         recognize=False,
     )
     assert len(result.roots) == 2
-    assert result.homotopy_endpoint_smallest_singular_values is not None
     assert all(value != 0 for value in result.homotopy_endpoint_smallest_singular_values)
 
 
@@ -207,14 +206,13 @@ def test_algebraic_homotopy_controls():
         homotopy_gamma_attempts=3,
         recognize=False,
     )
-    assert result.homotopy_paths_total is not None
-    assert result.homotopy_projected_candidates is not None
-    assert result.homotopy_projected_roots_rejected is not None
-    assert result.homotopy_projected_roots_rejected >= 1
+    assert result.homotopy_paths_total == 2
+    assert result.homotopy_projected_candidates == 1
+    assert result.homotopy_projected_roots_rejected == 1
     assert len(result.roots) == 1
 
 
-def test_total_degree_homotopy_gamma_retry_exhaustion_reports_attempts(monkeypatch):
+def test_gamma_retry_exhaustion(monkeypatch):
     import algroots.solver as solver_module
     from algroots.continuation import PathResult
 
@@ -253,7 +251,7 @@ def test_total_degree_homotopy_gamma_retry_exhaustion_reports_attempts(monkeypat
     assert "every deterministic gamma candidate" in message
 
 
-def test_total_degree_homotopy_refuses_system_with_affine_path_at_infinity():
+def test_infinite_path_refusal():
     # Bezout count is 2, but x*y - 1 == 0 and y - 1 == 0 have only the
     # affine root (1, 1); the missing projective path must not be ignored.
     with pytest.raises(HomotopySolveError, match="expected number of distinct roots|path"):

@@ -51,4 +51,4 @@ All options are integers; counts are positive except `max_retry_rounds`, which p
 
 If completeness is not proved, `HomotopySolveError` carries `recovery_records`, `certification_attempts` and `certified_endpoints`. These prove only the recorded partial endpoints. The solver never returns that partial set as a complete result. Inspect the failure before increasing the relevant bound. Near-infinity is a numerical classification, not a certified point at infinity.
 
-See the [recovery example](../examples/12_bounded_homotopy_recovery.py), [chart example](../examples/13_projective_chart_switching.py), [Homotopy Continuation](homotopy-continuation.md) and [API](api.md).
+See the [recovery example](../examples/bounded_homotopy_recovery.py), [chart example](../examples/projective_chart_switching.py), [Homotopy Continuation](homotopy-continuation.md) and [API](api.md).

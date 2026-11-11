@@ -110,10 +110,12 @@ class DecompositionChainNode:
 
     @property
     def leaves(self):
+        """The unsplit components in outer-to-inner composition order."""
         return (self,) if self.split is None else (*self.outer.leaves, *self.inner.leaves)
 
     @property
     def resolved(self):
+        """Whether the leaf search has a conclusive stopping reason."""
         return self.stop_reason in _RESOLVED
 
 
@@ -336,34 +338,42 @@ class RationalDecompositionChain:
 
     @property
     def original_expression(self):
+        """The original rational function represented by the chain."""
         return self.root.function
 
     @property
     def variables(self):
+        """Coordinate symbols in their declared order."""
         return self.root.variables
 
     @property
     def constants(self):
+        """The declared field of constant coefficients."""
         return self.root.constants
 
     @property
     def leaves(self):
+        """The unsplit components in outer-to-inner composition order."""
         return self.root.leaves
 
     @property
     def components(self):
+        """The ordered outer-to-inner components of the decomposition."""
         return tuple(RationalChainComponent(n.function, n.variables) for n in self.leaves)
 
     @property
     def complete(self):
+        """Whether the recorded search is complete within its stated scope."""
         return all(n.resolved for n in self.leaves)
 
     @property
     def status(self):
+        """The decomposition outcome implied by the stored evidence."""
         return "complete" if self.complete else "incomplete"
 
     @property
     def input_guard(self):
+        """Condition retaining the input expression's denominator exclusions."""
         fd = _fd()
         return sp.And(*(sp.Ne(p, 0) for p in fd._visible_denominators(self.original_expression)))
 
@@ -416,30 +426,37 @@ class AlgebraicDecompositionChain:
 
     @property
     def relation(self):
+        """The original implicit polynomial relation."""
         return self.root.function
 
     @property
     def constants(self):
+        """The declared field of constant coefficients."""
         return self.root.constants
 
     @property
     def variables(self):
+        """Coordinate symbols in their declared order."""
         return self.root.variables
 
     @property
     def leaves(self):
+        """The unsplit components in outer-to-inner composition order."""
         return self.root.leaves
 
     @property
     def components(self):
+        """The ordered outer-to-inner components of the decomposition."""
         return tuple(n.function for n in self.leaves)
 
     @property
     def complete(self):
+        """Whether the recorded search is complete within its stated scope."""
         return all(n.resolved for n in self.leaves)
 
     @property
     def status(self):
+        """The decomposition outcome implied by the stored evidence."""
         return "complete" if self.complete else "incomplete"
 
     def resultant(self):
@@ -457,11 +474,13 @@ class AlgebraicDecompositionChain:
 
     @property
     def exponent(self):
+        """The power of the original relation in the exact resultant identity."""
         resultant = self.resultant()
         return resultant.degree(self.variables[0]) // self.relation.degree(self.variables[0])
 
     @property
     def unit(self):
+        """The nonzero coefficient multiplying the resultant identity."""
         return self.resultant().LC() / (self.relation**self.exponent).LC()
 
     def verify(self):

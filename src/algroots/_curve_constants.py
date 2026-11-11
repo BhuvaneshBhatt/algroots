@@ -6,6 +6,7 @@ import sympy as sp
 
 
 def number_degree(domain):
+    """Return the algebraic constant field's degree over QQ."""
     return 1 if domain == sp.QQ else int(domain.mod.degree())
 
 
@@ -64,6 +65,7 @@ class ConstantCoordinates:
         return sp.Matrix.hstack(*columns).inv()
 
     def coordinates(self, value):
+        """Express a constant in the relative power basis of the extension over the base."""
         if self.extension == self.base:
             return (self.base.to_sympy(self.base.convert(value)),)
         values = self._inverse * self._absolute(value)
@@ -80,5 +82,6 @@ class ConstantCoordinates:
         )
 
     def polynomial(self, symbol):
+        """Convert a polynomial using the chosen exact relative coefficient embedding."""
         coefficients = self.coordinates(self.theta**self.degree)
         return symbol**self.degree - sum(c * symbol**i for i, c in enumerate(coefficients))

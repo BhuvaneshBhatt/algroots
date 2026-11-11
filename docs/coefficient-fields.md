@@ -90,7 +90,7 @@ The Python package uses python-flint for factorization and interpolation. Buildi
 ALGROOTS_BUILD_NATIVE_F4=1 ALGROOTS_BUILD_NATIVE_EXTENSION=1 python -m pip install .
 ```
 
-The build uses `pkg-config flint`. Alternatively set `ALGROOTS_FLINT_PREFIX` to an installation containing `include/flint` and the FLINT, GMP, and MPFR libraries in `lib`. Windows builds can use the vcpkg FLINT package. Native wheels must bundle these dependencies using delocate, auditwheel, or delvewheel; `tools/repair_extension_wheels.py` performs the platform-specific repair. A wheel's minimum OS version must match its bundled libraries. The existing prime-only wheel workflow remains available, and a separate extension-field CI workflow builds and tests repaired host wheels.
+Native wheels use the Python 3.11 Stable ABI; see [native wheels and Python compatibility](native-wheels.md) for binary requirements and artifact validation. The build uses `pkg-config flint`. Alternatively set `ALGROOTS_FLINT_PREFIX` to an installation containing `include/flint` and the FLINT, GMP, and MPFR libraries in `lib`. Windows builds can use the vcpkg FLINT package. Native wheels must bundle these dependencies using delocate, auditwheel, or delvewheel; `tools/repair_extension_wheels.py` performs the platform-specific repair. A wheel's minimum OS version must match its bundled libraries. The existing prime-only wheel workflow remains available, and a separate extension-field CI workflow builds and tests repaired host wheels.
 
 ## Choose dense or sparse interpolation
 
@@ -137,7 +137,7 @@ Here the generic algebra has two geometric points, but the zero fiber has one po
 
 ## Profile a complete algorithm
 
-`algroots.profiling.GroebnerProfiler` records calls to the public verified basis API without changing its mathematical return type. It can surround quotient, RUR, or adapter calls that select that API. Direct legacy SymPy calculations and cache hits do not create public basis records. Clear application caches when measuring construction costs.
+`algroots.profiling.GroebnerProfiler` records calls to the public verified basis API without changing its mathematical return type. It can surround quotient, RUR, or adapter calls that select that API. Direct SymPy calculations and cache hits do not create public basis records. Clear application caches when measuring construction costs.
 
 <!-- algroots: execute -->
 ```python

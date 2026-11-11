@@ -154,7 +154,7 @@ If exact reconstruction is required:
 
 - solve at higher `digits`;
 - choose a sufficiently large `max_degree`;
-- adjust recognition bounds deliberately;
+- adjust recognition bounds to match the expected algebraic degree and coefficient size;
 - inspect `scalar_certified`, `jointly_certified`, and `equation_values`.
 
 Do not assume that increasing `max_degree` indefinitely is always desirable; it increases the space of candidate algebraic relations.

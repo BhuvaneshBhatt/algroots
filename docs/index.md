@@ -10,6 +10,7 @@ Start with [Quick start](quick-start.md), [Supported problems](supported-problem
 | Reduce a polynomial or test ideal membership | [Normal forms and membership](groebner-bases.md#test-ideal-membership) |
 | Eliminate variables or change monomial order | [Elimination](groebner-bases.md#eliminate-a-variable), [FGLM](groebner-bases.md#change-order-for-a-finite-ideal) |
 | Construct and inspect a finite quotient | [Quotient tools](quotient-tools.md) |
+| Install a native wheel or check Python compatibility | [Native wheels](native-wheels.md) |
 | Choose an installed engine | [Backend selection](groebner-bases.md#choose-a-backend), [availability](groebner-bases.md#check-engine-availability) |
 | Bound a complete calculation | [Supervised execution](supervised-execution.md) |
 

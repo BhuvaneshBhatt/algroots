@@ -154,3 +154,11 @@ If a difficult system fails:
 6. consider whether the system has repeated or nearly repeated roots.
 
 See [Multiplicity and Singular Roots](multiplicity-and-singular-roots.md) and [Troubleshooting](troubleshooting.md).
+
+## Precision scopes and concurrency
+
+Algroots coordinates its mpmath and FLINT precision changes with one reentrant lock. Nested numerical operations restore the preceding precision on success or error, and concurrent algroots precision scopes cannot overwrite one another. Midpoint conversion retains the requested digits even when the caller's default mpmath precision is lower.
+
+This lock serializes numerical precision scopes inside one process. Use process workers for parallel path tracking. It does not coordinate external code that changes `mpmath.mp` or `flint.ctx` directly; avoid those changes while an algroots numerical calculation is running. Exact native Gröbner arithmetic does not use this precision lock.
+
+Exact `CRootOf` constants use their rational isolating intervals or rectangles when converted to Arb/ACB. Arithmetic on these enclosures retains rounding bounds. Homotopy compilation passes such constants as separate numerical arguments and caches their approximations by working precision, so increasing precision does not reuse lower-precision values.

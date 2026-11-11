@@ -117,10 +117,10 @@ pytest_add_cli_args_test_selection = ["tests/"]
 mutate_only_covered_lines = true
 
 [tool.cibuildwheel]
-build = "cp311-* cp312-* cp313-* cp314-*"
-skip = "*-musllinux_* *-win32 *-win_arm64"
+build = "cp3*-*"
+skip = "*-musllinux_* *-win32 *-win_arm64 cp3*t-*"
 archs = ["native"]
-test-command = "python {project}/tools/wheel_smoke.py --native --extension-fields --tutorials"
+test-command = "python {project}/tools/wheel_smoke.py --native --extension-fields --stable-abi --tutorials"
 
 [tool.cibuildwheel.linux]
 repair-wheel-command = "python {project}/tools/repair_extension_wheels.py {wheel} --output {dest_dir}"

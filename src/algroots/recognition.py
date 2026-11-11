@@ -8,6 +8,7 @@ from typing import Any
 
 import sympy as sp
 
+from ._precision import precision_lock
 from .monodromy import MonodromyOrbitResult
 from .solver import PolynomialSystemRoots
 
@@ -338,33 +339,34 @@ def recognize_system_roots(
         options["min_relation_bits"] = min_relation_bits
 
     trusted_digits = max(verify_by_root, default=15)
-    old_precision = int(ctx.prec)
-    working_bits = max(old_precision, ceil(trusted_digits * log2(10)) + 8)
-    ctx.prec = working_bits
-    try:
+    with precision_lock:
+        old_precision = int(ctx.prec)
+        working_bits = max(old_precision, ceil(trusted_digits * log2(10)) + 8)
+        ctx.prec = working_bits
+        try:
 
-        def recognize_coordinate(value: Any, digits: int):
-            try:
-                return algrecognize(
-                    _to_flint_number(value, digits),
-                    **options,
-                )
-            except algrecognize_error as exc:
-                raise ExactCertificationError(
-                    f"algrecognize could not identify a relation: {exc}"
-                ) from exc
+            def recognize_coordinate(value: Any, digits: int):
+                try:
+                    return algrecognize(
+                        _to_flint_number(value, digits),
+                        **options,
+                    )
+                except algrecognize_error as exc:
+                    raise ExactCertificationError(
+                        f"algrecognize could not identify a relation: {exc}"
+                    ) from exc
 
-        return _recognize_exact_roots(
-            roots,
-            equations,
-            variables,
-            digits_by_root,
-            verify_by_root,
-            recognize_coordinate,
-            require_certified=require_certified,
-        )
-    finally:
-        ctx.prec = old_precision
+            return _recognize_exact_roots(
+                roots,
+                equations,
+                variables,
+                digits_by_root,
+                verify_by_root,
+                recognize_coordinate,
+                require_certified=require_certified,
+            )
+        finally:
+            ctx.prec = old_precision
 
 
 def _with_auto_recognition(result: Any, *, max_degree: int):
@@ -383,7 +385,7 @@ def _with_auto_recognition(result: Any, *, max_degree: int):
             require_certified=True,
         )
     except (ExactCertificationError, ImportError) as exc:
-        # Automatic recognition is deliberately best-effort: failure to find a
+        # Automatic recognition is best-effort: failure to find a
         # low-complexity exact relation must not invalidate an already verified
         # numerical solve. Preserve the failure for inspection instead.
         return replace(

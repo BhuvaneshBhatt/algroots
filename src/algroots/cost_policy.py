@@ -1,6 +1,6 @@
 """Deterministic structural cost policy; calibrated by the bundled benchmark corpus."""
 
-import sympy as sp
+from .domains import algebraic_polynomial, polynomial
 
 
 def _candidate_order(equations, variables, *, policy):
@@ -10,7 +10,8 @@ def _candidate_order(equations, variables, *, policy):
         for v in present:
             graph[v].update(present - {v})
     counts = {v: sum(v in row.free_symbols for row in equations) for v in variables}
-    degrees = {v: max((sp.degree(row, v) for row in equations), default=0) for v in variables}
+    polynomials = tuple(algebraic_polynomial(row, variables, extension=False) for row in equations)
+    degrees = {v: max((p.degree(v) for p in polynomials), default=0) for v in variables}
     result = []
     graph = {v: set(neighbours) for v, neighbours in graph.items()}
     while graph:
@@ -77,14 +78,14 @@ def prefer_action(quotient, max_dimension, equations=()):
         expression = poly.as_expr()
         symbols = expression.free_symbols
         if len(symbols) == 1:
-            univariate = sp.Poly(expression, next(iter(symbols)), extension=True)
+            univariate = algebraic_polynomial(expression, (next(iter(symbols)),))
             repeated |= univariate.gcd(univariate.diff()).degree() > 0
     repeated_input = False
     # The expanded corpus exposes repeated multivariate input factors hidden by
     # reduced Groebner relations. Restrict square-free analysis to small inputs.
     checked = 0
     for expression in equations:
-        poly = sp.Poly(expression, *quotient.variables, domain=quotient.domain)
+        poly = polynomial(expression, quotient.variables, quotient.domain)
         if poly.total_degree() <= 8 and len(poly.terms()) <= 32:
             checked += 1
             repeated_input |= any(power > 1 for _, power in poly.sqf_list()[1])

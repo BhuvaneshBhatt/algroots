@@ -1,10 +1,17 @@
 # Changelog
 
-## 0.4.0
+## 0.4.1
 
-### Gröbner bases and solver integration
-
-Add `groebner_basis`, returning a reduced monic SymPy `GroebnerBasis` over an explicit exact coefficient field. Solvers, quotient algebras and rational-univariate construction accept verified native backend selection through `groebner_backend` and `groebner_limits`. Their defaults remain SymPy.
+Use stable CPython ABI in order to extend Python version compatibility to 3.11+.
+Also fix four serious issues:
+- "Real solutions" could include complex points.
+- Bound symbols inside CRootOf constants caused valid systems to be rejected.
+- RootOf numerical conversion and homotopy compilation could fail.
+- Number-field RUR certificates could crash during construction.
+- Precision scopes interfering across threads.
+- Lost precision in midpoint conversion.
+- A homotopy parameter name was colliding with an input variable.
+- Failed field snapshots involving algebraic roots.
 
 ## 0.4.0
 

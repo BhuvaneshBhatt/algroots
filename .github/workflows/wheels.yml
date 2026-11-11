@@ -35,8 +35,10 @@ jobs:
           $prefix = "$root/installed/x64-windows"
           Add-Content $env:GITHUB_ENV "CIBW_ENVIRONMENT_WINDOWS=ALGROOTS_BUILD_NATIVE_F4=1 ALGROOTS_BUILD_FF_SPARSE=1 ALGROOTS_BUILD_NATIVE_EXTENSION=1 ALGROOTS_FLINT_PREFIX='$prefix'"
           Add-Content $env:GITHUB_ENV "CIBW_REPAIR_WHEEL_COMMAND_WINDOWS=delvewheel repair --add-path $prefix/bin -w {dest_dir} {wheel}"
-      - run: python -m pip install cibuildwheel==4.3.5
+      - run: python -m pip install cibuildwheel==4.3.5 abi3audit
       - run: python -m cibuildwheel --output-dir wheelhouse
+      - name: Verify Stable ABI wheel tags and symbols
+        run: python tools/check_wheel_abi.py wheelhouse --require-all
       - uses: actions/upload-artifact@v6
         with:
           name: native-wheels-${{ matrix.os }}

@@ -26,6 +26,7 @@ class TowerPresentation:
 
     @cached_property
     def inverse_coordinates(self):
+        """The exact inverse map from the compressed primitive basis to the original tower basis."""
         field = self.field
         entries = {}
         for j, monomial in enumerate(self.monomials):
@@ -37,6 +38,7 @@ class TowerPresentation:
         return matrix.inv()
 
     def expression(self, value):
+        """Express a field element in the original triangular tower generators."""
         field = self.field
         coefficients = list(reversed(field.convert(value).rep.to_list()))
         vector = DomainMatrix(
@@ -49,6 +51,7 @@ class TowerPresentation:
 
     @cached_property
     def relations(self):
+        """The original defining equations in their triangular tower coordinates."""
         result = []
         for relation in self.field.relations:
             base = relation.domain

@@ -32,7 +32,7 @@ def test_newton_handles_overdetermined_consistent_system():
     assert compiled_residual(polynomials, root, 50) < mp.mpf("1e-30")
 
 
-def test_newton_does_not_claim_easy_success_at_singular_multiple_root():
+def test_singular_newton_refusal():
     equations = (x**2,)
     polynomials = compile_polynomials(equations, (x,))
     jacobian = compiled_jacobian(equations, (x,))

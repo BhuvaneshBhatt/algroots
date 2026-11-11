@@ -75,10 +75,12 @@ class PlaneCurve:
 
     @property
     def degree(self):
+        """Total degree of the affine defining polynomial."""
         return int(self.polynomial.total_degree())
 
     @cached_property
     def homogeneous_polynomial(self):
+        """The projective closure equation in the private homogenizing coordinate."""
         from ._curve_normalization import W
 
         return self.polynomial.homogenize(W).as_expr()
@@ -90,6 +92,7 @@ class PlaneCurve:
         return normalize(self, 256, 256)
 
     def normalization(self, *, max_steps=256, max_dimension=256):
+        """Resolve singularities and return exact normalization invariants within the budgets."""
         _positive(max_steps, "max_steps")
         _positive(max_dimension, "max_dimension")
         if (max_steps, max_dimension) == (256, 256):
@@ -100,6 +103,7 @@ class PlaneCurve:
 
     @property
     def genus(self):
+        """Return the genus of the associated coefficient curve."""
         return self.normalization().genus
 
     def rational_parametrization(
@@ -169,6 +173,7 @@ class CurveNormalization:
     max_dimension: int
 
     def verify(self):
+        """Replay singularity resolution and the normalization genus identity."""
         from ._curve_normalization import normalize
 
         return self == normalize(self.curve, self.max_steps, self.max_dimension)
@@ -186,19 +191,23 @@ class CurveParametrization:
 
     @property
     def affine_coordinates(self):
+        """The affine coordinate functions in the parametrization parameter."""
         X, Y, Z = self.projective_coordinates
         return sp.cancel(X / Z), sp.cancel(Y / Z)
 
     @property
     def forward_guard(self):
+        """Nonvanishing condition under which the forward rational map is defined."""
         return sp.Ne(self.projective_coordinates[2], 0)
 
     @property
     def inverse_guard(self):
+        """Nonvanishing condition under which the inverse rational map is defined."""
         return sp.Ne(sp.fraction(sp.cancel(self.inverse))[1], 0)
 
     @property
     def exceptional_parameter_polynomial(self):
+        """Polynomial recording excluded denominators and undefined parameter values."""
         x, y = self.curve.variables
         denominator = sp.fraction(sp.cancel(self.inverse))[1]
         pulled = sp.fraction(
@@ -216,6 +225,7 @@ class CurveParametrization:
 
     @property
     def point_at_infinity(self):
+        """The projective limit at the infinite parameter value."""
         polys = [
             sp.Poly(p, self.parameter, domain=self.domain) for p in self.projective_coordinates
         ]
@@ -223,6 +233,7 @@ class CurveParametrization:
         return tuple(p.nth(degree) for p in polys)
 
     def homogeneous_coordinates(self, first, second):
+        """Evaluate the parametrization on homogeneous parameter coordinates."""
         if not isinstance(first, sp.Symbol) or not isinstance(second, sp.Symbol) or first == second:
             raise CurveError("two distinct homogeneous parameter Symbols are required")
         degree = max(sp.degree(p, self.parameter) for p in self.projective_coordinates)
@@ -232,6 +243,7 @@ class CurveParametrization:
         )
 
     def verify(self):
+        """Check the curve equation, inverse map and recorded exceptional parameters."""
         from ._curve_normalization import W
 
         t = self.parameter
@@ -276,6 +288,7 @@ class ConicModel:
     inverse: tuple[sp.Expr, sp.Expr]
 
     def verify(self):
+        """Check the conic equation and both birational coordinate maps."""
         if (
             self.conic.domain != self.source.domain
             or self.conic.degree != 2
@@ -334,9 +347,11 @@ class CurveRationalityResult:
 
     @property
     def rational(self):
+        """Whether a rational presentation over the declared constants was established."""
         return self.status == "rational"
 
     def verify(self):
+        """Replay the normalization, rationality decision and any parametrization."""
         if not self.normalization.verify():
             return False
         if self.status == "positive_genus":

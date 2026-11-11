@@ -6,6 +6,7 @@ from dataclasses import dataclass, replace
 import mpmath as mp
 import sympy as sp
 
+from ._precision import working_precision
 from .continuation import PathTrackerOptions, track_path
 from .endgames import ProjectiveHomotopy
 from .numerical import number_to_mpc
@@ -40,6 +41,7 @@ class ProjectivePathResult:
     )
 
     def affine_endpoint(self):
+        """Return the finite endpoint in affine coordinates, rejecting an infinite endpoint."""
         if self.classification != "finite":
             raise ValueError("endpoint is not numerically resolved as finite")
         return tuple(v / self.endpoint[-1] for v in self.endpoint[:-1])
@@ -102,7 +104,7 @@ def track_projective_path(
         raise ValueError("homogeneous start point dimension does not match")
     segments, switches = [], []
     chart = projective
-    with mp.workdps(opts.max_digits + 10):
+    with working_precision(opts.max_digits + 10):
         point = tuple(number_to_mpc(v, opts.max_digits + 5) for v in start)
         if any(not mp.isfinite(v) for v in point) or max(abs(v) for v in point) == 0:
             raise ValueError("homogeneous point must be finite and nonzero")

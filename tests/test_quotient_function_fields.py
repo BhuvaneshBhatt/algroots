@@ -101,7 +101,7 @@ def test_domain_matrix_actions_are_exact_homomorphisms():
         q.multiplication_matrix(x, representation="approximate")
 
 
-def test_proper_subfield_short_closure_is_not_characteristic_polynomial():
+def test_subfield_short_closure():
     q = QuotientAlgebra.from_polynomials((x**4 - z,), (x,), domain=K)
     assert q.minimal_polynomial(x * x, y) == sp.Poly(y * y - z, y, domain=K)
     assert q.characteristic_polynomial(x * x, y) == sp.Poly((y * y - z) ** 2, y, domain=K)

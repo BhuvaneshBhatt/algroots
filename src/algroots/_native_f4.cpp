@@ -1,5 +1,5 @@
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "_python_abi.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -41,7 +41,7 @@ struct MonHash {
 // IDs are scoped to one native call: their only valid use is as cache keys
 // within that computation.  Distinct prime computations cannot compare IDs.
 struct InternedMon {
-  std::shared_ptr<const std::vector<unsigned>> coefficients;
+  std::shared_ptr<const std::vector<unsigned>> exponents;
   uint32_t id;
   uint64_t total_degree;
   uint64_t support_mask;
@@ -49,44 +49,40 @@ struct InternedMon {
   bool packed_valid;
 };
 struct MonPool {
-  std::unordered_map<std::vector<unsigned>, InternedMon, MonHash> symbols;
+  std::unordered_map<std::vector<unsigned>, InternedMon, MonHash> entries;
   std::vector<InternedMon> by_id;
   size_t hits = 0, misses = 0, max_entries = 2000000;
   InternedMon intern(std::vector<unsigned> m) {
     if (((hits + misses) & 4095) == 4095)
       native_check_signals();
-    auto found = symbols.find(m);
-    if (found != symbols.end()) {
+    auto found = entries.find(m);
+    if (found != entries.end()) {
       ++hits;
       return found->second;
     }
     if (by_id.size() >= max_entries)
       throw NativeBudgetError("native monomial interning budget exceeded");
-    auto coefficients =
-        std::make_shared<const std::vector<unsigned>>(std::move(m));
-    uint64_t degree = std::accumulate(coefficients->begin(),
-                                      coefficients->end(), uint64_t{0});
+    auto exponents = std::make_shared<const std::vector<unsigned>>(std::move(m));
+    uint64_t degree = std::accumulate(exponents->begin(), exponents->end(), uint64_t{0});
     uint64_t support = 0, packed = 0;
-    bool packable = coefficients->size() <= 8;
-    for (size_t i = 0; i < coefficients->size(); ++i) {
-      unsigned exponent = (*coefficients)[i];
+    bool packable = exponents->size() <= 8;
+    for (size_t i = 0; i < exponents->size(); ++i) {
+      unsigned exponent = (*exponents)[i];
       if (exponent && i < 64)
         support |= uint64_t{1} << i;
       if (exponent > 255)
         packable = false;
       packed = (packed << 8) | static_cast<uint8_t>(exponent);
     }
-    InternedMon record{coefficients, static_cast<uint32_t>(by_id.size() + 1),
-                       degree,       support,
-                       packed,       packable};
-    symbols.emplace(*coefficients, record);
+    InternedMon record{exponents, static_cast<uint32_t>(by_id.size() + 1), degree, support, packed,
+                       packable};
+    entries.emplace(*exponents, record);
     by_id.push_back(record);
     ++misses;
     return record;
   }
 };
 static thread_local MonPool *active_mon_pool = nullptr;
-static constexpr bool active_packed_monomials = true;
 class Mon {
   std::shared_ptr<const std::vector<unsigned>> data_;
   uint32_t intern_id_ = 0;
@@ -98,19 +94,19 @@ class Mon {
   void assign(std::vector<unsigned> v) {
     if (active_mon_pool) {
       auto r = active_mon_pool->intern(std::move(v));
-      data_ = std::move(r.coefficients);
+      data_ = std::move(r.exponents);
       intern_id_ = r.id;
       total_degree_ = r.total_degree;
       support_mask_ = r.support_mask;
       packed_key_ = r.packed_key;
-      packed_valid_ = r.packed_valid && active_packed_monomials;
+      packed_valid_ = r.packed_valid;
     } else {
       total_degree_ = std::accumulate(v.begin(), v.end(), uint64_t{0});
       support_mask_ = 0;
       for (size_t i = 0; i < v.size(); ++i)
         if (v[i] && i < 64)
           support_mask_ |= (uint64_t{1} << i);
-      packed_valid_ = active_packed_monomials && v.size() <= 8;
+      packed_valid_ = v.size() <= 8;
       packed_key_ = 0;
       for (unsigned exp : v) {
         if (exp > 255)
@@ -129,12 +125,12 @@ public:
       throw std::runtime_error("invalid contiguous monomial ID");
     const auto &r = active_mon_pool->by_id[id - 1];
     Mon m(0);
-    m.data_ = r.coefficients;
+    m.data_ = r.exponents;
     m.intern_id_ = r.id;
     m.total_degree_ = r.total_degree;
     m.support_mask_ = r.support_mask;
     m.packed_key_ = r.packed_key;
-    m.packed_valid_ = r.packed_valid && active_packed_monomials;
+    m.packed_valid_ = r.packed_valid;
     return m;
   }
   explicit Mon(std::vector<unsigned> v) { assign(std::move(v)); }
@@ -159,16 +155,14 @@ public:
   bool operator==(const Mon &o) const {
     if (size() == o.size() && packed_valid_ && o.packed_valid_)
       return packed_key_ == o.packed_key_;
-    return (intern_id_ && intern_id_ == o.intern_id_ && data_ == o.data_) ||
-           data_ == o.data_ || *data_ == *o.data_;
+    return (intern_id_ && intern_id_ == o.intern_id_ && data_ == o.data_) || data_ == o.data_ ||
+           *data_ == *o.data_;
   }
   bool operator!=(const Mon &o) const { return !(*this == o); }
 };
 struct MonPoolScope {
   MonPool *before;
-  explicit MonPoolScope(MonPool &pool) : before(active_mon_pool) {
-    active_mon_pool = &pool;
-  }
+  explicit MonPoolScope(MonPool &pool) : before(active_mon_pool) { active_mon_pool = &pool; }
   ~MonPoolScope() { active_mon_pool = before; }
 };
 static int compare(const Mon &a, const Mon &b, int order);
@@ -176,9 +170,7 @@ static int compare(const Mon &a, const Mon &b, int order);
 static thread_local int active_poly_order = 2;
 struct MonOrder {
   int order = active_poly_order;
-  bool operator()(const Mon &a, const Mon &b) const {
-    return compare(a, b, order) > 0;
-  }
+  bool operator()(const Mon &a, const Mon &b) const { return compare(a, b, order) > 0; }
 };
 using Poly = std::map<Mon, uint64_t, MonOrder>;
 
@@ -207,8 +199,7 @@ struct Engine {
   std::map<uint64_t, std::deque<Pair>> f4_degree_queue;
   size_t f4_degree_queue_size = 0;
   size_t f4_pair_select_ns = 0, f4_spoly_ns = 0, f4_symbolic_ns = 0;
-  size_t f4_assembly_ns = 0, f4_elimination_ns = 0, f4_insertion_ns = 0,
-         f4_finish_ns = 0;
+  size_t f4_assembly_ns = 0, f4_elimination_ns = 0, f4_insertion_ns = 0, f4_finish_ns = 0;
   size_t f4_index_lookup_hits = 0;
 
   bool collect_batch_metrics = false;
@@ -229,8 +220,7 @@ struct Engine {
   size_t block_sparse_rows = 0, block_dense_rows = 0;
   size_t block_reducer_pivots = 0, block_work_pivots = 0;
 
-  size_t matrix_peak_width = 0, matrix_peak_rows = 0,
-         matrix_peak_reducer_rows = 0;
+  size_t matrix_peak_width = 0, matrix_peak_rows = 0, matrix_peak_reducer_rows = 0;
   size_t matrix_peak_echelon = 0, matrix_preprocessed_batches = 0;
 
   size_t pair_index_candidates = 0, pair_index_degree_skips = 0;
@@ -239,8 +229,8 @@ struct Engine {
   size_t f4_reduction_passes = 0;
   std::vector<FlatTerm> flat_basis_terms;
   std::vector<size_t> flat_basis_offsets{0};
-  size_t flat_matrix_terms = 0, flat_pivot_terms_peak = 0,
-         flat_row_reductions = 0, flat_matrix_batches = 0;
+  size_t flat_matrix_terms = 0, flat_pivot_terms_peak = 0, flat_row_reductions = 0,
+         flat_matrix_batches = 0;
   size_t flat_reducer_pivots_excluded = 0;
   size_t f4_reducer_candidates = 0, f4_reducer_divides = 0;
 
@@ -284,8 +274,7 @@ static Mon mlcm(const Mon &a, const Mon &b) {
 }
 struct MonomialDivisibility {
   static inline bool exact(const Mon &a, const Mon &b) {
-    if (a.total_degree() > b.total_degree() ||
-        (a.support_mask() & ~b.support_mask()))
+    if (a.total_degree() > b.total_degree() || (a.support_mask() & ~b.support_mask()))
       return false;
     for (size_t i = 0; i < a.size(); ++i)
       if (a[i] > b[i])
@@ -293,14 +282,11 @@ struct MonomialDivisibility {
     return true;
   }
 };
-static inline bool divides(const Mon &a, const Mon &b) {
-  return MonomialDivisibility::exact(a, b);
-}
+static inline bool divides(const Mon &a, const Mon &b) { return MonomialDivisibility::exact(a, b); }
 
 struct ReducerSelection {
   template <class Candidates, class Eligible>
-  static inline size_t first(const Candidates &candidates,
-                             Eligible &&eligible) {
+  static inline size_t first(const Candidates &candidates, Eligible &&eligible) {
     for (size_t pos = 0; pos < candidates.size(); ++pos) {
       const size_t i = candidates[pos];
       if (eligible(i))
@@ -337,9 +323,7 @@ static int compare(const Mon &a, const Mon &b, int order) {
 #else
     const unsigned shift = (static_cast<unsigned>(__builtin_ctzll(x)) >> 3) * 8;
 #endif
-    return ((a.packed_key() >> shift) & 255) < ((b.packed_key() >> shift) & 255)
-               ? 1
-               : -1;
+    return ((a.packed_key() >> shift) & 255) < ((b.packed_key() >> shift) & 255) ? 1 : -1;
   }
   if (order == 2) {
     for (size_t k = a.size(); k-- > 0;)
@@ -376,8 +360,8 @@ static uint64_t inverse(uint64_t a, unsigned p) {
 }
 template <class Storage> struct SparseArithmetic;
 template <> struct SparseArithmetic<Poly> {
-  static inline void subtract_shifted(Poly &f, const Poly &g, const Mon &shift,
-                                      uint64_t scale, const Engine &e) {
+  static inline void subtract_shifted(Poly &f, const Poly &g, const Mon &shift, uint64_t scale,
+                                      const Engine &e) {
     for (const auto &[m, c] : g) {
       Mon k = plus(m, shift);
       uint64_t a = c * scale % e.p;
@@ -393,8 +377,8 @@ template <> struct SparseArithmetic<Poly> {
       throw NativeBudgetError("native F4 term budget exceeded");
   }
 };
-static inline void subtract_multiple(Poly &f, const Poly &g, const Mon &shift,
-                                     uint64_t scale, const Engine &e) {
+static inline void subtract_multiple(Poly &f, const Poly &g, const Mon &shift, uint64_t scale,
+                                     const Engine &e) {
   SparseArithmetic<Poly>::subtract_shifted(f, g, shift, scale, e);
 }
 static void monic(Poly &f, const Engine &e) {
@@ -405,8 +389,8 @@ static void monic(Poly &f, const Engine &e) {
     c = c * scalar % e.p;
 }
 
-static Poly normal_form(Poly f, const std::vector<Poly> &divisors,
-                        const Engine &e, size_t skip = SIZE_MAX) {
+static Poly normal_form(Poly f, const std::vector<Poly> &divisors, const Engine &e,
+                        size_t skip = SIZE_MAX) {
   Poly remainder;
   // Cache leading monomials once per normal-form call. Re-scanning full
   // reducer polynomials for each intermediate term is a major F4 bottleneck.
@@ -430,8 +414,7 @@ static Poly normal_form(Poly f, const std::vector<Poly> &divisors,
       if (!divides(lm, m))
         continue;
 
-      subtract_multiple(f, d, minus(m, lm), c * inverse(d.at(lm), e.p) % e.p,
-                        e);
+      subtract_multiple(f, d, minus(m, lm), c * inverse(d.at(lm), e.p) % e.p, e);
       done = true;
       break;
     }
@@ -448,19 +431,16 @@ static Poly normal_form(Poly f, const std::vector<Poly> &divisors,
 // The priority queue is a lazy ordered frontier: polynomial reductions only
 // produce monomials strictly smaller than the current leading monomial.
 // We verify the same strict descent as the ordered-map normal form.
-static Poly hashed_normal_form(Poly f, const std::vector<Poly> &divisors,
-                               const Engine &e, size_t skip = SIZE_MAX) {
+static Poly hashed_normal_form(Poly f, const std::vector<Poly> &divisors, const Engine &e,
+                               size_t skip = SIZE_MAX) {
   if (!active_mon_pool)
     throw std::runtime_error("hashed normal form requires monomial interning");
 
   struct LowerPriority {
     int order;
-    bool operator()(const Mon &a, const Mon &b) const {
-      return compare(a, b, order) < 0;
-    }
+    bool operator()(const Mon &a, const Mon &b) const { return compare(a, b, order) < 0; }
   };
-  std::priority_queue<Mon, std::vector<Mon>, LowerPriority> frontier(
-      LowerPriority{e.order});
+  std::priority_queue<Mon, std::vector<Mon>, LowerPriority> frontier(LowerPriority{e.order});
   std::unordered_map<uint32_t, uint32_t> coefficients;
   coefficients.reserve(f.size() * 2 + 16);
   for (const auto &[m, c] : f) {
@@ -509,8 +489,7 @@ static Poly hashed_normal_form(Poly f, const std::vector<Poly> &divisors,
     }
 
     const Mon shift = minus(m, leading[chosen]);
-    const uint64_t scale =
-        static_cast<uint64_t>(c) * inverse_leads[chosen] % e.p;
+    const uint64_t scale = static_cast<uint64_t>(c) * inverse_leads[chosen] % e.p;
     for (const auto &[term, coefficient] : divisors[chosen]) {
       if (term == leading[chosen])
         continue; // leading term cancels exactly
@@ -518,11 +497,10 @@ static Poly hashed_normal_form(Poly f, const std::vector<Poly> &divisors,
       if (compare(shifted, m, e.order) >= 0)
         throw std::runtime_error("nondecreasing hashed polynomial reduction");
       const auto previous = coefficients.find(shifted.id());
-      const uint32_t old =
-          previous == coefficients.end() ? 0 : previous->second;
+      const uint32_t old = previous == coefficients.end() ? 0 : previous->second;
       const uint32_t amount = static_cast<uint32_t>(scale * coefficient % e.p);
-      const uint32_t next = static_cast<uint32_t>(
-          (static_cast<uint64_t>(old) + e.p - amount) % e.p);
+      const uint32_t next =
+          static_cast<uint32_t>((static_cast<uint64_t>(old) + e.p - amount) % e.p);
       if (!next)
         coefficients.erase(shifted.id());
       else {
@@ -549,9 +527,8 @@ static void insert(Engine &e, Poly f) {
   // Reduce against the entire current basis: earlier insertions can introduce
   // new reducers after the matrix echelon rows were computed.
 
-  f = ((e.basis.size() > 64))
-          ? hashed_normal_form(std::move(f), e.basis, e, SIZE_MAX)
-          : normal_form(std::move(f), e.basis, e, SIZE_MAX);
+  f = e.basis.size() > 64 ? hashed_normal_form(std::move(f), e.basis, e, SIZE_MAX)
+                          : normal_form(std::move(f), e.basis, e, SIZE_MAX);
 
   if (f.empty())
     return;
@@ -571,30 +548,27 @@ static void insert(Engine &e, Poly f) {
     }
   }
   std::vector<size_t> degree_candidates;
-  const bool use_indexed_chain = (((e.basis.size() > 128)));
-  if ((use_indexed_chain)) {
+  const bool use_indexed_chain = e.basis.size() > 128;
+  if (use_indexed_chain) {
     degree_candidates.resize(new_lcms.size());
     std::iota(degree_candidates.begin(), degree_candidates.end(), 0);
-    std::sort(degree_candidates.begin(), degree_candidates.end(),
-              [&](size_t a, size_t b) {
-                if (degree(new_lcms[a]) != degree(new_lcms[b]))
-                  return degree(new_lcms[a]) < degree(new_lcms[b]);
-                return a < b;
-              });
+    std::sort(degree_candidates.begin(), degree_candidates.end(), [&](size_t a, size_t b) {
+      if (degree(new_lcms[a]) != degree(new_lcms[b]))
+        return degree(new_lcms[a]) < degree(new_lcms[b]);
+      return a < b;
+    });
   }
   for (size_t i = 0; i < e.basis.size(); ++i) {
-    Mon old = (old_leads[i]);
-    Mon l = (new_lcms[i]);
+    Mon old = old_leads[i];
+    Mon l = new_lcms[i];
     if (degree(l) == degree(old) + degree(lm))
       continue; // Buchberger product criterion
     {
       bool redundant = false;
       if (use_indexed_chain) {
         const auto stop =
-            std::lower_bound(degree_candidates.begin(), degree_candidates.end(),
-                             degree(l), [&](size_t k, uint64_t bound) {
-                               return degree(new_lcms[k]) < bound;
-                             });
+            std::lower_bound(degree_candidates.begin(), degree_candidates.end(), degree(l),
+                             [&](size_t k, uint64_t bound) { return degree(new_lcms[k]) < bound; });
         e.pair_index_degree_skips += degree_candidates.end() - stop;
         for (auto it = degree_candidates.begin(); it != stop; ++it) {
           size_t k = *it;
@@ -632,12 +606,12 @@ static void insert(Engine &e, Poly f) {
       }
     }
     {
-      uint64_t d = (degree(l));
+      uint64_t d = degree(l);
 
       e.f4_degree_queue[d].emplace_back(i, e.basis.size(), std::move(l));
       ++e.f4_degree_queue_size;
     }
-    e.max_queued_pairs = std::max(e.max_queued_pairs, (e.f4_degree_queue_size));
+    e.max_queued_pairs = std::max(e.max_queued_pairs, e.f4_degree_queue_size);
   }
   // Buchberger's LCM-chain criterion: old pair (i,j) is redundant if
   // the new leading monomial connects i and j through two strictly
@@ -645,8 +619,7 @@ static void insert(Engine &e, Poly f) {
   // criterion, so the corresponding S-polynomial representation follows
   // from syzygies with strictly smaller critical monomials.
   {
-    for (auto bucket = e.f4_degree_queue.begin();
-         bucket != e.f4_degree_queue.end();) {
+    for (auto bucket = e.f4_degree_queue.begin(); bucket != e.f4_degree_queue.end();) {
       auto &entries = bucket->second;
       for (auto it = entries.begin(); it != entries.end();) {
         size_t i = std::get<0>(*it), j = std::get<1>(*it);
@@ -683,13 +656,11 @@ static void insert(Engine &e, Poly f) {
 
   e.basis.push_back(std::move(f));
 
-  e.peak_intermediate_basis =
-      std::max(e.peak_intermediate_basis, e.basis.size());
+  e.peak_intermediate_basis = std::max(e.peak_intermediate_basis, e.basis.size());
   if (e.basis.size() > e.max_basis)
     throw NativeBudgetError("native F4 basis limit");
 }
-static Poly s_poly(const Poly &a, const Poly &b, const Mon &l,
-                   const Engine &e) {
+static Poly s_poly(const Poly &a, const Poly &b, const Mon &l, const Engine &e) {
   Mon lm = lead(a, e), rm = lead(b, e);
   Poly s;
   subtract_multiple(s, a, minus(l, lm), e.p - inverse(a.at(lm), e.p), e);
@@ -698,11 +669,9 @@ static Poly s_poly(const Poly &a, const Poly &b, const Mon &l,
 }
 // Merge shifted sorted streams: translation preserves the term order,
 // and the two leading terms cancel before lower coefficients are combined.
-static Poly merged_s_poly(const Poly &a, const Poly &b, const Mon &l,
-                          const Engine &e) {
+static Poly merged_s_poly(const Poly &a, const Poly &b, const Mon &l, const Engine &e) {
   const Mon shift_a = minus(l, lead(a, e)), shift_b = minus(l, lead(b, e));
-  const uint64_t inv_a = inverse(a.begin()->second, e.p),
-                 inv_b = inverse(b.begin()->second, e.p);
+  const uint64_t inv_a = inverse(a.begin()->second, e.p), inv_b = inverse(b.begin()->second, e.p);
   auto ai = std::next(a.begin()), bi = std::next(b.begin());
   std::optional<Mon> ma, mb;
   Poly result;
@@ -772,8 +741,7 @@ static Layout layout(Engine &e, const std::vector<Poly> &ss) {
     size_t chosen = SIZE_MAX;
 
     if (chosen == SIZE_MAX) {
-      chosen = (ReducerSelection::first(DenseReducerCandidates{e.basis.size()},
-                                        eligible));
+      chosen = (ReducerSelection::first(DenseReducerCandidates{e.basis.size()}, eligible));
     }
     if (chosen != SIZE_MAX) {
       const Mon shift = minus(m, leading[chosen]);
@@ -798,14 +766,11 @@ static Layout layout(Engine &e, const std::vector<Poly> &ss) {
   }
   std::vector<Mon> cols;
   cols.assign(supports.begin(), supports.end());
-  std::sort(cols.begin(), cols.end(), [&](const auto &a, const auto &b) {
-    return compare(a, b, e.order) > 0;
+  std::sort(cols.begin(), cols.end(),
+            [&](const auto &a, const auto &b) { return compare(a, b, e.order) > 0; });
+  std::sort(reducers.begin(), reducers.end(), [&](const auto &a, const auto &b) {
+    return compare(plus(a.first, leading[a.second]), plus(b.first, leading[b.second]), e.order) > 0;
   });
-  std::sort(reducers.begin(), reducers.end(),
-            [&](const auto &a, const auto &b) {
-              return compare(plus(a.first, leading[a.second]),
-                             plus(b.first, leading[b.second]), e.order) > 0;
-            });
 
   return {std::move(cols), std::move(reducers)};
 }
@@ -815,8 +780,7 @@ static Layout layout(Engine &e, const std::vector<Poly> &ss) {
 // Each support monomial is enqueued once at minimum discovery depth.
 static Layout indexed_symbolic_layout(Engine &e, const std::vector<Poly> &ss) {
   if (!active_mon_pool)
-    throw std::runtime_error(
-        "indexed symbolic preprocessing requires monomial interning");
+    throw std::runtime_error("indexed symbolic preprocessing requires monomial interning");
   std::unordered_set<uint32_t> support;
 
   std::deque<std::pair<uint32_t, unsigned>> pending;
@@ -862,8 +826,7 @@ static Layout indexed_symbolic_layout(Engine &e, const std::vector<Poly> &ss) {
     size_t chosen = SIZE_MAX;
 
     if (chosen == SIZE_MAX) {
-      chosen = (ReducerSelection::first(DenseReducerCandidates{e.basis.size()},
-                                        eligible));
+      chosen = (ReducerSelection::first(DenseReducerCandidates{e.basis.size()}, eligible));
     }
     if (chosen != SIZE_MAX) {
       const Mon shift = minus(mon, leads[chosen]);
@@ -877,7 +840,7 @@ static Layout indexed_symbolic_layout(Engine &e, const std::vector<Poly> &ss) {
         }
       }
     }
-    if (((support.size())) > e.max_terms || reducers.size() > e.max_terms)
+    if (support.size() > e.max_terms || reducers.size() > e.max_terms)
       throw NativeBudgetError("native F4 symbolic budget exceeded");
   }
   std::vector<Mon> columns;
@@ -886,14 +849,11 @@ static Layout indexed_symbolic_layout(Engine &e, const std::vector<Poly> &ss) {
     for (uint32_t id : support)
       columns.push_back(Mon::from_id(id));
   }
-  std::sort(columns.begin(), columns.end(), [&](const Mon &a, const Mon &b) {
-    return compare(a, b, e.order) > 0;
+  std::sort(columns.begin(), columns.end(),
+            [&](const Mon &a, const Mon &b) { return compare(a, b, e.order) > 0; });
+  std::sort(reducers.begin(), reducers.end(), [&](const Reducer &a, const Reducer &b) {
+    return compare(plus(a.first, leads[a.second]), plus(b.first, leads[b.second]), e.order) > 0;
   });
-  std::sort(reducers.begin(), reducers.end(),
-            [&](const Reducer &a, const Reducer &b) {
-              return compare(plus(a.first, leads[a.second]),
-                             plus(b.first, leads[b.second]), e.order) > 0;
-            });
 
   ++e.symbolic_hash_batches;
   e.symbolic_hash_columns += columns.size();
@@ -915,9 +875,8 @@ struct FlatSparseStorage {};
 template <> struct SparseArithmetic<FlatSparseStorage> {
   static inline void subtract_shifted(std::vector<FlatColumn> &out,
                                       const std::vector<FlatColumn> &row,
-                                      const std::vector<FlatColumn> &pivots,
-                                      size_t start, size_t end, uint64_t scale,
-                                      unsigned p) {
+                                      const std::vector<FlatColumn> &pivots, size_t start,
+                                      size_t end, uint64_t scale, unsigned p) {
     constexpr uint32_t absent = UINT32_MAX;
     out.clear();
     size_t i = 0, j = start;
@@ -929,15 +888,14 @@ template <> struct SparseArithmetic<FlatSparseStorage> {
         continue;
       }
       if (b < a) {
-        const uint32_t v =
-            static_cast<uint32_t>((p - scale * pivots[j].coefficient % p) % p);
+        const uint32_t v = static_cast<uint32_t>((p - scale * pivots[j].coefficient % p) % p);
         if (v)
           out.push_back({b, v});
         ++j;
         continue;
       }
-      const uint32_t v = static_cast<uint32_t>(
-          (row[i].coefficient + p - scale * pivots[j].coefficient % p) % p);
+      const uint32_t v =
+          static_cast<uint32_t>((row[i].coefficient + p - scale * pivots[j].coefficient % p) % p);
       if (v)
         out.push_back({a, v});
       ++i;
@@ -945,18 +903,15 @@ template <> struct SparseArithmetic<FlatSparseStorage> {
     }
   }
 };
-static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
-                                                const std::vector<Poly> &ss,
+static std::vector<Poly> reduce_contiguous_rows(const Layout &spec, const std::vector<Poly> &ss,
                                                 Engine &e) {
   if ((!active_mon_pool))
-    throw std::runtime_error(
-        "flat backend requires contiguous basis and interned monomials");
+    throw std::runtime_error("flat backend requires contiguous basis and interned monomials");
   const auto width = spec.columns.size();
   if (width > static_cast<size_t>(UINT32_MAX))
     throw std::runtime_error("flat matrix column overflow");
   constexpr uint32_t absent = UINT32_MAX;
-  std::vector<uint32_t> mon_to_column(active_mon_pool->by_id.size() + 1,
-                                      absent);
+  std::vector<uint32_t> mon_to_column(active_mon_pool->by_id.size() + 1, absent);
   for (size_t col = 0; col < width; ++col) {
     const auto id = spec.columns[col].id();
     if (!id || id >= mon_to_column.size())
@@ -977,8 +932,7 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
   std::vector<FlatColumn> row_terms;
   std::vector<FlatColumn> raw;
   auto commit_row = [&]() {
-    std::sort(raw.begin(), raw.end(),
-              [](auto a, auto b) { return a.column < b.column; });
+    std::sort(raw.begin(), raw.end(), [](auto a, auto b) { return a.column < b.column; });
     for (size_t i = 1; i < raw.size(); ++i)
       if (raw[i].column == raw[i - 1].column)
         throw std::runtime_error("duplicate flat matrix column");
@@ -989,11 +943,9 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
   for (const auto &[shift, i] : spec.reducers) {
     if (i + 1 >= e.flat_basis_offsets.size())
       throw std::runtime_error("flat basis index overflow");
-    for (size_t j = e.flat_basis_offsets[i]; j < e.flat_basis_offsets[i + 1];
-         ++j) {
+    for (size_t j = e.flat_basis_offsets[i]; j < e.flat_basis_offsets[i + 1]; ++j) {
       const auto &t = e.flat_basis_terms[j];
-      raw.push_back(
-          {index_of(plus(Mon::from_id(t.monomial), shift)), t.coefficient});
+      raw.push_back({index_of(plus(Mon::from_id(t.monomial), shift)), t.coefficient});
     }
     commit_row();
   }
@@ -1019,15 +971,13 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
   std::vector<uint32_t> dense_tiles;
   std::vector<size_t> tile_start(width, SIZE_MAX), tile_count(width, 0);
   size_t pivot_count = 0;
-  auto register_tiled_pivot = [&](uint32_t leading, size_t begin,
-                                  size_t count) {
+  auto register_tiled_pivot = [&](uint32_t leading, size_t begin, size_t count) {
     ++pivot_count;
 
     tile_start[leading] = tiles.size();
     const size_t end = begin + count;
     for (size_t pos = begin; pos < end;) {
-      const uint32_t first =
-          (pivot_terms[pos].column / tile_width) * tile_width;
+      const uint32_t first = (pivot_terms[pos].column / tile_width) * tile_width;
       size_t last = pos;
       while (last < end && pivot_terms[last].column < first + tile_width)
         ++last;
@@ -1036,8 +986,7 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
       // below the threshold continue using the zero-copy sparse CSR view.
       constexpr double required_occupancy = 0.625;
       const bool use_dense =
-          length >=
-              static_cast<size_t>(std::ceil(required_occupancy * tile_width)) &&
+          length >= static_cast<size_t>(std::ceil(required_occupancy * tile_width)) &&
           first + tile_width <= width;
       if (use_dense) {
         if (dense_tiles.size() > UINT32_MAX - tile_width)
@@ -1047,16 +996,13 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
         if (dense_tiles.size() > e.max_terms * 32)
           throw NativeBudgetError("F4 dense pivot tile memory budget exceeded");
         for (size_t j = pos; j < last; ++j)
-          dense_tiles[dense_offset + pivot_terms[j].column - first] =
-              pivot_terms[j].coefficient;
-        tiles.push_back(
-            {first, dense_offset, static_cast<uint16_t>(length), true});
+          dense_tiles[dense_offset + pivot_terms[j].column - first] = pivot_terms[j].coefficient;
+        tiles.push_back({first, dense_offset, static_cast<uint16_t>(length), true});
         ++e.matrix_tile_dense;
       } else {
         if (pos > UINT32_MAX)
           throw std::runtime_error("F4 sparse tile offset overflow");
-        tiles.push_back({first, static_cast<uint32_t>(pos),
-                         static_cast<uint16_t>(length), false});
+        tiles.push_back({first, static_cast<uint32_t>(pos), static_cast<uint16_t>(length), false});
         ++e.matrix_tile_sparse;
       }
       pos = last;
@@ -1090,24 +1036,18 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
       e.block_reducer_nnz += row.size();
       e.block_reducer_cells += width;
     }
-    const double row_density =
-        width ? static_cast<double>(row.size()) / width : 0.0;
+    const double row_density = width ? static_cast<double>(row.size()) / width : 0.0;
     const double pivot_density =
-        (width && pivot_count)
-            ? static_cast<double>(pivot_terms.size()) / (width * pivot_count)
-            : 0.0;
+        (width && pivot_count) ? static_cast<double>(pivot_terms.size()) / (width * pivot_count)
+                               : 0.0;
     const double tiled_threshold =
-        (std::clamp(0.20 - 0.20 * pivot_density + (width < 512 ? 0.04 : -0.025),
-                    0.10, 0.26));
+        std::clamp(0.20 - 0.20 * pivot_density + (width < 512 ? 0.04 : -0.025), 0.10, 0.26);
     const bool dense_work =
-        (work_row) && width <= 8192 &&
-        ((((width >= 192) && row_density >= tiled_threshold)));
+        work_row && width <= 8192 && width >= 192 && row_density >= tiled_threshold;
     if (dense_work) {
       ++e.block_dense_rows;
       ++e.matrix_tiled_rows;
-      std::vector<uint32_t> dense_local;
-      std::vector<uint32_t> &dense = (dense_local);
-      dense.resize(width, 0);
+      std::vector<uint32_t> dense(width, 0);
       for (const auto &t : row)
         dense[t.column] = t.coefficient;
       for (size_t column = 0; column < width; ++column) {
@@ -1115,8 +1055,7 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
         if (!coefficient)
           continue;
         if (e.step_limit())
-          throw NativeBudgetError(
-              "F4 block dense reduction step budget exceeded");
+          throw NativeBudgetError("F4 block dense reduction step budget exceeded");
         const size_t pivot_start = pivot_offset[column];
         if (pivot_start != SIZE_MAX) {
           ++e.flat_row_reductions;
@@ -1124,29 +1063,25 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
             ++e.matrix_tile_updates;
             if (tile_start[column] == SIZE_MAX)
               throw std::runtime_error("missing F4 pivot tile metadata");
-            for (size_t k = tile_start[column];
-                 k < tile_start[column] + tile_count[column]; ++k) {
+            for (size_t k = tile_start[column]; k < tile_start[column] + tile_count[column]; ++k) {
               const auto &block = tiles[k];
               if (block.dense) {
                 // 64 contiguous positions form the cache-local multiplication
                 // tile.
                 for (uint32_t j = 0; j < tile_width; ++j) {
-                  const uint64_t amount = static_cast<uint64_t>(coefficient) *
-                                          dense_tiles[block.offset + j] % e.p;
+                  const uint64_t amount =
+                      static_cast<uint64_t>(coefficient) * dense_tiles[block.offset + j] % e.p;
                   dense[block.first_column + j] = static_cast<uint32_t>(
-                      (static_cast<uint64_t>(dense[block.first_column + j]) +
-                       e.p - amount) %
-                      e.p);
+                      (static_cast<uint64_t>(dense[block.first_column + j]) + e.p - amount) % e.p);
                 }
               } else {
-                for (size_t j = block.offset;
-                     j < static_cast<size_t>(block.offset) + block.nnz; ++j) {
+                for (size_t j = block.offset; j < static_cast<size_t>(block.offset) + block.nnz;
+                     ++j) {
                   const auto &t = pivot_terms[j];
-                  const uint32_t amount = static_cast<uint32_t>(
-                      static_cast<uint64_t>(coefficient) * t.coefficient % e.p);
+                  const uint32_t amount = static_cast<uint32_t>(static_cast<uint64_t>(coefficient) *
+                                                                t.coefficient % e.p);
                   dense[t.column] = static_cast<uint32_t>(
-                      (static_cast<uint64_t>(dense[t.column]) + e.p - amount) %
-                      e.p);
+                      (static_cast<uint64_t>(dense[t.column]) + e.p - amount) % e.p);
                 }
               }
             }
@@ -1160,22 +1095,19 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
         ;
         for (size_t j = column; j < width; ++j) {
           if (dense[j])
-            committed.push_back({static_cast<uint32_t>(j),
-                                 static_cast<uint32_t>(dense[j] * inv % e.p)});
+            committed.push_back(
+                {static_cast<uint32_t>(j), static_cast<uint32_t>(dense[j] * inv % e.p)});
         }
         if (committed.size() > e.max_terms)
           throw NativeBudgetError("F4 block dense row term budget exceeded");
         pivot_offset[column] = pivot_terms.size();
         pivot_length[column] = committed.size();
-        pivot_terms.insert(pivot_terms.end(), committed.begin(),
-                           committed.end());
-        register_tiled_pivot(static_cast<uint32_t>(column),
-                             pivot_offset[column], pivot_length[column]);
-        e.flat_pivot_terms_peak =
-            std::max(e.flat_pivot_terms_peak, pivot_terms.size());
+        pivot_terms.insert(pivot_terms.end(), committed.begin(), committed.end());
+        register_tiled_pivot(static_cast<uint32_t>(column), pivot_offset[column],
+                             pivot_length[column]);
+        e.flat_pivot_terms_peak = std::max(e.flat_pivot_terms_peak, pivot_terms.size());
         if (pivot_terms.size() > e.max_terms * 32)
-          throw NativeBudgetError(
-              "F4 contiguous pivot-term memory budget exceeded");
+          throw NativeBudgetError("F4 contiguous pivot-term memory budget exceeded");
         Poly polynomial;
         for (const auto &t : committed)
           polynomial.emplace(spec.columns[t.column], t.coefficient);
@@ -1188,8 +1120,7 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
     ++e.block_sparse_rows;
     while (!row.empty()) {
       if (e.step_limit())
-        throw NativeBudgetError(
-            "F4 contiguous matrix reduction step budget exceeded");
+        throw NativeBudgetError("F4 contiguous matrix reduction step budget exceeded");
       const uint32_t lead_col = row.front().column;
 
       const size_t pivot_start = pivot_offset[lead_col];
@@ -1199,18 +1130,14 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
         pivot_length[lead_col] = row.size();
         Poly polynomial;
         for (auto &term : row) {
-          term.coefficient =
-              static_cast<uint32_t>(term.coefficient * inv % e.p);
+          term.coefficient = static_cast<uint32_t>(term.coefficient * inv % e.p);
           polynomial.emplace(spec.columns[term.column], term.coefficient);
         }
         pivot_terms.insert(pivot_terms.end(), row.begin(), row.end());
-        register_tiled_pivot(lead_col, pivot_offset[lead_col],
-                             pivot_length[lead_col]);
-        e.flat_pivot_terms_peak =
-            std::max(e.flat_pivot_terms_peak, pivot_terms.size());
+        register_tiled_pivot(lead_col, pivot_offset[lead_col], pivot_length[lead_col]);
+        e.flat_pivot_terms_peak = std::max(e.flat_pivot_terms_peak, pivot_terms.size());
         if (pivot_terms.size() > e.max_terms * 32)
-          throw NativeBudgetError(
-              "F4 contiguous pivot-term memory budget exceeded");
+          throw NativeBudgetError("F4 contiguous pivot-term memory budget exceeded");
         // Only S-origin rows can contribute new information to this batch.
         // Reducer-origin rows remain as exact pivots, but are not candidates
         // for basis insertion. Every original reducer row is a basis multiple.
@@ -1226,8 +1153,8 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
       ++e.flat_row_reductions;
       const uint64_t scale = row.front().coefficient;
       const size_t end = pivot_start + pivot_length[lead_col];
-      SparseArithmetic<FlatSparseStorage>::subtract_shifted(
-          temp, row, pivot_terms, pivot_start, end, scale, e.p);
+      SparseArithmetic<FlatSparseStorage>::subtract_shifted(temp, row, pivot_terms, pivot_start,
+                                                            end, scale, e.p);
       if (temp.size() > e.max_terms)
         throw NativeBudgetError("F4 contiguous row term budget exceeded");
       row.swap(temp);
@@ -1241,8 +1168,7 @@ static std::vector<Poly> reduce_contiguous_rows(const Layout &spec,
 static void finish_basis(Engine &e);
 static uint64_t f4_elapsed_ns(std::chrono::steady_clock::time_point start) {
   return static_cast<uint64_t>(
-      std::chrono::duration_cast<std::chrono::nanoseconds>(
-          std::chrono::steady_clock::now() - start)
+      std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - start)
           .count());
 }
 static void run(Engine &e) {
@@ -1270,9 +1196,8 @@ static void run(Engine &e) {
     start = std::chrono::steady_clock::now();
     std::vector<Poly> ss;
     for (const auto &[i, j, m] : take) {
-      Poly s = ((e.basis.size() > 64))
-                   ? merged_s_poly(e.basis[i], e.basis[j], m, e)
-                   : s_poly(e.basis[i], e.basis[j], m, e);
+      Poly s = e.basis.size() > 64 ? merged_s_poly(e.basis[i], e.basis[j], m, e)
+                                   : s_poly(e.basis[i], e.basis[j], m, e);
       if (!s.empty())
         ss.push_back(std::move(s));
     }
@@ -1281,21 +1206,18 @@ static void run(Engine &e) {
     size_t lcm_min = SIZE_MAX, lcm_max = 0;
     if (e.collect_batch_metrics)
       for (const auto &pair : take) {
-        lcm_min =
-            std::min(lcm_min, static_cast<size_t>(degree(std::get<2>(pair))));
-        lcm_max =
-            std::max(lcm_max, static_cast<size_t>(degree(std::get<2>(pair))));
+        lcm_min = std::min(lcm_min, static_cast<size_t>(degree(std::get<2>(pair))));
+        lcm_max = std::max(lcm_max, static_cast<size_t>(degree(std::get<2>(pair))));
       }
     if (ss.empty()) {
       if (e.collect_batch_metrics)
-        e.batch_metrics.push_back({take.size(), lcm_min, lcm_max, 0,
-                                   e.basis.size(), e.basis.size(), 0, 0, 0, 0});
+        e.batch_metrics.push_back(
+            {take.size(), lcm_min, lcm_max, 0, e.basis.size(), e.basis.size(), 0, 0, 0, 0});
       continue;
     }
     start = std::chrono::steady_clock::now();
 
-    Layout spec = ((((e.basis.size() <= 128)))) ? indexed_symbolic_layout(e, ss)
-                                                : layout(e, ss);
+    Layout spec = e.basis.size() <= 128 ? indexed_symbolic_layout(e, ss) : layout(e, ss);
     const size_t symbolic_ns = f4_elapsed_ns(start);
     e.f4_symbolic_ns += symbolic_ns;
     const size_t matrix_rows = spec.reducers.size() + ss.size();
@@ -1304,21 +1226,15 @@ static void run(Engine &e) {
     e.layout_columns += spec.columns.size();
     ++e.matrix_preprocessed_batches;
     e.matrix_peak_width = std::max(e.matrix_peak_width, spec.columns.size());
-    e.matrix_peak_rows =
-        std::max(e.matrix_peak_rows, spec.reducers.size() + ss.size());
-    e.matrix_peak_reducer_rows =
-        std::max(e.matrix_peak_reducer_rows, spec.reducers.size());
+    e.matrix_peak_rows = std::max(e.matrix_peak_rows, spec.reducers.size() + ss.size());
+    e.matrix_peak_reducer_rows = std::max(e.matrix_peak_reducer_rows, spec.reducers.size());
 
     start = std::chrono::steady_clock::now();
     std::vector<Poly> rows;
 
     e.f4_assembly_ns += f4_elapsed_ns(start);
     start = std::chrono::steady_clock::now();
-    std::vector<Poly> echelon;
-
-    {
-      echelon = reduce_contiguous_rows(spec, ss, e);
-    }
+    auto echelon = reduce_contiguous_rows(spec, ss, e);
     const size_t elimination_ns = f4_elapsed_ns(start);
     e.f4_elimination_ns += elimination_ns;
     e.emitted_rows += echelon.size();
@@ -1332,9 +1248,8 @@ static void run(Engine &e) {
       size_t max_degree = 0;
       for (const auto &m : spec.columns)
         max_degree = std::max(max_degree, static_cast<size_t>(degree(m)));
-      e.batch_metrics.push_back({take.size(), lcm_min, lcm_max, matrix_rows,
-                                 spec.columns.size(), basis_before,
-                                 e.basis.size(), symbolic_ns, elimination_ns,
+      e.batch_metrics.push_back({take.size(), lcm_min, lcm_max, matrix_rows, spec.columns.size(),
+                                 basis_before, e.basis.size(), symbolic_ns, elimination_ns,
                                  insertion_ns, max_degree});
     }
 
@@ -1352,14 +1267,12 @@ static void run(Engine &e) {
 // A cached leading-term table is safe across all final normal forms because
 // their divisor set is immutable until the pass has completed.
 static Poly finish_nf_cached(Poly f, const std::vector<Poly> &divisors,
-                             const std::vector<Mon> &leads,
-                             const std::vector<uint64_t> &inverses, Engine &e,
-                             size_t skip) {
+                             const std::vector<Mon> &leads, const std::vector<uint64_t> &inverses,
+                             Engine &e, size_t skip) {
   Poly remainder;
   while (!f.empty()) {
     if (e.step_limit())
-      throw NativeBudgetError(
-          "F4 minimal final reduction step budget exceeded");
+      throw NativeBudgetError("F4 minimal final reduction step budget exceeded");
     const Mon m = f.begin()->first;
     const uint64_t c = f.begin()->second;
     size_t selected = divisors.size();
@@ -1382,7 +1295,7 @@ static Poly finish_nf_cached(Poly f, const std::vector<Poly> &divisors,
   }
   return remainder;
 }
-static void finish_basis_minimal(Engine &e) {
+static void finish_basis(Engine &e) {
   e.pre_interreduction_basis = e.basis.size();
   const size_t n = e.basis.size();
   std::vector<unsigned char> keep(n, 1);
@@ -1445,8 +1358,7 @@ static void finish_basis_minimal(Engine &e) {
       f = finish_nf_cached(basis[i], basis, leads, inverses, e, i);
     }
     if (f.empty() || f.begin()->first != leads[i])
-      throw std::runtime_error(
-          "F4 minimal final basis lost a leading monomial");
+      throw std::runtime_error("F4 minimal final basis lost a leading monomial");
     monic(f, e);
     reduced.push_back(std::move(f));
   }
@@ -1455,20 +1367,13 @@ static void finish_basis_minimal(Engine &e) {
   });
   // These cheap postconditions are independent of the reduction path.
   for (size_t i = 0; i < reduced.size(); ++i) {
-    for (auto term = std::next(reduced[i].begin()); term != reduced[i].end();
-         ++term)
+    for (auto term = std::next(reduced[i].begin()); term != reduced[i].end(); ++term)
       for (size_t j = 0; j < reduced.size(); ++j)
         if (divides(reduced[j].begin()->first, term->first))
           throw std::runtime_error("F4 minimal final basis has reducible tail");
   }
   e.basis = std::move(reduced);
   ++e.f4_reduction_passes;
-}
-static void finish_basis(Engine &e) {
-  {
-    finish_basis_minimal(e);
-    return;
-  }
 }
 
 #include "_native_f4_bindings.inc"

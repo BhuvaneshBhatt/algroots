@@ -1,7 +1,7 @@
 """Exact finite quotient algebras for zero-dimensional polynomial ideals.
 
 This module is the canonical home for the equality-only algebra shared by the
-RUR, action-matrix, and exact border-basis backends.  It deliberately contains
+RUR, action-matrix, and exact border-basis backends.  It contains
 no semialgebraic Boolean, sign, inequality, or quantifier logic.
 """
 
@@ -21,7 +21,7 @@ from sympy.polys.matrices.exceptions import DMNonInvertibleMatrixError
 from sympy.polys.orderings import grevlex
 
 from ._validation import validate_integer
-from .domains import domain_matrix, field_element, groebner, polynomial
+from .domains import domain_matrix, field_element, groebner, infer_coefficient_field, polynomial
 from .errors import QuotientAlgebraError
 from .finite_fields import FiniteFieldExtension, is_finite_field
 
@@ -98,8 +98,16 @@ def _exact_polynomials(
         _check_coefficient_symbols(domain, variables)
     try:
         if domain is None:
-            polys, options = sp.parallel_poly_from_expr(raw, *variables, extension=True)
-            domain = _require_quotient_domain(options["domain"])
+            if any(
+                constant.has(*variables)
+                for expression in raw
+                for constant in expression.atoms(sp.CRootOf, sp.AlgebraicNumber)
+            ):
+                domain = _require_quotient_domain(infer_coefficient_field(raw, variables))
+                polys = [polynomial(p, variables, domain) for p in raw]
+            else:
+                polys, options = sp.parallel_poly_from_expr(raw, *variables, extension=True)
+                domain = _require_quotient_domain(options["domain"])
         else:
             polys = [polynomial(p, variables, domain) for p in raw]
     except (
@@ -438,6 +446,7 @@ class QuotientAlgebra:
 
     @cached_property
     def standard_monomials(self) -> tuple[sp.Expr, ...]:
+        """The ordered monomials representing quotient coordinates."""
         return tuple(
             monomial_from_exponent(self.variables, exponent) for exponent in self.standard_exponents
         )
@@ -485,10 +494,12 @@ class QuotientAlgebra:
 
     @property
     def normal_form_cache_info(self):
+        """Return reduction counts, cache occupancy and the configured capacity."""
         cache, stats = self._normal_form_cache
         return dict(stats, entries=len(cache), capacity=self.normal_form_cache_size)
 
     def clear_normal_form_cache(self):
+        """Discard cached normal forms and reset their counters."""
         cache, stats = self._normal_form_cache
         cache.clear()
         stats.update(hits=0, misses=0, evictions=0, reduction_seconds=0.0)
@@ -1039,7 +1050,7 @@ class QuotientAlgebra:
     ) -> tuple[tuple[sp.Expr, ...], ...]:
         """Return columns of a linear separator multiplication matrix.
 
-        This direct form deliberately uses exactly one Gröbner reduction per
+        This direct form uses one Gröbner reduction per
         staircase monomial.  The RUR path already owns the coordinate
         multiplication matrices and uses :meth:`linear_combination_matrix`;
         the numerical action path should not pay ``n*D`` reductions merely to

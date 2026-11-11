@@ -34,7 +34,7 @@ def test_genus_of_projective_normalization(f, genus):
     assert not replace(N, genus=genus + 1).verify()
 
 
-def test_infinitely_near_points_and_conjugate_singularities_are_counted():
+def test_singularity_orbit_counts():
     N = PlaneCurve.from_polynomial(y * y - x**5, (x, y)).normalization()
     assert N.arithmetic_genus == 6 and N.delta_sum == 6
     assert any(p.depth > 0 for p in N.singularities)
@@ -84,7 +84,7 @@ def test_positive_genus_rejection_is_not_a_point_search_failure():
     )
 
 
-def test_genus_zero_without_qq_point_has_explicit_quadratic_extension():
+def test_quadratic_rationality_obstruction():
     C = PlaneCurve.from_polynomial(x * x + y * y - 3, (x, y))
     R = C.rational_parametrization(t)
     assert C.genus == 0 and R.status == "no_ground_field_point" and not R.rational
@@ -192,7 +192,7 @@ def test_explicit_limits_and_invalid_map_requests():
         )
 
 
-def test_proper_coefficient_field_does_not_adjoin_the_ambient_parameter():
+def test_proper_coefficient_field():
     A = QuotientAlgebra.from_polynomials([y * y - x * y + x**3], (y,), domain=sp.QQ.frac_field(x))
     E = coefficient_field([y], ambient=A, generator_symbols=(u,))
     P = E.rational_parametrization(t)
@@ -201,7 +201,7 @@ def test_proper_coefficient_field_does_not_adjoin_the_ambient_parameter():
         P.to_source(x)
 
 
-def test_genus_under_coordinate_changes_and_relative_number_constants():
+def test_genus_field_invariance():
     transformed = PlaneCurve.from_polynomial((y + x) ** 2 - (x - 2 * y + 1) ** 3, (x, y))
     assert transformed.genus == 0 and transformed.rational_parametrization(t).verify()
     K = sp.QQ.algebraic_field(sp.sqrt(2))

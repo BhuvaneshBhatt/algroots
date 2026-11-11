@@ -1,7 +1,7 @@
 """Discover algebraic factor extensions and verify a functional decomposition.
 
 Guarantee: Exact factor-orbit coverage and explicit search completeness.
-Run from the repository root: python examples/20_automatic_algebraic_discovery.py
+Run from the repository root: python examples/automatic_algebraic_discovery.py
 """
 
 import sympy as sp

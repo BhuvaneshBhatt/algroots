@@ -38,7 +38,7 @@ for (const auto &values : e.batch_metrics) {
   auto row = own_python(PyTuple_New(values.size()));
   for (size_t i = 0; i < values.size(); ++i) {
     auto value = own_python(PyLong_FromSize_t(values[i]));
-    PyTuple_SET_ITEM(row.get(), i, value.release());
+    PyTuple_SetItem(row.get(), i, value.release());
   }
   check_python(PyList_Append(metrics.get(), row.get()));
 }

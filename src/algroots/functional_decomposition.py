@@ -107,10 +107,12 @@ class RationalDecomposition:
 
     @property
     def function(self):
+        """Return the rational function in its declared coordinate variables."""
         return _rational(self.original_expression, self.variable, self.constants)
 
     @property
     def degrees(self):
+        """Degrees of the outer and inner rational maps."""
         return (
             _degree(self.outer, self.parameter, self.constants),
             _degree(self.inner, self.variable, self.constants),
@@ -262,10 +264,12 @@ class RationalDecompositionResult:
 
     @property
     def complete(self):
+        """Whether the recorded search is complete within its stated scope."""
         return self.examined == self.candidate_count
 
     @property
     def status(self):
+        """The decomposition outcome implied by the stored evidence."""
         if self.decompositions:
             return "decomposable"
         if not self.complete:
@@ -425,18 +429,22 @@ class AlgebraicDecomposition:
 
     @property
     def output(self):
+        """The output coordinate of the implicit decomposition."""
         return self.relation.gens[0]
 
     @property
     def input(self):
+        """The input coordinate of the implicit decomposition."""
         return self.relation.gens[1]
 
     @property
     def intermediate(self):
+        """The intermediate coordinate shared by the two relations."""
         return self.outer.gens[1]
 
     @property
     def constants(self):
+        """The declared field of constant coefficients."""
         return self.relation.domain
 
     def verify(self):
@@ -535,14 +543,17 @@ class AlgebraicDecompositionResult:
 
     @property
     def complete(self):
+        """Whether the recorded search is complete within its stated scope."""
         return False
 
     @property
     def status(self):
+        """The decomposition outcome implied by the stored evidence."""
         return "decomposable" if self.decomposition is not None else "candidate_rejected"
 
     @property
     def decompositions(self):
+        """The verified decompositions found by the search."""
         return () if self.decomposition is None else (self.decomposition,)
 
     def verify(self):

@@ -31,7 +31,7 @@ def test_negative_real_branch_rejected_for_two_thirds_power():
     assert not any(abs(value + 8) < 1e-20 for value in real_values)
 
 
-def test_nested_principal_radicals_are_checked_at_original_expression():
+def test_nested_principal_branches():
     equation = sp.sqrt(1 + sp.sqrt(x)) - 2
     result = algsolve([equation], (x,), digits=50, recognize=False)
     assert len(result.roots) == 1

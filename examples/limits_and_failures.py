@@ -1,7 +1,7 @@
 """Handle unsupported problems and proof budgets.
 
 Guarantee: Explicit refusal; no weakened proof.
-Run from the repository root: python examples/15_limits_and_failures.py
+Run from the repository root: python examples/limits_and_failures.py
 """
 
 import sympy as sp

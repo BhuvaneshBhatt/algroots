@@ -1,7 +1,7 @@
 """Search rational compositions and reconstruct a supplied algebraic candidate.
 
 Guarantee: Exact identities and rational-search completeness over QQ.
-Run from the repository root: python examples/19_functional_decomposition.py
+Run from the repository root: python examples/functional_decomposition.py
 """
 
 import sympy as sp

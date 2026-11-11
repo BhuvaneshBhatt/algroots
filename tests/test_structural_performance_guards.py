@@ -12,7 +12,7 @@ def _quotient(equations, variables, max_dimension):
     return QuotientAlgebra.from_groebner_basis(basis, variables, max_dimension=max_dimension)
 
 
-def test_separator_construction_uses_one_reduction_per_staircase_monomial(monkeypatch):
+def test_separator_reduction_count(monkeypatch):
     variables = (x, y, z)
     quotient = _quotient((x**2 - 2, y**2 - 3, z**2 - 5), variables, 64)
 
@@ -28,7 +28,7 @@ def test_separator_construction_uses_one_reduction_per_staircase_monomial(monkey
     assert calls["count"] == quotient.dimension
 
 
-def test_coordinate_normal_forms_need_at_most_one_reduction_per_variable(monkeypatch):
+def test_coordinate_reduction_count(monkeypatch):
     variables = (x, y, z)
     quotient = _quotient(
         ((x + y) ** 2 - 2, (y + z) ** 2 - 3, z**2 - 5),

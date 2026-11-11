@@ -22,9 +22,7 @@ from algroots.rational_univariate import (
         (lambda x, y: ((x**2 - 2) ** 3, y - x), 6, 2),
     ],
 )
-def test_nonreduced_rur_separates_multiplicity_from_geometric_branches(
-    equations, quotient_dimension, solution_count
-) -> None:
+def test_nonreduced_geometric_branches(equations, quotient_dimension, solution_count) -> None:
     x, y = sp.symbols("x y", real=True)
     system = equations(x, y)
 

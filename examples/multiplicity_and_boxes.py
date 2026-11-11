@@ -1,7 +1,7 @@
 """Certify individual multiplicities with automatic boxes.
 
 Guarantee: Exact isolated endpoint proofs.
-Run from the repository root: python examples/07_multiplicity_and_boxes.py
+Run from the repository root: python examples/multiplicity_and_boxes.py
 """
 
 import sympy as sp

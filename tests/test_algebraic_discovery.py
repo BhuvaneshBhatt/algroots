@@ -80,7 +80,7 @@ def test_automatic_paper_decomposition_needs_no_supplied_data():
     assert not replace(result, attempts=(replace(result.attempts[0], index=1),)).verify()
 
 
-def test_discovery_reaches_a_factor_extension_not_inside_a_root_field():
+def test_external_factor_field():
     discovery = discover_algebraic_factors(x**4 + x + z, (x, z), degrees=(2,))
     assert discovery.complete and discovery.verify()
     (orbit,) = discovery.orbits

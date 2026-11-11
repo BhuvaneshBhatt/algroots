@@ -129,7 +129,7 @@ def test_empty_repeated_view_has_trivial_certified_order():
 
 @pytest.mark.parametrize("method", ["auto", "shape", "rur", "action", "triangular"])
 @pytest.mark.parametrize("digits", [20, 40])
-def test_certified_complex_order_is_backend_and_precision_independent(method, digits):
+def test_complex_order_invariance(method, digits):
     result = polysolve(
         (x * x + 1,), (x,), digits=digits, method=method, recognize=False, root_order="required"
     )

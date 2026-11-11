@@ -1,7 +1,7 @@
 """Inspect cancellation-aware presolve and observed costs.
 
 Guarantee: Exact substitution; timings are observations.
-Run from the repository root: python examples/09_presolve_and_costs.py
+Run from the repository root: python examples/presolve_and_costs.py
 """
 
 import sympy as sp

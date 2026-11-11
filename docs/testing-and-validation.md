@@ -41,6 +41,10 @@ The release test report records exact counts, dependency versions and limitation
 
 The examples demonstrate public use; the tests probe exact invariants and failure behavior. Neither source is a substitute for testing the built wheel on the supported Python and dependency matrix.
 
+## Precision and portable-state regression coverage
+
+`test_precision_contexts.py` checks real and complex midpoint accuracy, nested context restoration, cross-thread precision exclusion, private homotopy coordinates and precision-independent compiled evaluations. `test_coefficient_state.py` checks exact polynomial and field round trips, including algebraic constants whose defining polynomials bind the same printed symbol as a formal field coordinate. Prepared certificates are checked through quotient identities after serialization. Tower tests replay adjoining relations and compressed embeddings before and after snapshots, and exact factorization tests bind root constants at formal coordinates or coefficient parameters.
+
 ## Highest-value next additions
 
 | Priority | Addition | Why it helps |

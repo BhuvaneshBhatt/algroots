@@ -1,7 +1,7 @@
 """Distinguish normalized genus, birational maps, and ground-field rationality.
 
 Guarantee: Exact normalized genus and verified maps; QQ conic obstruction.
-Run from the repository root: python examples/18_normalized_curve_rationality.py
+Run from the repository root: python examples/normalized_curve_rationality.py
 """
 
 import sympy as sp

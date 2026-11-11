@@ -1,7 +1,7 @@
 """Construct subfields over an existing base and over chosen constants.
 
 Guarantee: Exact membership and replayable embeddings; generic rational maps.
-Run from the repository root: python examples/17_generated_subfields.py
+Run from the repository root: python examples/generated_subfields.py
 """
 
 import sympy as sp

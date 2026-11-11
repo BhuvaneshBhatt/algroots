@@ -11,7 +11,9 @@ import mpmath as mp
 import sympy as sp
 from sympy.polys.numberfields import isolate
 
+from ._precision import precision_lock, working_precision
 from ._validation import validate_integer
+from .domains import algebraic_polynomial
 
 try:  # pragma: no cover - exercised when python-flint is installed
     from flint import acb, acb_mat, acb_poly, arb, ctx, fmpq
@@ -31,12 +33,13 @@ def flint_dps(digits: int):
         yield
         return
     validate_integer(digits, "digits")
-    old_precision = ctx.prec
-    ctx.dps = digits
-    try:
-        yield
-    finally:
-        ctx.prec = old_precision
+    with precision_lock:
+        old_precision = ctx.prec
+        ctx.dps = digits
+        try:
+            yield
+        finally:
+            ctx.prec = old_precision
 
 
 def _decimal_parts(value: Any, digits: int) -> tuple[str, str]:
@@ -48,6 +51,43 @@ def _decimal_parts(value: Any, digits: int) -> tuple[str, str]:
 
 class AlgebraicIsolationError(ValueError):
     """An exact algebraic input could not be enclosed rigorously."""
+
+
+def _rational_ball(lower, upper):
+    midpoint = (lower + upper) / 2
+    radius = (upper - lower) / 2
+    return arb(fmpq(int(midpoint.p), int(midpoint.q)), fmpq(int(radius.p), int(radius.q)))
+
+
+def _rootof_ball(value, digits):
+    """Enclose RootOf expressions using exact isolating rectangles and ball arithmetic.
+
+    SymPy's general real isolation routine uses a lambdified sign test that
+    cannot evaluate RootOf. Its own rational isolating intervals do not need
+    that test. Arithmetic on the resulting balls retains rounding enclosures.
+    """
+    if isinstance(value, sp.AlgebraicNumber):
+        return sympy_to_acb(value.as_expr(), digits)
+    if isinstance(value, sp.CRootOf):
+        interval = value._get_interval().refine_size(sp.Rational(1, 10**digits))
+        if value.is_real:
+            return acb(_rational_ball(sp.Rational(interval.a), sp.Rational(interval.b)))
+        return acb(
+            _rational_ball(sp.Rational(interval.ax), sp.Rational(interval.bx)),
+            _rational_ball(sp.Rational(interval.ay), sp.Rational(interval.by)),
+        )
+    if value.is_Add:
+        return sum((sympy_to_acb(term, digits) for term in value.args), acb(0))
+    if value.is_Mul:
+        result = acb(1)
+        for factor in value.args:
+            result *= sympy_to_acb(factor, digits)
+        return result
+    if value.is_Pow and value.exp.is_Rational:
+        exponent = value.exp
+        power = int(exponent) if exponent.is_Integer else fmpq(int(exponent.p), int(exponent.q))
+        return sympy_to_acb(value.base, digits) ** power
+    raise AlgebraicIsolationError("unsupported operation on an exact algebraic root")
 
 
 def _algebraic_part_ball(part: sp.Expr, digits: int):
@@ -66,9 +106,7 @@ def _algebraic_part_ball(part: sp.Expr, digits: int):
         raise AlgebraicIsolationError("could not isolate the exact algebraic component") from exc
     if not (lower.is_Rational and upper.is_Rational and lower <= upper):
         raise AlgebraicIsolationError("algebraic isolation did not return rational endpoints")
-    midpoint = (lower + upper) / 2
-    radius = (upper - lower) / 2
-    return arb(fmpq(int(midpoint.p), int(midpoint.q)), fmpq(int(radius.p), int(radius.q)))
+    return _rational_ball(lower, upper)
 
 
 def sympy_to_acb(value: Any, digits: int):
@@ -86,6 +124,8 @@ def sympy_to_acb(value: Any, digits: int):
         raise AlgebraicIsolationError("ACB conversion requires an exact algebraic number")
     if value.is_Rational:
         return acb(fmpq(int(value.p), int(value.q)))
+    if value.has(sp.CRootOf, sp.AlgebraicNumber):
+        return _rootof_ball(value, digits)
     return acb(
         _algebraic_part_ball(sp.re(value), digits),
         _algebraic_part_ball(sp.im(value), digits),
@@ -121,10 +161,13 @@ def acb_mid_to_mpc(value: Any, digits: int) -> mp.mpc:
     The midpoint is numerical data; the original ball radius and any proof
     obligation must be retained by callers when certification is required.
     """
-    midpoint = value.mid()
-    real = mp.mpf(midpoint.real.str(digits + 5, radius=False))
-    imag = mp.mpf(midpoint.imag.str(digits + 5, radius=False))
-    return mp.mpc(real, imag)
+    with working_precision(digits + 8):
+        if not value.is_finite():
+            raise ValueError("ACB midpoint is nonfinite")
+        midpoint = value.mid()
+        real = mp.mpf(midpoint.real.str(digits + 5, radius=False))
+        imag = mp.mpf(midpoint.imag.str(digits + 5, radius=False))
+        return mp.mpc(real, imag)
 
 
 @dataclass(frozen=True)
@@ -137,7 +180,7 @@ class CompiledPolynomial:
     @classmethod
     def from_expr(cls, expression: Any, variables: tuple[Any, ...]) -> CompiledPolynomial:
         """Compile an exact polynomial into sparse coefficient and exponent data."""
-        poly = sp.Poly(expression, *variables, extension=True)
+        poly = algebraic_polynomial(expression, variables)
         return cls(
             terms=tuple((coeff, tuple(int(p) for p in powers)) for powers, coeff in poly.terms()),
             variable_count=len(variables),
@@ -149,7 +192,7 @@ class CompiledPolynomial:
         Powers are cached per coordinate so repeated monomials share work. The
         returned scale is used in relative residual checks, not exact proofs.
         """
-        with mp.workdps(digits + 8):
+        with working_precision(digits + 8):
             total = mp.mpc(0)
             scale = mp.mpf(0)
             powers_cache: list[dict[int, mp.mpc]] = [{0: mp.mpc(1)} for _ in values]
@@ -170,7 +213,7 @@ class CompiledPolynomial:
 def sympy_to_mpc(value: Any, digits: int) -> mp.mpc:
     """Convert a SymPy-compatible scalar to arbitrary-precision mpmath complex."""
     real, imag = _decimal_parts(value, digits)
-    with mp.workdps(digits + 5):
+    with working_precision(digits + 5):
         return mp.mpc(mp.mpf(real), mp.mpf(imag))
 
 
@@ -181,7 +224,7 @@ def number_to_mpc(value: Any, digits: int) -> mp.mpc:
     if isinstance(value, mp.mpf):
         return mp.mpc(value)
     if isinstance(value, complex):
-        with mp.workdps(digits + 5):
+        with working_precision(digits + 5):
             return mp.mpc(str(value.real), str(value.imag))
     return sympy_to_mpc(value, digits)
 
@@ -230,7 +273,7 @@ def newton_refine(
     """Refine a square/overdetermined polynomial system numerically."""
     if len(polynomials) < len(start):
         return tuple(mp.mpc(v) for v in start), False
-    with mp.workdps(digits + 10):
+    with working_precision(digits + 10):
         x = mp.matrix([mp.mpc(v) for v in start])
         target = mp.power(10, -(digits - 6))
         for _ in range(maxsteps):
@@ -318,5 +361,6 @@ class NumericExpression:
         )
 
     def evaluate(self, values: tuple[Any, ...], digits: int) -> mp.mpc:
-        with mp.workdps(digits + 8):
+        """Evaluate the compiled algebraic expression at the requested decimal precision."""
+        with working_precision(digits + 8):
             return self._eval(values, digits + 5)

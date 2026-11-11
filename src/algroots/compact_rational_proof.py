@@ -216,7 +216,7 @@ def canonicalize_rational_dag(dag, originals, ring, *, max_terms=100000):
     topology guess: no prime images or modular hashes authorize equality.
 
     Its cost is proportional to evaluating the entire circuit over QQ, and it
-    is intentionally optional.  The independent certificate verifier still
+    is optional.  The independent certificate verifier still
     checks the final (possibly normalized) DAG over QQ.
     """
     if not isinstance(dag, RationalProofDAG):

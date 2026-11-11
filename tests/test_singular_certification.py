@@ -129,7 +129,7 @@ def test_coarse_empty_boundary_and_insufficiently_refined_boxes_fail():
         )
 
 
-def test_box_does_not_accept_nonrational_coefficients_or_wrong_dimensions():
+def test_box_input_validation():
     with pytest.raises(RootCertificationError, match="rational coefficients"):
         certify_root_box(((x - sp.sqrt(2)) ** 2,), (x,), ((1, 2, -1, 1),))
     with pytest.raises(RootCertificationError, match="dimension"):
@@ -204,7 +204,7 @@ def test_deflation_refinement_resolves_repeated_root():
 
 
 @pytest.mark.parametrize("scale", [sp.Rational(1, 10**50), sp.Integer(10) ** 50, -7])
-def test_scaled_recombined_equations_preserve_certificate_and_deflation(scale):
+def test_deflation_equation_invariance(scale):
     equations = (scale * x**2, y**2 + x**2)
     certificate = certify_isolated_root(equations, (x, y), (0, 0))
     assert certificate.multiplicity == 4

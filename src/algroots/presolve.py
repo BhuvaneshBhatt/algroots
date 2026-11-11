@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import sympy as sp
 
+from .domains import algebraic_polynomial
+
 
 @dataclass(frozen=True)
 class AffinePresolve:
@@ -17,6 +19,7 @@ class AffinePresolve:
     cancellation_acceptances: int = 0
 
     def reconstruct(self, root, original_variables, digits):
+        """Recover original coordinates from a root of the affine-reduced system."""
         assignment = dict(zip(self.variables, root, strict=True))
         for variable, expression in reversed(self.substitutions):
             assignment[variable] = sp.N(expression.subs(assignment), digits)
@@ -33,7 +36,12 @@ def affine_presolve(equations, variables):
         if any(not row.free_symbols and row != 0 for row in rows):
             return AffinePresolve(rows, remaining, tuple(substitutions), True)
         affine = next(
-            (row for row in rows if remaining and sp.Poly(row, *remaining).total_degree() == 1),
+            (
+                row
+                for row in rows
+                if remaining
+                and algebraic_polynomial(row, remaining, extension=False).total_degree() == 1
+            ),
             None,
         )
         if affine is None:
@@ -58,7 +66,11 @@ def _bounded_substitution(
     """
     support_limit = min(4096, max(64, term_limit * 8))
     zero = (0,) * len(others)
-    substitution = dict(sp.Poly(expression, *others).terms()) if others else {zero: expression}
+    substitution = (
+        dict(algebraic_polynomial(expression, others, extension=False).terms())
+        if others
+        else {zero: expression}
+    )
     if len(substitution) > support_limit:
         return None
     spent = 0
@@ -163,13 +175,13 @@ def polynomial_presolve(equations, variables, *, max_terms=1000, max_degree=16, 
         rows = tuple(sp.expand(row) for row in rows if row != 0)
         if any(not row.free_symbols and row != 0 for row in rows):
             return AffinePresolve(rows, remaining, tuple(substitutions), True, probes, acceptances)
-        polynomials = [sp.Poly(row, *remaining) for row in rows]
+        polynomials = [algebraic_polynomial(row, remaining, extension=False) for row in rows]
         accepted = None
         # Affine rows first, then the least expensive nonlinear pivot.
         candidates = []
         for index, row in enumerate(rows):
             for variable in remaining:
-                p = sp.Poly(row, variable)
+                p = algebraic_polynomial(row, (variable,), extension=False)
                 if p.degree() != 1:
                     continue
                 coefficient = p.nth(1)
@@ -177,7 +189,7 @@ def polynomial_presolve(equations, variables, *, max_terms=1000, max_degree=16, 
                     continue
                 expression = sp.cancel(-p.nth(0) / coefficient)
                 others = tuple(v for v in remaining if v != variable)
-                ep = sp.Poly(expression, *others) if others else None
+                ep = algebraic_polynomial(expression, others, extension=False) if others else None
                 terms = len(ep.terms()) if ep is not None else 1
                 degree = ep.total_degree() if ep is not None else 0
                 candidates.append(
@@ -185,7 +197,7 @@ def polynomial_presolve(equations, variables, *, max_terms=1000, max_degree=16, 
                 )
         for _, _, index, _, variable, expression in sorted(candidates):
             others = tuple(v for v in remaining if v != variable)
-            ep = sp.Poly(expression, *others) if others else None
+            ep = algebraic_polynomial(expression, others, extension=False) if others else None
             term_count = len(ep.terms()) if ep is not None else 1
             degree = ep.total_degree() if ep is not None else 0
             position = remaining.index(variable)

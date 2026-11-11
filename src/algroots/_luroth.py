@@ -142,6 +142,7 @@ class RationalCoordinateMap:
 
     @cached_property
     def basis(self):
+        """The generic graph basis relating ambient coordinates to the generating parameter."""
         (generator,) = rational_values(self.ambient, (self.generator,))
         numerator, denominator = sp.fraction(generator)
         return groebner(
@@ -151,6 +152,7 @@ class RationalCoordinateMap:
         )
 
     def express(self, value):
+        """Express an ambient rational function in the generator parameter, or return None."""
         (value,) = rational_values(self.ambient, (value,))
         numerator, denominator = sp.fraction(value)
         base = self.basis.domain

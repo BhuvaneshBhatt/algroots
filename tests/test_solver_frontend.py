@@ -185,7 +185,7 @@ def test_auto_ordering_changes_internal_order_without_changing_roots():
         assert abs(complex(root[1] ** 3 - root[0])) < 1e-18
 
 
-def test_nonreduced_dimension_does_not_consume_distinct_solution_budget():
+def test_distinct_solution_budget():
     result = polysolve((x**5, y**5), (x, y), max_solutions=2, recognize=False, digits=25)
     assert result.method == "rational_univariate"
     assert result.total_multiplicity == 25

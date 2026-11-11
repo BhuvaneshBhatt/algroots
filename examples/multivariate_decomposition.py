@@ -1,7 +1,7 @@
 """Search multivariate rational compositions and replay exact coverage.
 
 Guarantee: Nontrivial two-factor classes over QQ, up to Möbius changes.
-Run from the repository root: python examples/22_multivariate_decomposition.py
+Run from the repository root: python examples/multivariate_decomposition.py
 """
 
 import sympy as sp

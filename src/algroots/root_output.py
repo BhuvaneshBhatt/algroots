@@ -30,9 +30,11 @@ class RootViews:
 
     @property
     def distinct_roots(self):
+        """The distinct geometric points with their aligned metadata."""
         return self.roots
 
     def iter_roots(self, *, with_multiplicity=None):
+        """Iterate distinct points or their certified multiplicity expansion."""
         expanded = (
             self.root_mode == "with_multiplicity"
             if with_multiplicity is None
@@ -56,10 +58,12 @@ class RootViews:
 
     @property
     def output_roots(self):
+        """Return the root tuples selected by the result's multiplicity policy."""
         return tuple(self.iter_roots())
 
     @property
     def roots_with_multiplicity(self):
+        """Expand each distinct point by its established local multiplicity."""
         return tuple(self.iter_roots(with_multiplicity=True))
 
     def __iter__(self):
@@ -91,7 +95,7 @@ def validate_output_options(
 
 
 # Every field listed here has one entry for each distinct point. Global path
-# histories and quotient monomials deliberately do not participate.
+# histories and quotient monomials do not participate.
 ALIGNED_FIELDS = (
     "roots",
     "diagnostics",

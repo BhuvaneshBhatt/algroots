@@ -21,7 +21,7 @@ def test_quotient_algebra_exposes_exact_structural_operations() -> None:
     assert quotient.geometric_solution_count == 2
 
 
-def test_quotient_algebra_normalizes_exact_algebraic_coefficient_fields() -> None:
+def test_quotient_coefficient_normalization() -> None:
     x, y = sp.symbols("x y")
     quotient = QuotientAlgebra.from_polynomials((x - sp.sqrt(2), y - sp.sqrt(3)), (x, y))
 
@@ -85,7 +85,7 @@ def test_rur_border_basis_and_quotient_share_one_dimension_contract() -> None:
     assert quotient.geometric_solution_count == representation.geometric_solution_count == 2
 
 
-def test_quotient_from_lex_groebner_basis_respects_actual_basis_order() -> None:
+def test_lex_quotient_order() -> None:
     x, y, z = sp.symbols("x y z")
     basis = sp.groebner((x**2 - 2, y**2 - 3, z - x * y), x, y, z, order="lex")
 

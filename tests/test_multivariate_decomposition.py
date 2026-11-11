@@ -89,7 +89,7 @@ def test_all_three_mobius_classes_of_a_rational_laurent_composition():
     )
 
 
-def test_products_of_irreducibles_and_nonnear_candidates_are_both_visited():
+def test_candidate_factor_coverage():
     result = multivariate_rational_decompose((x + y) ** 6, (x, y), parameter=t)
     assert result.candidate_count == 3 and len(result.decompositions) == 2
     assert len(result.factors) == 4
@@ -116,7 +116,7 @@ def test_candidate_count_matches_independent_small_powerset_oracle():
     assert result.examined == 1 and not result.complete and result.verify()
 
 
-def test_candidate_budgets_are_replayable_and_never_prove_false_negatives(monkeypatch):
+def test_search_budget_replay(monkeypatch):
     import algroots._multivariate_decomposition as implementation
 
     empty = multivariate_rational_decompose((x + y) ** 6, (x, y), parameter=t, max_candidates=0)
@@ -139,7 +139,7 @@ def test_candidate_budgets_are_replayable_and_never_prove_false_negatives(monkey
 
 
 @pytest.mark.parametrize("function", [x**4 + y, (x**4 + y) / (x + y + 1), x**4 + y**4])
-def test_composite_degree_functions_can_have_complete_negative_results(function):
+def test_composite_degree_negative_result(function):
     result = multivariate_rational_decompose(function, (x, y), parameter=t)
     assert result.complete and result.status == "indecomposable" and not result.decompositions
     assert result.factors and result.verify()
@@ -258,7 +258,7 @@ def test_invalid_options(options):
         multivariate_rational_decompose((x * x + y * y) ** 2, **kwargs)
 
 
-def test_unsupported_operations_propagate_without_indecision_certificates(monkeypatch):
+def test_unsupported_search_error(monkeypatch):
     def unsupported(*args, **kwargs):
         raise NotImplementedError("backend does not support this exact operation")
 

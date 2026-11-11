@@ -1,7 +1,7 @@
 """Solve a coupled polynomial system.
 
 Guarantee: Conditional finite-root extraction.
-Run from the repository root: python examples/01_polynomial_system.py
+Run from the repository root: python examples/polynomial_system.py
 """
 
 import sympy as sp

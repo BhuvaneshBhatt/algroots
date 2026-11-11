@@ -20,7 +20,7 @@ def _matrix_from_columns(columns):
     return sp.Matrix(d, d, lambda row, col: columns[col][row])
 
 
-def test_separator_matrix_equals_linear_combination_of_coordinate_matrices():
+def test_separator_matrix_identity():
     variables = (x, y)
     equations = (x**2 - 2, y**2 - 3)
     basis = _groebner_basis(equations, variables)

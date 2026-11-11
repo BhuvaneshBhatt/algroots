@@ -172,6 +172,23 @@ def infer_coefficient_field(expressions, variables):
     return options.domain.get_field()
 
 
+def algebraic_polynomial(expression, variables, *, extension=True):
+    """Parse a polynomial without capturing symbols bound inside algebraic constants.
+
+    SymPy's expression parser can treat a RootOf's defining coordinate as a
+    polynomial variable. Infer its coefficient field separately in that case;
+    ordinary inputs retain the direct parser and its usual domain inference.
+    """
+    variables = tuple(variables)
+    expression = expression.as_expr() if isinstance(expression, sp.Poly) else sp.sympify(expression)
+    if expression.has(sp.CRootOf, sp.AlgebraicNumber) and any(
+        constant.has(*variables) for constant in expression.atoms(sp.CRootOf, sp.AlgebraicNumber)
+    ):
+        domain = infer_coefficient_field((expression,), variables)
+        return polynomial(expression, variables, domain)
+    return sp.Poly(expression, *variables, **({"extension": True} if extension else {}))
+
+
 def polynomial(expression, variables, domain):
     """Construct a polynomial over the declared field using native coefficient elements."""
     variables = tuple(variables)
@@ -189,13 +206,13 @@ def polynomial(expression, variables, domain):
     if expression.has(sp.Float):
         raise ValueError("exact polynomial coefficients are required")
     ground = domain.domain if domain.is_FractionField else domain
-    if ground.is_AlgebraicField or getattr(domain, "is_AlgebraicFunctionField", False):
+    if expression.has(sp.CRootOf, sp.AlgebraicNumber):
         # CRootOf's defining polynomial binds its own symbols. Hide that
         # bound syntax while identifying the free coordinate monomials.
         roots = tuple(
             root
-            for root in expression.atoms(sp.CRootOf)
-            if root.args[0].free_symbols.intersection(variables)
+            for root in expression.atoms(sp.CRootOf, sp.AlgebraicNumber)
+            if root.has(*variables)
         )
         if roots:
             replacements = {root: sp.Dummy("algebraic_constant") for root in roots}

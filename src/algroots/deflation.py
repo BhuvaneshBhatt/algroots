@@ -60,6 +60,7 @@ class DeflationResult:
 
     @property
     def regular(self):
+        """Whether exact deflation established full column Jacobian rank."""
         return self.final_rank == len(self.variables)
 
     def refine(self, approximate, *, digits=50, maxsteps=50):

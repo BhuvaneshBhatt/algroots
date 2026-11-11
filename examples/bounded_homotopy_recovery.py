@@ -1,7 +1,7 @@
 """Recover and certify a singular finite endpoint.
 
 Guarantee: Exact finite-root accounting; no path proof.
-Run from the repository root: python examples/12_bounded_homotopy_recovery.py
+Run from the repository root: python examples/bounded_homotopy_recovery.py
 """
 
 import sympy as sp

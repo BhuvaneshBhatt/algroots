@@ -43,10 +43,10 @@ def test_catalog_example_runs_standalone(entry, tmp_path):
 def test_catalog_is_complete_and_uses_public_imports():
     names = [entry["file"] for entry in CATALOG]
     assert len(set(names)) == len(names)
-    assert set(names) == {path.name for path in EXAMPLES.glob("[0-9][0-9]_*.py")}
+    assert set(names) == {path.name for path in EXAMPLES.glob("*.py") if path.name != "run_all.py"}
     documentation = (EXAMPLES / "README.md").read_text(encoding="utf-8")
     for entry in CATALOG:
-        assert re.fullmatch(r"[0-9]{2}_[a-z_]+\.py", entry["file"])
+        assert re.fullmatch(r"[a-z_]+\.py", entry["file"])
         assert all(isinstance(value, str) and value for value in entry.values())
         assert f"({entry['file']})" in documentation
         tree = ast.parse((EXAMPLES / entry["file"]).read_text(encoding="utf-8"))
@@ -72,11 +72,11 @@ def test_runner_lists_entire_catalog_without_execution(tmp_path):
 
 def test_runner_executes_selected_examples(tmp_path):
     process = _run(
-        EXAMPLES / "run_all.py", tmp_path, "01_polynomial_system.py", "15_limits_and_failures.py"
+        EXAMPLES / "run_all.py", tmp_path, "polynomial_system.py", "limits_and_failures.py"
     )
     assert process.returncode == 0, process.stdout + process.stderr
     assert "Positive-dimensional input refused" in process.stdout
-    assert "02_branches_and_poles.py" not in process.stdout
+    assert "branches_and_poles.py" not in process.stdout
 
 
 @pytest.mark.parametrize("name", ["missing.py", "../src/algroots/__init__.py", "/tmp/unlisted.py"])

@@ -24,13 +24,15 @@ representation = compute_rational_univariate_representation(
 assert representation.solution_count == 2
 ```
 
-The constructor operates natively over `QQ` for rational coefficients and over one exact compositum algebraic-number field for exact algebraic coefficients such as `sqrt(2)`, `sqrt(3)`, or `CRootOf` constants.
+The constructor operates natively over `QQ` for rational coefficients and over one exact compositum algebraic-number field for exact algebraic coefficients such as `sqrt(2)`, `sqrt(3)`, or `CRootOf` constants. A coordinate symbol may also occur as the bound variable in a `CRootOf` defining polynomial; that occurrence remains part of the coefficient, not an additional unknown. Reusable RUR certificates support these number fields as well as parameter fields.
 
 ## Exact root extraction
 
 `solve_rur_representation(representation, real=...)` enumerates exact algebraic roots of the RUR defining polynomial and evaluates the exact coordinate maps. This is appropriate when exact SymPy algebraic-number objects are the desired result, but exact root enumeration can be substantially more expensive than numerical extraction for higher degrees.
 
 `solve_rur_points()` returns `RationalUnivariatePoint` objects that retain the parameter root and evaluate coordinates lazily from the exact representation.
+
+Both exact extraction functions default to `real=True`, which requires every original coordinate to be real. Over a complex coefficient field, a real parameter root can encode complex coordinates, and a complex parameter can encode a real point. Filtering therefore uses the coordinate maps; `real=False` returns all geometric points. For example, the system `x - I = 0, y + I = 0` has one complex point and no real points.
 
 ## Numerical `method="rur"`
 

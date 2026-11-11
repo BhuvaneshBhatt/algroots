@@ -1,4 +1,4 @@
-"""Numerical Cauchy endgames and fixed-chart projective contiunation.
+"""Numerical Cauchy endgames and projective continuation in a fixed chart.
 
 These APIs produce numerical evidence only. They do not certify
 multiplicity, path completeness, or projective chart coverage.
@@ -9,6 +9,7 @@ from dataclasses import dataclass, replace
 import mpmath as mp
 import sympy as sp
 
+from ._precision import working_precision
 from .continuation import PathTrackerOptions, PathTrackingError, SympyHomotopy, track_path
 
 
@@ -27,7 +28,7 @@ class EndgameResult:
     error_estimate: object
     endpoint_residual: object = mp.inf
     status: str = "numerical"
-    limitations: tuple = ("No rigourous endpoint enclosure or multiplicity certification.",)
+    limitations: tuple = ("No rigorous endpoint enclosure or multiplicity certification.",)
     certificate: object = None
     deflation: object = None
 
@@ -91,7 +92,7 @@ def cauchy_endgame(
     if certify and (exact_target.has(sp.Float) or exact_target.is_algebraic is not True):
         raise ValueError("endpoint certification requires an exact algebraic target parameter")
     opts = options or PathTrackerOptions()
-    with mp.workdps(opts.max_digits):
+    with working_precision(opts.max_digits):
         tol = (
             mp.mpf(str(tolerance))
             if tolerance is not None
@@ -243,6 +244,7 @@ class ProjectiveHomotopy:
     )
 
     def lift(self, affine_point):
+        """Embed affine coordinates in the fixed projective chart."""
         if len(affine_point) != len(self.affine_variables):
             raise ValueError("point dimension does not match")
         point = (*affine_point, sp.Integer(1))
@@ -252,6 +254,7 @@ class ProjectiveHomotopy:
         return tuple(x / scale for x in point)
 
     def dehomogenize(self, point):
+        """Recover affine coordinates from the fixed projective chart."""
         if len(point) != len(self.system.variables):
             raise ValueError("point dimension does not match")
         if point[-1] == 0:

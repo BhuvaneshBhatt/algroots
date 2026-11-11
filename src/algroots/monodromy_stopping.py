@@ -11,6 +11,8 @@ from typing import Any
 import mpmath as mp
 import sympy as sp
 
+from ._precision import working_precision
+
 
 @dataclass(frozen=True)
 class CaptureRecaptureEstimate:
@@ -121,7 +123,7 @@ def second_order_trace_test(
     jacobian_fn = sp.lambdify(args, jacobian_expr.tolist(), modules="mpmath")
     hessian_fns = [sp.lambdify(args, matrix.tolist(), modules="mpmath") for matrix in hessians_expr]
 
-    with mp.workdps(digits + 12):
+    with working_precision(digits + 12):
         rhs = mp.matrix([_mpc(value, digits + 8) for value in direction])
         trace = mp.matrix([mp.mpc(0) for _ in variables])
         scale = mp.mpf(1)

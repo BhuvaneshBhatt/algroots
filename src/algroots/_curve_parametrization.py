@@ -13,6 +13,7 @@ from .subfields import field_normal_form
 
 
 def validate_point(curve, point, domain):
+    """Check exact projective coordinates, curve membership and smoothness."""
     if point is None or len(point) not in (2, 3):
         raise CurveError("point must have two affine or three projective coordinates")
     values = tuple(sp.sympify(c) for c in point)
@@ -333,6 +334,7 @@ def _conic_result(normalization, model, t, extend_constants, point=None):
 
 
 def rational_parametrization(curve, t, point, extend_constants, max_steps, max_dimension):
+    """Construct a checked rational parametrization with its inverse map."""
     t = sp.Dummy("curve_parameter") if t is None else t
     if not isinstance(t, sp.Symbol) or t in curve.variables:
         raise CurveError("parameter must be a fresh Symbol")

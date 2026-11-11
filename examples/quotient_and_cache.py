@@ -1,7 +1,7 @@
 """Inspect exact quotient structure and bounded caches.
 
 Guarantee: Exact finite algebra.
-Run from the repository root: python examples/04_quotient_and_cache.py
+Run from the repository root: python examples/quotient_and_cache.py
 """
 
 import sympy as sp

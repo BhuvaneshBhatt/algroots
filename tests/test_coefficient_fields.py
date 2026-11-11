@@ -28,7 +28,7 @@ def test_cusp_generator_and_bidirectional_maps_with_poles():
     assert not replace(E, generator_expression=u).verify()
 
 
-def test_proper_rational_subfield_includes_constructive_nonmembership():
+def test_constructive_nonmembership():
     E = coefficient_field([z * z], ambient=sp.QQ.frac_field(z), parameter=T)
     assert E.generator == z * z and E.extension_degree == 2
     assert E.express(1 / (z * z + 1)).expression == 1 / (T + 1)

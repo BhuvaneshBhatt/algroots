@@ -1,5 +1,5 @@
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "_python_abi.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -137,7 +137,7 @@ static PyObject *reduce_rows(PyObject *self, PyObject *args) {
     }
     rows = PySequence_Fast(rows_input, "rows must be a sequence of sparse dictionaries");
     if (!rows) return NULL;
-    Py_ssize_t nrows = PySequence_Fast_GET_SIZE(rows);
+    Py_ssize_t nrows = native_sequence_size(rows);
     pivots = PyMem_Calloc((size_t)(nrows ? nrows : 1), sizeof(Pivot));
     column_pivot = PyMem_Malloc((size_t)(ncols ? ncols : 1) * sizeof(Py_ssize_t));
     if (!pivots || !column_pivot) { PyErr_NoMemory(); goto fail; }
@@ -145,7 +145,7 @@ static PyObject *reduce_rows(PyObject *self, PyObject *args) {
     output = PyList_New(0);
     if (!output) goto fail;
     for (Py_ssize_t i=0; i<nrows; ++i) {
-        PyObject *src = PySequence_Fast_GET_ITEM(rows,i);
+        PyObject *src = native_sequence_item(rows,i);
         if (!PyDict_Check(src)) { PyErr_SetString(PyExc_TypeError,"matrix rows must be dicts"); goto fail; }
         int use_sparse = !strcmp(mode,"sparse") || (!strcmp(mode,"adaptive") &&
             ncols >= 1024 && PyDict_Size(src) < ncols / 12);
@@ -273,35 +273,35 @@ static PyObject *shifted_rows(PyObject *self, PyObject *args) {
     if (!seq || !bases) {Py_XDECREF(seq);Py_XDECREF(bases);return NULL;}
     output=PyList_New(0);
     if (!output) goto error;
-    for (Py_ssize_t i=0;i<PySequence_Fast_GET_SIZE(seq);++i) {
-        PyObject *spec=PySequence_Fast_GET_ITEM(seq,i);
+    for (Py_ssize_t i=0;i<native_sequence_size(seq);++i) {
+        PyObject *spec=native_sequence_item(seq,i);
         if (!PyTuple_Check(spec) || PyTuple_Size(spec)!=2) {
             PyErr_SetString(PyExc_TypeError,"shift specification must be (powers, basis-index)");goto error;
         }
-        PyObject *shift=PyTuple_GET_ITEM(spec,0);
-        Py_ssize_t index=PyLong_AsSsize_t(PyTuple_GET_ITEM(spec,1));
+        PyObject *shift=PyTuple_GetItem(spec,0);
+        Py_ssize_t index=PyLong_AsSsize_t(PyTuple_GetItem(spec,1));
         if (index == -1 && PyErr_Occurred()) goto error;
-        if (index<0 || index>=PySequence_Fast_GET_SIZE(bases) || !PyTuple_Check(shift)) {
+        if (index<0 || index>=native_sequence_size(bases) || !PyTuple_Check(shift)) {
             PyErr_SetString(PyExc_ValueError,"invalid shift or basis-index");goto error;
         }
-        PyObject *terms=PySequence_Fast(PySequence_Fast_GET_ITEM(bases,index),"basis row must be a term sequence");
+        PyObject *terms=PySequence_Fast(native_sequence_item(bases,index),"basis row must be a term sequence");
         if (!terms) goto error;
         PyObject *row=PyDict_New();
         if (!row) {Py_DECREF(terms);goto error;}
-        for (Py_ssize_t t=0;t<PySequence_Fast_GET_SIZE(terms);++t) {
-            PyObject *term=PySequence_Fast_GET_ITEM(terms,t);
-            if (!PyTuple_Check(term) || PyTuple_Size(term)!=2 || !PyTuple_Check(PyTuple_GET_ITEM(term,0))) {
+        for (Py_ssize_t t=0;t<native_sequence_size(terms);++t) {
+            PyObject *term=native_sequence_item(terms,t);
+            if (!PyTuple_Check(term) || PyTuple_Size(term)!=2 || !PyTuple_Check(PyTuple_GetItem(term,0))) {
                 PyErr_SetString(PyExc_TypeError,"term must be (exponents, coefficient)");Py_DECREF(row);Py_DECREF(terms);goto error;
             }
-            PyObject *exp=PyTuple_GET_ITEM(term,0);
-            if (PyTuple_GET_SIZE(exp)!=PyTuple_GET_SIZE(shift)) {
+            PyObject *exp=PyTuple_GetItem(term,0);
+            if (PyTuple_Size(exp)!=PyTuple_Size(shift)) {
                 PyErr_SetString(PyExc_ValueError,"exponent length mismatch");Py_DECREF(row);Py_DECREF(terms);goto error;
             }
-            PyObject *combined=PyTuple_New(PyTuple_GET_SIZE(exp));
+            PyObject *combined=PyTuple_New(PyTuple_Size(exp));
             if (!combined) {Py_DECREF(row);Py_DECREF(terms);goto error;}
-            for (Py_ssize_t k=0;k<PyTuple_GET_SIZE(exp);++k) {
-                Py_ssize_t a=PyLong_AsSsize_t(PyTuple_GET_ITEM(exp,k));
-                Py_ssize_t b=PyLong_AsSsize_t(PyTuple_GET_ITEM(shift,k));
+            for (Py_ssize_t k=0;k<PyTuple_Size(exp);++k) {
+                Py_ssize_t a=PyLong_AsSsize_t(PyTuple_GetItem(exp,k));
+                Py_ssize_t b=PyLong_AsSsize_t(PyTuple_GetItem(shift,k));
                 if (PyErr_Occurred() || a<0 || b<0 || a>PY_SSIZE_T_MAX-b) {
                     Py_DECREF(combined);Py_DECREF(row);Py_DECREF(terms);
                     if (!PyErr_Occurred())
@@ -310,7 +310,7 @@ static PyObject *shifted_rows(PyObject *self, PyObject *args) {
                 }
                 PyObject *val=PyLong_FromSsize_t(a+b);
                 if (!val) {Py_DECREF(combined);Py_DECREF(row);Py_DECREF(terms);goto error;}
-                PyTuple_SET_ITEM(combined,k,val);
+                PyTuple_SetItem(combined,k,val);
             }
             PyObject *column=PyDict_GetItemWithError(positions,combined);
             Py_DECREF(combined);
@@ -318,7 +318,7 @@ static PyObject *shifted_rows(PyObject *self, PyObject *args) {
                 if (!PyErr_Occurred()) PyErr_SetString(PyExc_KeyError,"symbolic layout omitted shifted term");
                 Py_DECREF(row);Py_DECREF(terms);goto error;
             }
-            long long coefficient=PyLong_AsLongLong(PyTuple_GET_ITEM(term,1));
+            long long coefficient=PyLong_AsLongLong(PyTuple_GetItem(term,1));
             if (coefficient==-1 && PyErr_Occurred()) {Py_DECREF(row);Py_DECREF(terms);goto error;}
             long long residue=coefficient%(long long)prime;
             if (residue<0) residue+=prime;
@@ -345,10 +345,10 @@ error:
    Returned quotients satisfy f=sum(q[i]*g[i])+r modulo p, and every remainder
    monomial is indivisible by the leading monomials of g. */
 static int nf_cmp(PyObject *a, PyObject *b, int order) {
-    Py_ssize_t n=PyTuple_GET_SIZE(a), d=0;
+    Py_ssize_t n=PyTuple_Size(a), d=0;
     for (Py_ssize_t i=0;i<n;++i) {
-        Py_ssize_t x=PyLong_AsSsize_t(PyTuple_GET_ITEM(a,i));
-        Py_ssize_t y=PyLong_AsSsize_t(PyTuple_GET_ITEM(b,i));
+        Py_ssize_t x=PyLong_AsSsize_t(PyTuple_GetItem(a,i));
+        Py_ssize_t y=PyLong_AsSsize_t(PyTuple_GetItem(b,i));
         if (PyErr_Occurred()) return 0;
         if (order && x!=y) d+=x-y;
         if (!order && x!=y) return x>y ? 1 : -1;
@@ -356,35 +356,35 @@ static int nf_cmp(PyObject *a, PyObject *b, int order) {
     if (order && d) return d>0 ? 1 : -1;
     if (order==1) { /* grlex */
         for (Py_ssize_t i=0;i<n;++i) {
-            Py_ssize_t x=PyLong_AsSsize_t(PyTuple_GET_ITEM(a,i));
-            Py_ssize_t y=PyLong_AsSsize_t(PyTuple_GET_ITEM(b,i));
+            Py_ssize_t x=PyLong_AsSsize_t(PyTuple_GetItem(a,i));
+            Py_ssize_t y=PyLong_AsSsize_t(PyTuple_GetItem(b,i));
             if (x!=y) return x>y ? 1 : -1;
         }
     } else if (order==2) { /* grevlex */
         for (Py_ssize_t i=n;i>0;) {
             --i;
-            Py_ssize_t x=PyLong_AsSsize_t(PyTuple_GET_ITEM(a,i));
-            Py_ssize_t y=PyLong_AsSsize_t(PyTuple_GET_ITEM(b,i));
+            Py_ssize_t x=PyLong_AsSsize_t(PyTuple_GetItem(a,i));
+            Py_ssize_t y=PyLong_AsSsize_t(PyTuple_GetItem(b,i));
             if (x!=y) return x<y ? 1 : -1;
         }
     }
     return 0;
 }
 static int nf_validate_exps(PyObject *tuple, Py_ssize_t nvars) {
-    if (!PyTuple_Check(tuple) || PyTuple_GET_SIZE(tuple)!=nvars) return 0;
+    if (!PyTuple_Check(tuple) || PyTuple_Size(tuple)!=nvars) return 0;
     for (Py_ssize_t k=0;k<nvars;++k) {
-        Py_ssize_t power=PyLong_AsSsize_t(PyTuple_GET_ITEM(tuple,k));
+        Py_ssize_t power=PyLong_AsSsize_t(PyTuple_GetItem(tuple,k));
         if (power<0 || power>INT32_MAX || PyErr_Occurred()) return 0;
     }
     return 1;
 }
 static PyObject *nf_shift(PyObject *a, PyObject *b, int subtract) {
-    Py_ssize_t n=PyTuple_GET_SIZE(a);
+    Py_ssize_t n=PyTuple_Size(a);
     PyObject *out=PyTuple_New(n);
     if (!out) return NULL;
     for (Py_ssize_t i=0;i<n;++i) {
-        Py_ssize_t x=PyLong_AsSsize_t(PyTuple_GET_ITEM(a,i));
-        Py_ssize_t y=PyLong_AsSsize_t(PyTuple_GET_ITEM(b,i));
+        Py_ssize_t x=PyLong_AsSsize_t(PyTuple_GetItem(a,i));
+        Py_ssize_t y=PyLong_AsSsize_t(PyTuple_GetItem(b,i));
         if (PyErr_Occurred() || (subtract ? x<y : x>INT32_MAX-y)) {
             Py_DECREF(out);
             if (!PyErr_Occurred()) PyErr_SetString(PyExc_OverflowError,"invalid monomial shift");
@@ -392,14 +392,14 @@ static PyObject *nf_shift(PyObject *a, PyObject *b, int subtract) {
         }
         PyObject *z=PyLong_FromSsize_t(subtract ? x-y : x+y);
         if (!z) {Py_DECREF(out);return NULL;}
-        PyTuple_SET_ITEM(out,i,z);
+        PyTuple_SetItem(out,i,z);
     }
     return out;
 }
 static int nf_divisible(PyObject *large, PyObject *small) {
-    for (Py_ssize_t i=0;i<PyTuple_GET_SIZE(large);++i) {
-        if (PyLong_AsSsize_t(PyTuple_GET_ITEM(large,i)) <
-            PyLong_AsSsize_t(PyTuple_GET_ITEM(small,i))) return 0;
+    for (Py_ssize_t i=0;i<PyTuple_Size(large);++i) {
+        if (PyLong_AsSsize_t(PyTuple_GetItem(large,i)) <
+            PyLong_AsSsize_t(PyTuple_GetItem(small,i))) return 0;
     }
     return 1;
 }
@@ -426,7 +426,7 @@ static PyObject *nf_normalize(PyObject *src, uint32_t p, Py_ssize_t *nvars, int 
     Py_ssize_t pos=0;
     PyObject *key,*val;
     while (PyDict_Next(src,&pos,&key,&val)) {
-        if (*nvars<0 && PyTuple_Check(key)) *nvars=PyTuple_GET_SIZE(key);
+        if (*nvars<0 && PyTuple_Check(key)) *nvars=PyTuple_Size(key);
         if (*nvars<0 || !nf_validate_exps(key,*nvars)) {
             if (!PyErr_Occurred()) PyErr_SetString(PyExc_ValueError,"invalid exponent tuple");
             Py_DECREF(out);return NULL;
@@ -459,7 +459,7 @@ static PyObject *normal_form(PyObject *self, PyObject *args) {
     else {PyErr_SetString(PyExc_ValueError,"order must be lex, grlex or grevlex");return NULL;}
     divisors=PySequence_Fast(divisor_input,"divisors must be a sequence");
     if (!divisors) return NULL;
-    nb=PySequence_Fast_GET_SIZE(divisors);
+    nb=native_sequence_size(divisors);
     basis=PyMem_Calloc((size_t)(nb?nb:1),sizeof(PyObject*));
     lm=PyMem_Calloc((size_t)(nb?nb:1),sizeof(PyObject*));
     invs=PyMem_Calloc((size_t)(nb?nb:1),sizeof(uint32_t));
@@ -467,7 +467,7 @@ static PyObject *normal_form(PyObject *self, PyObject *args) {
     current=nf_normalize(dividend,p,&nvars,&ok);
     if (!current) goto finish;
     for (Py_ssize_t j=0;j<nb;++j) {
-        PyObject *src=PySequence_Fast_GET_ITEM(divisors,j);
+        PyObject *src=native_sequence_item(divisors,j);
         if (!PyDict_Check(src)) {PyErr_SetString(PyExc_TypeError,"divisor must be a dict");goto finish;}
         basis[j]=nf_normalize(src,p,&nvars,&ok);
         if (!basis[j]) goto finish;
@@ -489,7 +489,7 @@ static PyObject *normal_form(PyObject *self, PyObject *args) {
     for (Py_ssize_t j=0;j<nb;++j) {
         PyObject *dict=PyDict_New();
         if (!dict) goto finish;
-        PyTuple_SET_ITEM(quotients,j,dict);
+        PyTuple_SetItem(quotients,j,dict);
     }
     remainder=PyDict_New();
     if (!remainder) goto finish;
@@ -517,8 +517,8 @@ static PyObject *normal_form(PyObject *self, PyObject *args) {
             PyObject *shift=nf_shift(best,lm[j],1);
             if (!shift) {Py_DECREF(best);goto finish;}
             uint32_t q=mul_mod(coeff,invs[j],p);
-            if (nf_accumulate(PyTuple_GET_ITEM(quotients,j),shift,q,p)<0) {Py_DECREF(shift);Py_DECREF(best);goto finish;}
-            if (PyDict_Size(PyTuple_GET_ITEM(quotients,j))>max_terms) {
+            if (nf_accumulate(PyTuple_GetItem(quotients,j),shift,q,p)<0) {Py_DECREF(shift);Py_DECREF(best);goto finish;}
+            if (PyDict_Size(PyTuple_GetItem(quotients,j))>max_terms) {
                 Py_DECREF(shift);Py_DECREF(best);PyErr_SetString(PyExc_OverflowError,"GF(p) division resource limit");goto finish;
             }
             Py_ssize_t dpos=0; PyObject *dkey,*dval;
@@ -558,38 +558,38 @@ static PyObject *batched_spairs(PyObject *self, PyObject *args) {
     if (!bases || !pairs) goto done;
     out=PyList_New(0);
     if (!out) goto done;
-    for (Py_ssize_t n=0;n<PySequence_Fast_GET_SIZE(pairs);++n) {
-        PyObject *desc=PySequence_Fast_GET_ITEM(pairs,n);
-        if (!PyTuple_Check(desc) || PyTuple_GET_SIZE(desc)!=6) {
+    for (Py_ssize_t n=0;n<native_sequence_size(pairs);++n) {
+        PyObject *desc=native_sequence_item(pairs,n);
+        if (!PyTuple_Check(desc) || PyTuple_Size(desc)!=6) {
             PyErr_SetString(PyExc_TypeError,"pair descriptor must have six fields");goto error;
         }
         Py_ssize_t indices[2];
-        indices[0]=PyLong_AsSsize_t(PyTuple_GET_ITEM(desc,0));
-        indices[1]=PyLong_AsSsize_t(PyTuple_GET_ITEM(desc,1));
+        indices[0]=PyLong_AsSsize_t(PyTuple_GetItem(desc,0));
+        indices[1]=PyLong_AsSsize_t(PyTuple_GetItem(desc,1));
         if (PyErr_Occurred()) goto error;
         if (indices[0]<0 || indices[1]<0 ||
-            indices[0]>=PySequence_Fast_GET_SIZE(bases) ||
-            indices[1]>=PySequence_Fast_GET_SIZE(bases)) {
+            indices[0]>=native_sequence_size(bases) ||
+            indices[1]>=native_sequence_size(bases)) {
             PyErr_SetString(PyExc_IndexError,"invalid basis index");goto error;
         }
         PyObject *row=PyDict_New();
         if (!row) goto error;
         for (int which=0;which<2;++which) {
-            PyObject *shift=PyTuple_GET_ITEM(desc,2+which);
-            unsigned long inverse=PyLong_AsUnsignedLong(PyTuple_GET_ITEM(desc,4+which));
-            if (!PyTuple_Check(shift) || !nf_validate_exps(shift,PyTuple_GET_SIZE(shift)) ||
+            PyObject *shift=PyTuple_GetItem(desc,2+which);
+            unsigned long inverse=PyLong_AsUnsignedLong(PyTuple_GetItem(desc,4+which));
+            if (!PyTuple_Check(shift) || !nf_validate_exps(shift,PyTuple_Size(shift)) ||
                 PyErr_Occurred()) {
                 if (!PyErr_Occurred()) PyErr_SetString(PyExc_ValueError,"invalid shift exponents");
                 Py_DECREF(row);goto error;
             }
-            PyObject *poly=PySequence_Fast_GET_ITEM(bases,indices[which]);
+            PyObject *poly=native_sequence_item(bases,indices[which]);
             if (!PyDict_Check(poly)) {
                 PyErr_SetString(PyExc_TypeError,"basis polynomial must be a dict");
                 Py_DECREF(row);goto error;
             }
             Py_ssize_t cursor=0;PyObject *powers,*coef;
             while (PyDict_Next(poly,&cursor,&powers,&coef)) {
-                if (!nf_validate_exps(powers,PyTuple_GET_SIZE(shift))) {
+                if (!nf_validate_exps(powers,PyTuple_Size(shift))) {
                     PyErr_SetString(PyExc_ValueError,"invalid exponent vector");
                     Py_DECREF(row);goto error;
                 }
@@ -622,11 +622,11 @@ done:
    Outputs are exact integer exponent vectors.  Input validation is mandatory
    because the CPython extension must never read invalid tuple offsets. */
 static int mono_vector(PyObject *obj, Py_ssize_t width) {
-    if (!PyTuple_Check(obj) || PyTuple_GET_SIZE(obj) != width) return 0;
+    if (!PyTuple_Check(obj) || PyTuple_Size(obj) != width) return 0;
     PyObject *zero = PyLong_FromLong(0);
     if (!zero) return 0;
     for (Py_ssize_t i=0;i<width;i++) {
-        PyObject *v=PyTuple_GET_ITEM(obj,i);
+        PyObject *v=PyTuple_GetItem(obj,i);
         if (!PyLong_Check(v)) {Py_DECREF(zero);return 0;}
         int negative = PyObject_RichCompareBool(v,zero,Py_LT);
         if (negative != 0) {Py_DECREF(zero);return 0;}
@@ -637,11 +637,11 @@ static int mono_vector(PyObject *obj, Py_ssize_t width) {
 static PyObject *mono_vectors(PyObject *arg, Py_ssize_t *width) {
     PyObject *rows=PySequence_Fast(arg,"expected monomial vectors");
     if (!rows) return NULL;
-    for (Py_ssize_t i=0;i<PySequence_Fast_GET_SIZE(rows);i++) {
-        PyObject *v=PySequence_Fast_GET_ITEM(rows,i);
+    for (Py_ssize_t i=0;i<native_sequence_size(rows);i++) {
+        PyObject *v=native_sequence_item(rows,i);
         if (*width<0) {
             if (!PyTuple_Check(v)) {PyErr_SetString(PyExc_ValueError,"monomial must be a tuple");goto error;}
-            *width=PyTuple_GET_SIZE(v);
+            *width=PyTuple_Size(v);
         }
         if (!mono_vector(v,*width)) {PyErr_SetString(PyExc_ValueError,"invalid monomial exponents");goto error;}
     }
@@ -657,16 +657,16 @@ static PyObject *monomial_divisors(PyObject *self, PyObject *args) {
     if (!leaders)goto done;
     terms=mono_vectors(term_arg,&width);
     if (!terms)goto done;
-    out=PyTuple_New(PySequence_Fast_GET_SIZE(terms));
+    out=PyTuple_New(native_sequence_size(terms));
     if (!out)goto done;
-    for (Py_ssize_t j=0;j<PySequence_Fast_GET_SIZE(terms);j++) {
-        PyObject *term=PySequence_Fast_GET_ITEM(terms,j);
+    for (Py_ssize_t j=0;j<native_sequence_size(terms);j++) {
+        PyObject *term=native_sequence_item(terms,j);
         Py_ssize_t found=-1;
-        for (Py_ssize_t i=0;i<PySequence_Fast_GET_SIZE(leaders);i++) {
-            PyObject *leader=PySequence_Fast_GET_ITEM(leaders,i);
+        for (Py_ssize_t i=0;i<native_sequence_size(leaders);i++) {
+            PyObject *leader=native_sequence_item(leaders,i);
             int divides=1;
             for (Py_ssize_t k=0;k<width;k++) {
-                int cmp=PyObject_RichCompareBool(PyTuple_GET_ITEM(leader,k),PyTuple_GET_ITEM(term,k),Py_LE);
+                int cmp=PyObject_RichCompareBool(PyTuple_GetItem(leader,k),PyTuple_GetItem(term,k),Py_LE);
                 if (cmp<0)goto error;
                 if (!cmp) {divides=0;break;}
             }
@@ -674,7 +674,7 @@ static PyObject *monomial_divisors(PyObject *self, PyObject *args) {
         }
         PyObject *num=PyLong_FromSsize_t(found);
         if (!num)goto error;
-        PyTuple_SET_ITEM(out,j,num);
+        PyTuple_SetItem(out,j,num);
     }
     goto done;
 error: Py_CLEAR(out);
@@ -688,25 +688,25 @@ static PyObject *monomial_pairs(PyObject *self, PyObject *args) {
     if (!leaders)goto done;
     pairs=PySequence_Fast(pair_arg,"expected index pairs");
     if (!pairs)goto done;
-    out=PyTuple_New(PySequence_Fast_GET_SIZE(pairs));
+    out=PyTuple_New(native_sequence_size(pairs));
     if (!out)goto done;
-    for (Py_ssize_t q=0;q<PySequence_Fast_GET_SIZE(pairs);q++) {
-        PyObject *ij=PySequence_Fast_GET_ITEM(pairs,q);
-        if (!PyTuple_Check(ij) || PyTuple_GET_SIZE(ij)!=2) {PyErr_SetString(PyExc_ValueError,"expected pair indices");goto error;}
-        Py_ssize_t i=PyLong_AsSsize_t(PyTuple_GET_ITEM(ij,0)),j=PyLong_AsSsize_t(PyTuple_GET_ITEM(ij,1));
+    for (Py_ssize_t q=0;q<native_sequence_size(pairs);q++) {
+        PyObject *ij=native_sequence_item(pairs,q);
+        if (!PyTuple_Check(ij) || PyTuple_Size(ij)!=2) {PyErr_SetString(PyExc_ValueError,"expected pair indices");goto error;}
+        Py_ssize_t i=PyLong_AsSsize_t(PyTuple_GetItem(ij,0)),j=PyLong_AsSsize_t(PyTuple_GetItem(ij,1));
         if (PyErr_Occurred())goto error;
-        if (i<0||j<0||i>=PySequence_Fast_GET_SIZE(leaders)||j>=PySequence_Fast_GET_SIZE(leaders)) {
+        if (i<0||j<0||i>=native_sequence_size(leaders)||j>=native_sequence_size(leaders)) {
             PyErr_SetString(PyExc_IndexError,"invalid pair indices");goto error;
         }
-        PyObject *a=PySequence_Fast_GET_ITEM(leaders,i),*b=PySequence_Fast_GET_ITEM(leaders,j);
+        PyObject *a=native_sequence_item(leaders,i),*b=native_sequence_item(leaders,j);
         PyObject *lcm=PyTuple_New(width);
         if (!lcm)goto error;
         int coprime=1;
         for (Py_ssize_t k=0;k<width;k++) {
-            PyObject *u=PyTuple_GET_ITEM(a,k),*v=PyTuple_GET_ITEM(b,k);
+            PyObject *u=PyTuple_GetItem(a,k),*v=PyTuple_GetItem(b,k);
             int cmp=PyObject_RichCompareBool(u,v,Py_GE);
             if (cmp<0) {Py_DECREF(lcm);goto error;}
-            PyObject *max=cmp?u:v;Py_INCREF(max);PyTuple_SET_ITEM(lcm,k,max);
+            PyObject *max=cmp?u:v;Py_INCREF(max);PyTuple_SetItem(lcm,k,max);
             if (coprime) {
                 int nz1=PyObject_IsTrue(u);
                 /* avoid a leaked temporary and short-circuit through truth testing below */
@@ -722,7 +722,7 @@ static PyObject *monomial_pairs(PyObject *self, PyObject *args) {
         }
         PyObject *item=PyTuple_Pack(2,lcm,coprime?Py_True:Py_False);Py_DECREF(lcm);
         if (!item)goto error;
-        PyTuple_SET_ITEM(out,q,item);
+        PyTuple_SetItem(out,q,item);
     }
     goto done;
 error:Py_CLEAR(out);
@@ -739,21 +739,21 @@ static PyObject *monomial_sort(PyObject *self,PyObject *args) {
     if (!values)goto done;
     keyed=PyList_New(0);
     if (!keyed)goto done;
-    for (Py_ssize_t i=0;i<PySequence_Fast_GET_SIZE(values);i++) {
-        PyObject *vec=PySequence_Fast_GET_ITEM(values,i),*key=NULL,*item=NULL;
+    for (Py_ssize_t i=0;i<native_sequence_size(values);i++) {
+        PyObject *vec=native_sequence_item(values,i),*key=NULL,*item=NULL;
         if (!strcmp(order,"lex")) {key=vec;Py_INCREF(key);}
         else {
             PyObject *sum=PyLong_FromLong(0),*second=PyTuple_New(width);
             if (!sum||!second) {Py_XDECREF(sum);Py_XDECREF(second);goto error;}
             for (Py_ssize_t k=0;k<width;k++) {
-                PyObject *x=PyTuple_GET_ITEM(vec,k);
+                PyObject *x=PyTuple_GetItem(vec,k);
                 PyObject *next=PyNumber_Add(sum,x);Py_DECREF(sum);sum=next;
                 if (!sum) {Py_DECREF(second);goto error;}
                 PyObject *value;
                 if (!strcmp(order,"grlex")) {value=x;Py_INCREF(value);}
-                else value=PyNumber_Negative(PyTuple_GET_ITEM(vec,width-k-1));
+                else value=PyNumber_Negative(PyTuple_GetItem(vec,width-k-1));
                 if (!value) {Py_DECREF(sum);Py_DECREF(second);goto error;}
-                PyTuple_SET_ITEM(second,k,value);
+                PyTuple_SetItem(second,k,value);
             }
             key=PyTuple_Pack(2,sum,second);Py_DECREF(sum);Py_DECREF(second);
             if (!key)goto error;
@@ -764,11 +764,11 @@ static PyObject *monomial_sort(PyObject *self,PyObject *args) {
         Py_DECREF(item);
     }
     if (PyList_Sort(keyed)<0)goto error;
-    out=PyTuple_New(PyList_GET_SIZE(keyed));
+    out=PyTuple_New(PyList_Size(keyed));
     if (!out)goto error;
-    for (Py_ssize_t i=0;i<PyList_GET_SIZE(keyed);i++) {
-        PyObject *pair=PyList_GET_ITEM(keyed,reverse?PyList_GET_SIZE(keyed)-i-1:i);
-        PyObject *vec=PyTuple_GET_ITEM(pair,1);Py_INCREF(vec);PyTuple_SET_ITEM(out,i,vec);
+    for (Py_ssize_t i=0;i<PyList_Size(keyed);i++) {
+        PyObject *pair=PyList_GetItem(keyed,reverse?PyList_Size(keyed)-i-1:i);
+        PyObject *vec=PyTuple_GetItem(pair,1);Py_INCREF(vec);PyTuple_SetItem(out,i,vec);
     }
     goto done;
 error:Py_CLEAR(out);

@@ -4,6 +4,7 @@ import sympy as sp
 
 
 def domain_state(domain):
+    """Encode exact coefficient-field data without carrying mutable ring caches."""
     if domain == sp.QQ:
         return ("QQ",)
     if domain.is_FiniteField:
@@ -37,6 +38,7 @@ def domain_state(domain):
 
 
 def restore_domain(state):
+    """Reconstruct an exact coefficient field from its portable mathematical data."""
     kind, *data = state
     if kind == "QQ":
         return sp.QQ
@@ -65,9 +67,13 @@ def restore_domain(state):
 
 
 def polynomial_state(poly):
+    """Encode a polynomial together with its coordinate order and exact domain."""
     return poly.as_expr(), poly.gens, domain_state(poly.domain)
 
 
 def restore_polynomial(state):
+    """Restore a polynomial while preserving bound algebraic-root symbols."""
+    from .domains import polynomial
+
     expression, variables, domain = state
-    return sp.Poly(expression, *variables, domain=restore_domain(domain))
+    return polynomial(expression, variables, restore_domain(domain))

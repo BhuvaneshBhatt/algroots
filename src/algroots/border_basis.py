@@ -24,7 +24,7 @@ class BorderBasisError(RationalUnivariateError):
 class BorderBasisDiagnostics:
     """Diagnostics for exact border-basis construction.
 
-    The diagnostics are intentionally exact/symbolic. Numerical border-basis
+    The diagnostics describe exact symbolic algebra. Numerical border-basis
     algorithms should report residual norms separately; this class records the
     structural checks used by the current exact implementation.
     """
@@ -38,6 +38,7 @@ class BorderBasisDiagnostics:
     failed_expression: sp.Expr | None = None
 
     def add_message(self, message: str) -> BorderBasisDiagnostics:
+        """Return diagnostics with one additional mathematical or verification message."""
         return BorderBasisDiagnostics(
             success=self.success,
             messages=self.messages + (message,),
@@ -639,27 +640,13 @@ def compute_border_basis_linear(
     ``groebner_backend="sympy"`` for the portable implementation.
     """
 
-    variable_tuple = tuple(variables)
-    if not variable_tuple:
-        raise BorderBasisError("at least one variable is required")
-    try:
-        polys = [
-            _as_rational_polynomial(sp.sympify(poly), variable_tuple).as_expr()
-            for poly in polynomials
-        ]
-    except RationalUnivariateError as exc:
-        raise BorderBasisError(
-            "border bases require polynomial equations with rational coefficients"
-        ) from exc
-    if not polys:
-        raise BorderBasisError("at least one polynomial generator is required")
-    groebner_basis = verified_groebner_basis(
-        polys,
-        variable_tuple,
-        order=groebner_order,
+    variable_tuple, polys, groebner_basis = _prepare_border_basis_input(
+        polynomials,
+        variables,
         domain=domain,
-        backend=groebner_backend,
-        limits=groebner_limits,
+        groebner_order=groebner_order,
+        groebner_backend=groebner_backend,
+        groebner_limits=groebner_limits,
     )
     if groebner_basis.polys == [sp.Poly(1, *variable_tuple, domain=domain)]:
         empty = sp.zeros(0, 0)

@@ -74,11 +74,12 @@ def _rur_evidence(certificate, representation):
     if q.degree() < 1 or q.LC() != 1 or not q.is_sqf or r.solution_count != q.degree():
         raise GroebnerVerificationError("RUR defining polynomial is not monic and squarefree")
     t = r.parameter
+    coefficient_parameters = tuple(domain.symbols) if domain.is_FractionField else ()
     if any(
         t.name == p.name
         for p in (
             *variables,
-            *getattr(domain, "symbols", ()),
+            *coefficient_parameters,
             *getattr(domain, "parameters", ()),
             *getattr(domain, "tower_symbols", ()),
         )

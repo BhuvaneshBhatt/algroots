@@ -49,7 +49,7 @@ def test_coprime_powers_recover_the_full_generated_field(h):
 
 
 @pytest.mark.parametrize("h", [x + y, x / y])
-def test_proper_subfield_does_not_silently_adjoin_an_algebraic_element(h):
+def test_proper_subfield_membership(h):
     result = luroth_generator([h**2, h**4], variables=(x, y), parameter=t)
     assert_maps(result)
     assert sp.cancel(result.generator - h**2) == 0
@@ -115,7 +115,7 @@ def test_constant_field_has_no_spurious_transcendental_generator(values):
 
 
 @pytest.mark.parametrize("values", [[x, y], [x, y, z], [x * x, x * y], [x / y, y / z]])
-def test_unit_gcd_certifies_only_a_lower_bound_not_an_exact_dimension(values):
+def test_unit_gcd_dimension_bound(values):
     result = luroth_generator(values, variables=(x, y, z), parameter=t)
     assert_maps(result)
     assert result.status == "higher_transcendence_degree" and not result.rational
@@ -147,7 +147,7 @@ def test_number_field_constants_and_nonmonic_rational_poles():
     assert constant.verify() and constant.status == "constant" and constant.contains(a)
 
 
-def test_constant_and_redundant_inputs_cancellation_and_unused_variables():
+def test_redundant_generators():
     h = (x + y) / (x - y)
     values = [2, h**2, h**3, 0, h**2, (x**2 - y**2) / (x - y)]
     # The last input is x+y and makes this field have transcendence degree two.
@@ -161,7 +161,7 @@ def test_constant_and_redundant_inputs_cancellation_and_unused_variables():
 
 
 @pytest.mark.parametrize("variables", [(x, y), (y, x), (z, y, x)])
-def test_variable_order_and_birational_ambient_changes_preserve_the_field(variables):
+def test_birational_field_invariance(variables):
     h = (x + y) / (x - y)
     result = luroth_generator([h**2, h**3], variables=variables, parameter=t)
     assert_maps(result)

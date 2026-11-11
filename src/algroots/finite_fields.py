@@ -47,9 +47,11 @@ class FiniteFieldExtension(MonogenicFiniteExtension, Field):
     __hash__ = MonogenicFiniteExtension.__hash__
 
     def of_type(self, value):
+        """Whether a value uses this field's own element representation."""
         return isinstance(value, ExtensionElement) and value.ext == self
 
     def convert(self, value, base=None):
+        """Embed a scalar or an element of a compatible coefficient field."""
         if isinstance(value, ExtensionElement):
             if value.ext == self:
                 return value
@@ -59,6 +61,7 @@ class FiniteFieldExtension(MonogenicFiniteExtension, Field):
         return super().convert(value, base)
 
     def exquo(self, left, right):
+        """Divide by a nonzero element in the declared coefficient field."""
         return left / right
 
     @property

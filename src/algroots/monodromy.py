@@ -16,6 +16,7 @@ import sympy as sp
 if TYPE_CHECKING:
     from .recognition import RecognizedSystemRoot
 
+from ._precision import working_precision
 from ._validation import validate_recognition_options
 from .algebraic import _AlgebraicProjector, _project_candidates
 from .algebraization import AlgebraizedSystem, algebraize_system
@@ -43,6 +44,7 @@ class MonodromyLoop:
     perturbation: tuple[Any, ...]
 
     def homotopy(self) -> SympyHomotopy:
+        """Compile the parameter loop as a start-to-target analytic homotopy."""
         t = sp.Dummy("t", real=True)
         phase = sp.exp(2 * sp.pi * sp.I * t)
         expressions = tuple(
@@ -122,7 +124,7 @@ def _normalized_root_distance(left: Sequence[Any], right: Sequence[Any], digits:
     """Return normalized root distance at a caller-supplied precision."""
     if len(left) != len(right):
         raise ValueError("root dimensions must agree")
-    with mp.workdps(digits + 10):
+    with working_precision(digits + 10):
         distances: list[mp.mpf] = []
         for a, b in zip(left, right, strict=True):
             aa = number_to_mpc(a, digits + 5)
@@ -225,7 +227,7 @@ def _root_info(
 ) -> MonodromyRootInfo:
     """Build high-precision endpoint verification metadata for one root."""
     digits = path.final_digits
-    with mp.workdps(digits + 10):
+    with working_precision(digits + 10):
         endpoint = mp.matrix([number_to_mpc(value, digits + 5) for value in path.endpoint])
         residual = _relative_residual(base_homotopy, endpoint, mp.mpf(0))
         verify_digits = min(options.residual_digits, digits - 8)

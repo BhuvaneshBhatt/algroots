@@ -91,3 +91,5 @@ assert extended.convert(b**2-a-1) == extended.zero
 `with_parameters` adjoins independent parameters while preserving the original tower generators and compression maps. Passing `L.frac_field(u)` to a public basis, quotient or RUR constructor normalizes to the same algebraic function-field presentation. This supports localization steps that introduce parameters after algebraic extensions.
 
 Specialization is a partial map on coefficients regular at the selected point, not a homomorphism defined on every element of a rational function field. Prefix coefficients of later defining relations use the same local regularity test. Branches where a defining coefficient has a genuine pole are excluded from enumeration; if every branch is undefined, specialization raises an error.
+
+Bound symbols inside exact algebraic constants belong to those constants. Formal field coordinates remain independent of those names during conversion, tower compression, factorization and portable snapshot reconstruction.

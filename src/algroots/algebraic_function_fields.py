@@ -12,6 +12,24 @@ from ._validation import validate_integer
 from .groebner_errors import GroebnerLimitError, GroebnerVerificationError
 
 
+def _norm_coordinates(expressions, variables):
+    """Separate elimination coordinates from symbols bound by algebraic roots.
+
+    Keep ordinary coordinates unchanged to reuse symbolic arithmetic caches.
+    Only a coordinate also bound inside a RootOf needs a private replacement.
+    """
+    bound = set().union(
+        *(
+            root.args[0].free_symbols
+            for expression in expressions
+            for root in expression.atoms(sp.CRootOf)
+        )
+    )
+    return tuple(
+        sp.Dummy(variable.name) if variable in bound else variable for variable in variables
+    )
+
+
 @dataclass(frozen=True)
 class TowerCompression:
     """Exact maps for adjoining one root and compressing a separable tower.
@@ -53,7 +71,9 @@ class TowerCompression:
             a, b = self.old_modulus.gen, self.new_modulus.gen
 
             def rem(expression):
-                return sp.Poly(expression, z, domain=q.domain).rem(q)
+                from .domains import polynomial
+
+                return polynomial(expression, (z,), q.domain).rem(q)
 
             substitutions = {a: self.old_image, b: self.new_image}
             return (
@@ -128,9 +148,11 @@ class AlgebraicFunctionField(MonogenicFiniteExtension, Field):
         return restore_domain, (domain_state(self),)
 
     def of_type(self, value):
+        """Whether a value uses this field's own element representation."""
         return isinstance(value, ExtensionElement) and value.ext == self
 
     def convert(self, value, base=None):
+        """Embed a scalar or an element of a compatible coefficient field."""
         if isinstance(value, ExtensionElement):
             if value.ext == self:
                 return value
@@ -147,6 +169,7 @@ class AlgebraicFunctionField(MonogenicFiniteExtension, Field):
         return super().convert(value, base)
 
     def from_sympy(self, value):
+        """Interpret a rational expression using exact operations in the field generators."""
         value = (
             sp.sympify(value).subs(dict(self.images), simultaneous=True)
             if hasattr(self, "images")
@@ -154,14 +177,19 @@ class AlgebraicFunctionField(MonogenicFiniteExtension, Field):
         )
         # Parse rational expressions in the generator by field operations.
         # The underlying polynomial-ring parser cannot invert its generator.
+        from .domains import polynomial
+
         numerator, denominator = sp.together(value).as_numer_denom()
-        first = super().convert(numerator)
-        second = super().convert(denominator)
+        # Share the coefficient parser with basis construction: a CRootOf can
+        # bind the same printed symbol as this field's formal generator.
+        first = super().convert(polynomial(numerator, (self.symbol,), self.domain).rep)
+        second = super().convert(polynomial(denominator, (self.symbol,), self.domain).rep)
         if not second:
             raise ZeroDivisionError("coefficient denominator is zero in the algebraic field")
         return first / second
 
     def exquo(self, left, right):
+        """Divide by a nonzero element in the declared coefficient field."""
         return left / right
 
     def extend(self, modulus, *, max_degree=64, max_attempts=32):
@@ -184,22 +212,26 @@ class AlgebraicFunctionField(MonogenicFiniteExtension, Field):
             raise ValueError("tower generator names must be distinct")
         if self.rank * modulus.degree() > max_degree:
             raise GroebnerLimitError("algebraic tower degree budget exceeded")
+        from .domains import polynomial
+
         a, b = self.symbol, modulus.gen
         modulus = modulus.monic()
         z = sp.Dummy("theta")
-        expression = modulus.as_expr()
+        # The resultant binds its elimination coordinate. Use a private symbol
+        # so a RootOf constant binding the printed generator stays a constant.
+        (root,) = _norm_coordinates((self.modulus.as_expr(), modulus.as_expr()), (a,))
+        old_expression = self.modulus.as_expr().subs(a, root)
+        expression = modulus.as_expr().subs(a, root)
         for shift in range(1, max_attempts + 1):
-            second = expression.subs(b, z - shift * a)
-            norm = sp.Poly(
-                sp.resultant(self.modulus.as_expr(), second, a), z, domain=self.domain
-            ).monic()
+            second = expression.subs(b, z - shift * root)
+            norm = polynomial(sp.resultant(old_expression, second, root), (z,), self.domain).monic()
             if norm.degree() != self.rank * modulus.degree() or not norm.is_sqf:
                 continue
             if not norm.is_irreducible:
                 raise ValueError("the extension modulus is reducible over the existing field")
             result = AlgebraicFunctionField(norm)
-            first_poly = sp.Poly(self.modulus.as_expr(), a, domain=result)
-            second_poly = sp.Poly(second, a, domain=result)
+            first_poly = polynomial(old_expression, (root,), result)
+            second_poly = polynomial(second, (root,), result)
             common = first_poly.gcd(second_poly).monic()
             if common.degree() != 1:
                 raise GroebnerVerificationError(
@@ -355,27 +387,36 @@ class AlgebraicFunctionField(MonogenicFiniteExtension, Field):
             raise GroebnerLimitError("factorization norm degree budget exceeded")
         unit = polynomial.LC()
         result = []
-        x, a = polynomial.gen, self.symbol
+        from .domains import polynomial as exact_polynomial
+
+        variable = polynomial.gen
+        x, a = _norm_coordinates(
+            (self.modulus.as_expr(), polynomial.as_expr()), (variable, self.symbol)
+        )
+        old_expression = self.modulus.as_expr().subs(self.symbol, a)
         for squarefree, multiplicity in polynomial.monic().sqf_list()[1]:
+            expression = squarefree.as_expr().subs({variable: x, self.symbol: a}, simultaneous=True)
             for shift in range(max_attempts):
-                norm = sp.Poly(
-                    sp.resultant(
-                        self.modulus.as_expr(), squarefree.as_expr().subs(x, x - shift * a), a
-                    ),
-                    x,
-                    domain=self.domain,
+                norm = exact_polynomial(
+                    sp.resultant(old_expression, expression.subs(x, x - shift * a), a),
+                    (x,),
+                    self.domain,
                 ).monic()
                 if norm.degree() != squarefree.degree() * self.rank or not norm.is_sqf:
                     continue
                 for norm_factor, _ in norm.factor_list()[1]:
-                    lifted = sp.Poly(norm_factor.as_expr().subs(x, x + shift * a), x, domain=self)
+                    lifted = exact_polynomial(
+                        norm_factor.as_expr().subs(x, variable + shift * self.symbol),
+                        (variable,),
+                        self,
+                    )
                     factor = squarefree.gcd(lifted).monic()
                     if factor.degree() > 0:
                         result.append((factor, multiplicity))
                 break
             else:
                 raise GroebnerLimitError("factorization primitive search exhausted max_attempts")
-        reconstructed = sp.Poly(unit, x, domain=self)
+        reconstructed = exact_polynomial(unit, (variable,), self)
         for factor, multiplicity in result:
             reconstructed *= factor**multiplicity
         if reconstructed != polynomial:

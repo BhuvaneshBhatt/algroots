@@ -36,10 +36,12 @@ class GroebnerProfiler:
 
 
 def current_record():
+    """Return the active verified-basis profiling record, if profiling is enabled."""
     return _current_record.get()
 
 
 def record_native_stats(stats):
+    """Attach native image statistics to the current profiling record."""
     record = _current_record.get()
     if record is not None:
         record.setdefault("native", []).append(stats)

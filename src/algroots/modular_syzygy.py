@@ -65,6 +65,7 @@ class ModularSyzygyLimits:
             raise ValueError("invalid module F4 matrix configuration")
 
     def module_limits(self):
+        """Translate reconstruction budgets into limits for each module image."""
         return SyzygyLimits(self.max_basis, self.max_pairs, self.max_terms, self.max_steps)
 
 

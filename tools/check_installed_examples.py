@@ -55,9 +55,9 @@ def main():
         directory = Path(temporary)
         for entry in catalog:
             if args.portable and entry["file"] not in {
-                "25_groebner_operations.py",
-                "26_solver_settings.py",
-                "27_coefficient_fields.py",
+                "groebner_operations.py",
+                "solver_settings.py",
+                "coefficient_fields.py",
             }:
                 continue
             _run(data / "examples" / entry["file"], directory, environment, args.timeout)

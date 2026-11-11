@@ -137,7 +137,7 @@ def test_shear_coordinate_change_preserves_constructed_four_root_set(a, b, shear
     _assert_same_root_set(baseline.roots, mapped_back)
 
 
-def test_all_small_equation_permutations_preserve_three_variable_root_set():
+def test_equation_permutation_invariance():
     z = sp.symbols("z")
     equations = (x**2 - 2, y**2 - 3, z - x - y)
     baseline = polysolve(equations, (x, y, z), digits=30, recognize=False)

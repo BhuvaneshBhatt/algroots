@@ -20,7 +20,7 @@ def _close_tuple(left, right, tol=1e-12):
         ((sp.Pow(x, sp.Rational(-1, 2)) - 2,), (x,)),
     ],
 )
-def test_high_level_roots_are_subset_of_projected_algebraized_candidates(equations, variables):
+def test_projected_candidate_filtering(equations, variables):
     algebraized = algebraize_system(equations, variables)
     polynomial = polysolve(
         algebraized.polynomial_equations,
@@ -35,7 +35,7 @@ def test_high_level_roots_are_subset_of_projected_algebraized_candidates(equatio
         assert any(_close_tuple(root, candidate) for candidate in projected)
 
 
-def test_polynomial_input_high_and_low_level_agree_exactly_as_root_sets():
+def test_polynomial_frontend_agreement():
     equations = (x**2 + y**2 - 1, x * y - sp.Rational(1, 4))
     high = algsolve(equations, (x, y), digits=40, recognize=False)
     low = polysolve(equations, (x, y), digits=40, recognize=False)

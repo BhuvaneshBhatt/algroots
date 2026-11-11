@@ -97,6 +97,7 @@ def _initial_points(curve, max_dimension):
 
 
 def resolve(curve, max_steps, max_dimension):
+    """Resolve the finite singularity tree within the blow-up and quotient budgets."""
     from .curves import CurveComputationLimitError, ResolutionPoint
 
     records = []
@@ -179,6 +180,7 @@ def adjoint_basis(curve, points, degree):
 
 
 def normalize(curve, max_steps, max_dimension):
+    """Compute the normalization genus and replayable plane-curve resolution data."""
     from .curves import CurveError, CurveNormalization
 
     points = resolve(curve, max_steps, max_dimension)

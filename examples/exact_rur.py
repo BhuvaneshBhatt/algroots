@@ -1,7 +1,7 @@
 """Construct an RUR and extract exact points.
 
 Guarantee: Exact algebraic coordinates.
-Run from the repository root: python examples/05_exact_rur.py
+Run from the repository root: python examples/exact_rur.py
 """
 
 import sympy as sp

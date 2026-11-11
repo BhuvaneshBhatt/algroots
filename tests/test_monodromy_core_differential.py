@@ -19,7 +19,7 @@ def _as_seed(root):
     return tuple(complex(sp.N(value, 35)) for value in root)
 
 
-def test_multivariate_loop_endpoints_are_exactly_the_core_solver_root_set():
+def test_loop_root_set():
     equations = (x**2 - 1, y**2 - 4)
     solved = polysolve(equations, (x, y), digits=40, recognize=False)
     starts = tuple(_as_seed(root) for root in solved.roots)

@@ -5,6 +5,7 @@ from typing import Any
 import sympy as sp
 
 from ._validation import validate_integer
+from .domains import algebraic_polynomial
 from .errors import NumericalRootError
 from .numerical import acb_mid_to_sympy, flint_available, flint_dps, sympy_to_acb
 
@@ -26,7 +27,7 @@ def numerical_univariate_roots(
     if max_precision_digits is not None:
         validate_integer(max_precision_digits, "max_precision_digits", minimum=digits)
     try:
-        polynomial = sp.Poly(expression, variable, extension=True).sqf_part()
+        polynomial = algebraic_polynomial(expression, (variable,)).sqf_part()
     except (sp.PolynomialError, TypeError, ValueError) as exc:
         raise NumericalRootError(
             f"could not construct a univariate polynomial in {variable}"

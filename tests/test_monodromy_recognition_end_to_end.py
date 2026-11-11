@@ -25,7 +25,7 @@ def _exact_set(recognized):
 
 
 @pytest.mark.slow
-def test_core_seed_monodromy_and_real_recognition_agree_for_quadratic() -> None:
+def test_quadratic_orbit_recognition() -> None:
     pytest.importorskip("flint")
     pytest.importorskip("algrecognize")
 

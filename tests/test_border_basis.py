@@ -62,7 +62,7 @@ def test_border_basis_strict_false_reports_invalid_order_ideal():
     assert "order ideal" in result.diagnostics.messages[0]
 
 
-def test_border_basis_strict_false_reports_positive_dimensional_ideal():
+def test_positive_dimension_diagnostics():
     x, y = sp.symbols("x y")
     result = compute_border_basis([x**2 + y**2 - 1], [x, y], strict=False)
 

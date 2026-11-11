@@ -55,7 +55,7 @@ def test_execution_markers_are_immediately_followed_by_python_fences():
         assert executable_count == marker_count, path.relative_to(ROOT)
 
 
-def test_all_python_fences_are_syntactically_valid_or_explicit_signatures():
+def test_python_fences():
     """Catch stale/garbled code fences without executing deliberate error examples."""
     for path in [ROOT / "README.md", *(ROOT / "docs").glob("*.md")]:
         for index, code in enumerate(_python_blocks(str(path.relative_to(ROOT)))):

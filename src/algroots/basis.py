@@ -39,8 +39,10 @@ def groebner_basis(
     ``verification="certificate"`` instead checks generator-combination and
     standard S-pair identities, with optional ``proof_limits``. A reusable
     ``certificate`` checks an existing proof for this exact system and avoids
-    basis construction. Every certificate use replays its identities. This establishes both ideal inclusions and the
-    reduced-basis property, but includes reference computation in total time.
+    basis construction. Raw certificates replay their identities; prepared
+    snapshots retain a detached proof checked at construction. Both ideal
+    inclusions and the reduced-basis property remain required. Reference
+    verification, when selected, is included in total time.
     No partial or unverified result is returned on failure.
 
     ``groebner_backends()`` describes supported domains and installation steps.

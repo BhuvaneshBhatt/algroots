@@ -39,4 +39,4 @@ On Linux, `ExecutionLimits(timeout=30, memory_mib=512)` limits virtual address s
 
 The worker uses multiprocessing's spawn context. Use the `if __name__ == "__main__"` guard; launch a script instead of running a spawning call directly in an interactive notebook. Transferable calculation exceptions retain their types. `ExecutionError` reports a worker or transport failure, and its subclass `ExecutionTimeout` is also a `TimeoutError`. On POSIX a timed-out worker group is killed; side effects already performed by a user-supplied callable are not rolled back.
 
-The executable [supervision example](../examples/26_solver_settings.py) and the [Gröbner guide](groebner-bases.md) show these controls alongside ordinary exact results.
+The executable [supervision example](../examples/solver_settings.py) and the [Gröbner guide](groebner-bases.md) show these controls alongside ordinary exact results.

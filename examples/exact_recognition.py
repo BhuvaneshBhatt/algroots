@@ -1,7 +1,7 @@
 """Recognize and jointly certify numerical coordinates.
 
 Guarantee: Coordinate and joint equation certification.
-Run from the repository root: python examples/03_exact_recognition.py
+Run from the repository root: python examples/exact_recognition.py
 """
 
 import sympy as sp

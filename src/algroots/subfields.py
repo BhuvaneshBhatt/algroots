@@ -46,6 +46,7 @@ class SubfieldMembership:
 
     @property
     def belongs(self) -> bool:
+        """Whether the element has an exact expression in the generated subfield."""
         return self.coordinates is not None
 
     def __bool__(self):
@@ -93,6 +94,7 @@ class FiniteSubfield:
 
     @classmethod
     def generate(cls, ambient, generators, *, over=None, generator_symbols=None):
+        """Construct the subfield closure and its exact ambient embedding."""
         if over is not None and over != ambient.domain:
             raise QuotientAlgebraError(
                 "fixed-base subfields require over=ambient.domain; use coefficient_field to change constants"
@@ -132,10 +134,12 @@ class FiniteSubfield:
 
     @property
     def domain(self):
+        """The base coefficient field of this algebraic presentation."""
         return self.ambient.domain
 
     @property
     def dimension(self):
+        """The vector-space dimension, including nonreduced multiplicities."""
         return len(self.basis)
 
     @cached_property
@@ -150,6 +154,7 @@ class FiniteSubfield:
         return domain_matrix(self.embedding_matrix, self.domain)
 
     def express(self, element) -> SubfieldMembership:
+        """Return exact membership coordinates and their ambient embedding evidence."""
         element = field_normal_form(self.ambient, element)
         vector = domain_matrix(self.ambient.coordinate_vector(element), self.domain)
         values = _coordinates(self._domain_embedding, vector)
@@ -157,9 +162,11 @@ class FiniteSubfield:
         return SubfieldMembership(self, element, coefficients)
 
     def contains(self, element) -> bool:
+        """Test exact membership in the generated coefficient field."""
         return self.express(element).belongs
 
     def to_ambient(self, expression) -> sp.Expr:
+        """Embed an expression from this presentation in its original ambient field."""
         expression = sp.sympify(expression)
         allowed = set(self.generator_symbols) | set().union(
             *(s.free_symbols for s in getattr(self.domain, "symbols", ()))
@@ -253,12 +260,14 @@ class PrimitiveSubfield:
         )
 
     def to_ambient(self, value):
+        """Embed an expression from this presentation in its original ambient field."""
         value = field_normal_form(self.field, value)
         return field_normal_form(
             self.subfield.ambient, value.subs(self.field.variables[0], self.ambient_generator)
         )
 
     def to_source(self, value):
+        """Express an ambient element in the coordinates of this presentation."""
         A = self.subfield.ambient
         value = field_normal_form(A, value)
         coordinates = _coordinates(
@@ -271,6 +280,7 @@ class PrimitiveSubfield:
         )
 
     def verify(self):
+        """Replay the simple field presentation and both directions of its embedding."""
         if (
             self.field.domain != self.subfield.domain
             or len(self.field.variables) != 1

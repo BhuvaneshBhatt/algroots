@@ -1,8 +1,8 @@
 # Continuation and Monodromy
 
-**Status:** The mixed-precision continuation core is shared by the explicit total-degree homotopy backend and the experimental monodromy layer. Monodromy still requires supplied seeds, assumes nonsingular paths, and does not currently implement `method="monodromy"`. Trace/statistical stopping must not be interpreted as exact completeness certification.
+**Status:** The mixed-precision continuation core is shared by the explicit total-degree homotopy backend and the seeded numerical monodromy layer. Monodromy still requires supplied seeds, assumes nonsingular paths, and does not currently implement `method="monodromy"`. Trace/statistical stopping must not be interpreted as exact completeness certification.
 
-`algroots` includes a reusable numerical continuation layer, an explicit `method="homotopy"` backend for regular square polynomial systems, and an experimental monodromy-orbit layer.
+`algroots` includes a reusable numerical continuation layer, an explicit `method="homotopy"` backend for regular square polynomial systems, and an seeded numerical monodromy-orbit layer.
 
 The monodromy layer discovers roots reachable from supplied seed roots and can stop using an externally supplied exact root count, a numerical second-order curvature heuristic, or a Chapman-corrected capture-recapture estimate. The result records the evidence used; curvature stopping records no completeness evidence; statistical stopping records only its population estimate.
 

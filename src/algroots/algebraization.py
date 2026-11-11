@@ -9,6 +9,7 @@ from typing import Any
 import sympy as sp
 
 from ._validation import normalize_equation, validate_variables
+from .domains import algebraic_polynomial
 from .errors import PolynomialSystemInputError
 
 
@@ -150,7 +151,7 @@ def _validate_poly_equations(
     normalized: list[Any] = []
     for equation in equations:
         try:
-            polynomial = sp.Poly(sp.expand(equation), *variables, extension=True)
+            polynomial = algebraic_polynomial(sp.expand(equation), variables)
         except (sp.PolynomialError, TypeError, ValueError) as exc:
             raise PolynomialSystemInputError(
                 "algebraization did not produce a polynomial system"

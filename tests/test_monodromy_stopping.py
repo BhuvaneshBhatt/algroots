@@ -30,7 +30,7 @@ def test_capture_recapture_estimate_for_full_recapture_is_exact():
     assert estimate.lower == estimate.upper == 2
 
 
-def test_capture_recapture_with_no_overlap_predicts_larger_population():
+def test_disjoint_sample_estimate():
     estimate = capture_recapture_estimate(2, 2, 0)
     assert estimate.estimate > 2
     assert estimate.upper > estimate.estimate
@@ -72,7 +72,7 @@ def test_trace_test_can_stop_closed_known_orbit():
     assert result.trace_residual < 1e-10
 
 
-def test_statistical_stop_records_statistical_basis_not_exact_completion():
+def test_statistical_stop_evidence():
     result = discover_monodromy_orbit(
         [x**2 - 1],
         (x,),

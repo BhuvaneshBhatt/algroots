@@ -20,6 +20,7 @@ class UnluckyInterpolation(ArithmeticError):
 
 
 def monomials(count, degree):
+    """Enumerate exponent vectors up to the given total degree."""
     result = [()]
     for _ in range(count):
         result = [p + (e,) for p in result for e in range(degree - sum(p) + 1)]
@@ -27,6 +28,7 @@ def monomials(count, degree):
 
 
 def power(monomial, point, prime):
+    """Evaluate a coordinate monomial modulo the supplied prime."""
     value = 1
     for exponent, coordinate in zip(monomial, point, strict=True):
         value = value * pow(coordinate, exponent, prime) % prime
@@ -34,6 +36,7 @@ def power(monomial, point, prime):
 
 
 def evaluate(terms, point, prime):
+    """Evaluate a sparse parameter polynomial modulo the supplied prime."""
     return sum(c * power(m, point, prime) for m, c in terms.items()) % prime
 
 

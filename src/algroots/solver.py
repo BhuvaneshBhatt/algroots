@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import mpmath as mp
 import sympy as sp
 
+from ._precision import working_precision
 from ._validation import (
     normalize_equation,
     validate_integer,
@@ -17,6 +18,7 @@ from ._validation import (
     validate_variables,
 )
 from .continuation import PathResult, PathTrackerOptions
+from .domains import algebraic_polynomial
 from .errors import (
     ActionMatrixError,
     HomotopySolveError,
@@ -132,7 +134,7 @@ class _CompiledPolynomialSystem:
     def endpoint_regularity(
         self, root: tuple[Any, ...], *, digits: int, verification_digits: int
     ) -> _EndpointRegularity:
-        with mp.workdps(digits + 10):
+        with working_precision(digits + 10):
             values = _mp_root(root, digits + 5)
             variable_scales = [max(mp.mpf(1), abs(value)) for value in values]
             rows: list[list[mp.mpc]] = []
@@ -260,7 +262,7 @@ def _normalize_equations(
     for equation in equations:
         expression = normalize_equation(equation, expand=True)
         try:
-            polynomial = sp.Poly(expression, *variables, extension=True)
+            polynomial = algebraic_polynomial(expression, variables)
         except (sp.PolynomialError, TypeError, ValueError) as exc:
             raise PolynomialSystemInputError(
                 f"equation is not polynomial in the supplied variables: {equation!r}"
@@ -282,7 +284,15 @@ def _normalize_equations(
 def _groebner_basis(equations, variables, backend="native", limits=None):
     # Solver inputs have already been normalized and validated. Preserve the
     # direct SymPy construction path instead of parsing the same inputs again.
-    if backend == "sympy" and limits is None:
+    if (
+        backend == "sympy"
+        and limits is None
+        and not any(
+            constant.has(*variables)
+            for expression in equations
+            for constant in expression.atoms(sp.CRootOf, sp.AlgebraicNumber)
+        )
+    ):
         return sp.groebner(equations, *variables, order="grevlex", extension=True)
     from .basis import groebner_basis
 
@@ -299,7 +309,7 @@ def _relative_residual(
     assignment: dict[Any, Any],
     digits: int,
 ):
-    polynomial = sp.Poly(expression, *variables, extension=True)
+    polynomial = algebraic_polynomial(expression, variables)
     value = abs(sp.N(expression.subs(assignment), digits))
 
     term_scale = sp.Float(0, digits)
@@ -352,7 +362,7 @@ def _shape_representation(
     for expression in basis_exprs:
         if expression.free_symbols <= {parameter} and parameter in expression.free_symbols:
             try:
-                degree = sp.Poly(expression, parameter, extension=True).degree()
+                degree = algebraic_polynomial(expression, (parameter,)).degree()
             except (sp.PolynomialError, TypeError, ValueError):
                 continue
             if degree > 0:
@@ -362,7 +372,7 @@ def _shape_representation(
         return None
     eliminants.sort(
         key=lambda expr: (
-            sp.Poly(expr, parameter, extension=True).degree(),
+            algebraic_polynomial(expr, (parameter,)).degree(),
             int(sp.count_ops(expr)),
         )
     )
@@ -377,7 +387,7 @@ def _shape_representation(
             if not expression.free_symbols <= {variable, parameter}:
                 continue
             try:
-                polynomial = sp.Poly(expression, variable, domain="EX")
+                polynomial = algebraic_polynomial(expression, (variable,))
             except (sp.PolynomialError, TypeError, ValueError):
                 continue
             if polynomial.degree() != 1:
@@ -432,12 +442,12 @@ def _solve_shape(
 
     parameter = representation.parameter
     coordinate_polys = tuple(
-        sp.Poly(expression, parameter, extension=True)
+        algebraic_polynomial(expression, (parameter,))
         for expression in representation.coordinate_exprs
     )
 
     def evaluate_coordinate(poly, root):
-        with mp.workdps(work_digits + 8):
+        with working_precision(work_digits + 8):
             value = mp.mpc(0)
             root_mp = sympy_to_mpc(root, work_digits + 8)
             for coefficient in poly.all_coeffs():
@@ -854,11 +864,7 @@ def _candidate_equations(
         if current not in free or not free <= allowed:
             continue
         try:
-            degree = sp.Poly(
-                expression,
-                *variables[index:],
-                extension=True,
-            ).degree(current)
+            degree = algebraic_polynomial(expression, variables[index:]).degree(current)
         except (sp.PolynomialError, TypeError, ValueError):
             continue
         if degree > 0:
@@ -887,7 +893,7 @@ def _solve_univariate_branch(
     }
     substituted = expression.subs(midpoint_assignment)
     try:
-        polynomial = sp.Poly(substituted, variable, extension=True)
+        polynomial = algebraic_polynomial(substituted, (variable,))
     except sp.PolynomialError:
         return None
     if polynomial.degree() <= 0:
@@ -1274,7 +1280,7 @@ def _solve_total_degree_homotopy(
     # requires no path tracking. An identically zero equation is rejected by
     # the constructor because it falls outside the regular square-system scope.
     for equation in normalized:
-        polynomial = sp.Poly(equation, *variables, extension=True)
+        polynomial = algebraic_polynomial(equation, variables)
         if not polynomial.is_zero and polynomial.total_degree() == 0:
             return PolynomialSystemRoots(
                 roots=(),
@@ -1553,7 +1559,7 @@ def _polysolve(
                 count_basis = "exact_rur_geometric_count"
             elif result.eliminant is not None:
                 geometric = (
-                    sp.Poly(result.eliminant, result.parameter_variable, extension=True)
+                    algebraic_polynomial(result.eliminant, (result.parameter_variable,))
                     .sqf_part()
                     .degree()
                 )
@@ -2098,10 +2104,9 @@ def polysolve(
         for variable, expression in reversed(reduced.substitutions):
             coordinate_map[variable] = sp.expand(expression.subs(coordinate_map))
         numerators = tuple(
-            sp.Poly(
+            algebraic_polynomial(
                 coordinate_map.get(v, 0) if representation.is_empty else coordinate_map[v],
-                representation.parameter,
-                extension=True,
+                (representation.parameter,),
             ).rem(representation.defining_polynomial)
             for v in original_variables
         )

@@ -142,6 +142,7 @@ class MultivariateRationalDecomposition:
 
     @property
     def function(self):
+        """Return the rational function in its declared coordinate variables."""
         return _normal(self.original_expression, self.variables, self.constants)
 
     @property
@@ -154,11 +155,13 @@ class MultivariateRationalDecomposition:
 
     @property
     def input_guard(self):
+        """Condition retaining the input expression's denominator exclusions."""
         from .functional_decomposition import _visible_denominators
 
         return sp.And(*(sp.Ne(p, 0) for p in _visible_denominators(self.original_expression)))
 
     def verify(self):
+        """Check the exact composition identity and the input-domain exclusions."""
         try:
             _symbols(self.variables, self.parameter)
             if _constant_domain(self.constants) != self.constants:
@@ -227,10 +230,12 @@ class MultivariateRationalDecompositionResult:
 
     @property
     def complete(self):
+        """Whether the recorded search is complete within its stated scope."""
         return self.examined == self.candidate_count
 
     @property
     def status(self):
+        """The decomposition outcome implied by the stored evidence."""
         if self.decompositions:
             return "decomposable"
         if not self.complete:
@@ -240,6 +245,7 @@ class MultivariateRationalDecompositionResult:
         return "indecomposable"
 
     def verify(self):
+        """Replay the factor search scope and every returned rational decomposition."""
         from .functional_decomposition import _integer
 
         try:

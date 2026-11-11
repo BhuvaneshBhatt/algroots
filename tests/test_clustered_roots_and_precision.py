@@ -26,7 +26,7 @@ def test_exact_clustered_roots_remain_distinct(power):
 
 
 @pytest.mark.flint
-def test_action_precision_retry_after_one_controlled_isolation_failure(monkeypatch):
+def test_action_isolation_retry(monkeypatch):
     if not flint_available():
         if os.environ.get("ALGROOTS_REQUIRE_FLINT") == "1":
             pytest.fail("python-flint required for precision-retry test")

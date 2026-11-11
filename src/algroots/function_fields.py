@@ -166,12 +166,14 @@ class CoefficientMembership:
 
     @property
     def belongs(self):
+        """Whether the element has an exact expression in the generated subfield."""
         return self.expression is not None
 
     def __bool__(self):
         return self.belongs
 
     def verify(self):
+        """Check the proposed coefficient expression against the original ambient element."""
         expected = self.field.express(self.element)
         if expected.belongs != self.belongs:
             return False
@@ -203,10 +205,12 @@ class AlgebraicCoefficientField:
 
     @property
     def transcendence_degree(self):
+        """Transcendence degree of the generated field over its constants."""
         return int(self.base_index is not None)
 
     @property
     def degree(self):
+        """Degree of the finite presentation over its chosen transcendence base."""
         return _degree(self.presentation)
 
     @cached_property
@@ -241,13 +245,16 @@ class AlgebraicCoefficientField:
         return CoefficientFieldParametrization(self.curve_model(), result.parametrization)
 
     def express(self, value):
+        """Return a checked coefficient-field expression for an ambient element, when one exists."""
         value = _normal(self.ambient, value)
         return CoefficientMembership(self, value, _image_membership(self, value))
 
     def contains(self, value):
+        """Test exact membership in the generated coefficient field."""
         return self.express(value).belongs
 
     def to_ambient(self, expression):
+        """Embed an expression from this presentation in its original ambient field."""
         expression = sp.sympify(expression)
         if expression.free_symbols - set(self.generator_symbols):
             raise QuotientAlgebraError("expression must use only the coefficient coordinates")
@@ -257,6 +264,7 @@ class AlgebraicCoefficientField:
         )
 
     def verify(self):
+        """Replay the generating relations, degree and ambient coefficient embeddings."""
         if self.relations != _image_relations(
             self.ambient, self.constants, self.generators, self.generator_symbols
         ):
@@ -283,38 +291,47 @@ class RationalSubfieldParametrization:
 
     @property
     def parameter(self):
+        """The parameter of the rational presentation."""
         return self.field.parameter
 
     @property
     def generator(self):
+        """The generating element in the original ambient field."""
         return self.field.generator
 
     @property
     def generator_expression(self):
+        """The generating rational function in the original formal coordinates."""
         return self.field.generator_expression
 
     @property
     def coefficient_images(self):
+        """Images of the original coefficient generators in the parameter field."""
         return tuple(self.field.express(c).expression for c in self.field.generators)
 
     @property
     def forward_guard(self):
+        """Nonvanishing condition under which the forward rational map is defined."""
         return sp.And(*(sp.Ne(_fraction(c)[1], 0) for c in self.coefficient_images))
 
     @property
     def inverse_guard(self):
+        """Nonvanishing condition under which the inverse rational map is defined."""
         return sp.Ne(_fraction(self.generator_expression)[1], 0)
 
     def to_ambient(self, value):
+        """Embed an expression from this presentation in its original ambient field."""
         return self.field.to_ambient(value)
 
     def to_source(self, value):
+        """Express an ambient element in the coordinates of this presentation."""
         result = self.field.express(value)
         if not result.belongs:
             raise QuotientAlgebraError("element does not belong to the rational subfield")
         return result.expression
 
     def verify(self):
+        """Check both rational coefficient maps and their inverse identities."""
         return self.field.verify()
 
 
@@ -333,6 +350,7 @@ class RationalFunctionSubfield:
 
     @property
     def transcendence_degree(self):
+        """Transcendence degree of the generated field over its constants."""
         return int(self.generator is not None)
 
     @property
@@ -355,6 +373,7 @@ class RationalFunctionSubfield:
         )
 
     def express(self, value):
+        """Return a rational expression in the generator together with exact membership evidence."""
         value = _normal(self.ambient, value)
         _, t = _ambient_data(self.ambient, self.constants)
         if self.generator is None:
@@ -367,9 +386,11 @@ class RationalFunctionSubfield:
         return CoefficientMembership(self, value, expression)
 
     def contains(self, value):
+        """Test exact membership in the generated coefficient field."""
         return self.express(value).belongs
 
     def to_ambient(self, expression):
+        """Embed an expression from this presentation in its original ambient field."""
         expression = sp.sympify(expression)
         if expression.free_symbols - {self.parameter}:
             raise QuotientAlgebraError("expression must use only the rational generator parameter")
@@ -379,6 +400,7 @@ class RationalFunctionSubfield:
 
     @property
     def genus(self):
+        """Return the genus of the associated coefficient curve."""
         from .curves import CurveError
 
         if self.generator is None:
@@ -386,11 +408,13 @@ class RationalFunctionSubfield:
         return 0
 
     def rational_parametrization(self):
+        """Construct a checked rational parametrization with its inverse map."""
         if self.generator is None:
             raise QuotientAlgebraError("a constant field has no transcendental rational generator")
         return RationalSubfieldParametrization(self)
 
     def verify(self):
+        """Check the generator presentation and its ambient embedding."""
         _, t = _ambient_data(self.ambient, self.constants)
         if self.generator is None:
             return (
@@ -455,18 +479,22 @@ class LurothGeneratorResult:
 
     @property
     def variables(self):
+        """Coordinate symbols in their declared order."""
         return self.ambient.symbols
 
     @property
     def transcendence_degree(self):
+        """The proven transcendence degree, or None when only a lower bound is known."""
         return {"constant": 0, "rational": 1, "higher_transcendence_degree": None}[self.status]
 
     @property
     def transcendence_degree_lower_bound(self):
+        """The certified lower bound on the generated field's transcendence degree."""
         return {"constant": 0, "rational": 1, "higher_transcendence_degree": 2}[self.status]
 
     @property
     def rational(self):
+        """Whether a rational presentation over the declared constants was established."""
         return self.status == "rational"
 
     def _require_supported_field(self):
@@ -490,9 +518,11 @@ class LurothGeneratorResult:
         return CoefficientMembership(self, value, expression)
 
     def contains(self, value):
+        """Test exact membership in the generated coefficient field."""
         return self.express(value).belongs
 
     def to_ambient(self, expression):
+        """Embed an expression from this presentation in its original ambient field."""
         self._require_supported_field()
         source = (
             self.constants
@@ -506,11 +536,13 @@ class LurothGeneratorResult:
 
     @property
     def genus(self):
+        """Return the genus of the associated coefficient curve."""
         if not self.rational:
             raise QuotientAlgebraError("genus requires a field of transcendence degree one")
         return 0
 
     def rational_parametrization(self):
+        """Construct a checked rational parametrization with its inverse map."""
         if not self.rational:
             raise QuotientAlgebraError(
                 "a rational parametrization requires transcendence degree one"

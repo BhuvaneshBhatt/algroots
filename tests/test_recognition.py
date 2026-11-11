@@ -146,7 +146,7 @@ def test_monodromy_recognition_does_not_change_completeness(monkeypatch) -> None
     assert orbit.completeness_basis == "none"
 
 
-def test_real_recognition_handles_rational_and_complex_algebraic_roots() -> None:
+def test_real_and_complex_recognition() -> None:
     """Exercise actual algrecognize/python-flint on simple exact root families."""
     pytest.importorskip("flint")
     pytest.importorskip("algrecognize")

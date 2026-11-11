@@ -35,7 +35,7 @@ Run these checks on the repaired native wheel:
 ```sh
 python -m pip install abi3audit
 python tools/check_wheel_abi.py repaired --require-all
-python -m pip install --force-reinstall --no-deps repaired/algroots-0.4.0-cp311-abi3-macosx_14_0_arm64.whl
+python -m pip install --force-reinstall --no-deps repaired/algroots-0.4.1-cp311-abi3-macosx_14_0_arm64.whl
 python tools/wheel_smoke.py --native --extension-fields --stable-abi
 ```
 

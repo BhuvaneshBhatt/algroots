@@ -1,5 +1,5 @@
 [versions]
-algroots = "0.4.0"
+algroots = "0.4.1"
 semialg = "1.5.0"
 alggeom = "0.1.0"
 funcprops = "0.5.0"

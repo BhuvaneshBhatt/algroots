@@ -73,13 +73,13 @@ def test_free_threaded_build(monkeypatch):
 def wheel_fixture(
     tmp_path, *, platform="manylinux_2_28_x86_64", abi="abi3", payload=None, metadata_python="cp311"
 ):
-    path = tmp_path / f"algroots-0.4.0-cp311-{abi}-{platform}.whl"
+    path = tmp_path / f"algroots-0.4.1-cp311-{abi}-{platform}.whl"
     suffix = ".pyd" if platform.startswith("win") else ".abi3.so"
     if payload is None:
         payload = [f"algroots/{name}{suffix}" for name in sorted(wheel_abi.NATIVE_MODULES)]
     with ZipFile(path, "w") as archive:
         archive.writestr(
-            "algroots-0.4.0.dist-info/WHEEL",
+            "algroots-0.4.1.dist-info/WHEEL",
             f"Wheel-Version: 1.0\nRoot-Is-Purelib: false\nTag: {metadata_python}-{abi}-{platform}\n",
         )
         for name in payload:

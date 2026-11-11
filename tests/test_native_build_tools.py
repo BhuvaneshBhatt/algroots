@@ -163,7 +163,7 @@ def test_linux_repair_library_path(monkeypatch, tmp_path, single):
     module = _tool("repair_extension_wheels")
     source = tmp_path / "raw"
     source.mkdir()
-    wheel = source / "algroots-0.4.0-cp311-cp311-linux_x86_64.whl"
+    wheel = source / "algroots-0.4.1-cp311-cp311-linux_x86_64.whl"
     wheel.touch()
     prefix = tmp_path / "flint"
     (prefix / "lib").mkdir(parents=True)
@@ -197,7 +197,7 @@ def test_linux_repair_library_path(monkeypatch, tmp_path, single):
 
 def test_windows_repair_library_path(monkeypatch, tmp_path):
     module = _tool("repair_extension_wheels")
-    wheel = tmp_path / "algroots-0.4.0-cp311-cp311-win_amd64.whl"
+    wheel = tmp_path / "algroots-0.4.1-cp311-cp311-win_amd64.whl"
     wheel.touch()
     prefix = tmp_path / "flint"
     monkeypatch.setattr(

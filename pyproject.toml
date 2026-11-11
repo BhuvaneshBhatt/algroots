@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "algroots"
-version = "0.4.0"
+version = "0.4.1"
 description = "Exact and numerical algebraic computation: polynomial systems, Gröbner basis, finite algebras, function fields, functional decomposition, and plane curves."
 readme = "README.md"
 requires-python = ">=3.11"

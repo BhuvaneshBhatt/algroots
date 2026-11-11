@@ -53,6 +53,7 @@ test = [
     "pytest>=8",
     "hypothesis>=6",
     "pytest-cov>=6",
+    "setuptools>=77",
 ]
 dev = [
     "ruff>=0.12",
